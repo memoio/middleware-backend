@@ -1,15 +1,18 @@
 package server
 
 import(
+	"fmt"
 	"sync"
 	"time"
 	"crypto/rand"
 	"encoding/hex"
+
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type NonceManager struct {
-	handledNonce   map[string]int64
-	handlingNonce  map[string]int64
+	handledNonce   *sync.Map
+	handlingNonce  *sync.Map
 	modifyMutex    sync.Mutex
 
 	ExpireEpoch     int64
@@ -19,8 +22,8 @@ type NonceManager struct {
 
 func NewNonceManager(expireEpoch int64, modifyEpoch int64) *NonceManager {
 	return &NonceManager{
-		handlingNonce: make(map[string]int64), 
-		handledNonce: make(map[string]int64), 
+		handlingNonce: new(sync.Map), 
+		handledNonce: new(sync.Map), 
 		ExpireEpoch: expireEpoch, 
 		ModifyEpoch: modifyEpoch, 
 		LastModifyTime: time.Now().Unix(), 
@@ -39,8 +42,8 @@ func (non *NonceManager) GetNonce() string {
         return ""
     }
 
-    nonce := hex.EncodeToString(b)
-    non.handlingNonce[nonce] = time.Now().Unix() + non.ExpireEpoch
+    nonce := hex.EncodeToString(crypto.Keccak256(b, []byte(time.Now().String())))
+    non.handlingNonce.Store(nonce, time.Now().Unix() + non.ExpireEpoch)
 
     return nonce
 }
@@ -55,19 +58,23 @@ func (non *NonceManager) VerifyNonce(nonce string) bool {
 		non.clearExpiredNonce()
 	}
 
-	expireTime, ok := non.handlingNonce[nonce]
+	expireTime, ok := non.handlingNonce.Load(nonce)
 	if ok {
-		delete(non.handlingNonce, nonce)
-		if now < expireTime {
+		non.handlingNonce.Delete(nonce)
+		expireTimeInt, _ := expireTime.(int64)
+		if now < expireTimeInt {
 			return true
+		} else {
+			return false
 		}
 	}
 
 	if time.Now().Unix() - non.LastModifyTime < non.ExpireEpoch {
-		expireTime, ok = non.handledNonce[nonce]
+		expireTime, ok = non.handledNonce.Load(nonce)
 		if ok {
-			delete(non.handledNonce, nonce)
-			if now < expireTime {
+			non.handledNonce.Delete(nonce)
+			expireTimeInt, _ := expireTime.(int64)
+			if now < expireTimeInt {
 				return true
 			}
 		}
@@ -82,7 +89,7 @@ func (non *NonceManager) clearExpiredNonce() {
 	defer non.modifyMutex.Unlock()
 	if now - non.LastModifyTime >= non.ModifyEpoch {
 		non.handledNonce = non.handlingNonce
-		non.handlingNonce = make(map[string]int64)
+		non.handlingNonce = new(sync.Map)
 		non.LastModifyTime = now
 	}
 }

@@ -32,7 +32,7 @@ func NewServer() *http.Server {
 		c.String(http.StatusOK, "Welcome Server")
 	})
 
-	nonceManager := NewNonceManager(30 * int64(time.Second.Seconds()), 5 * int64(time.Minute.Seconds()))
+	nonceManager := NewNonceManager(30 * int64(time.Second.Seconds()), 1 * int64(time.Minute.Seconds()))
 
 	router.GET("/getnonce", func(c *gin.Context) {
 		nonce := nonceManager.GetNonce()
@@ -42,14 +42,14 @@ func NewServer() *http.Server {
 	router.POST("/login", func(c *gin.Context) {
 		var request LoginRequest
 		err := c.BindJSON(&request)
-	    if err != nil{
+		if err != nil{
 	    	apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 	        c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
 				Nonce: nonceManager.GetNonce(), 
 				Error: apiErr, 
 			})
 			return
-	    }
+		}
 		accessToken, freshToken, err := LoginWithEth(nonceManager, request)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
