@@ -13,6 +13,7 @@ const (
 	putfunc     = "put object error %s"
 	getfunc     = "get object error %s"
 	listfunc    = "list object error %s"
+	deletefunc  = "delete object error %s"
 	getinfofunc = "get object info error %s"
 )
 
@@ -49,6 +50,20 @@ func (e AddressNull) Error() string {
 	return "address is nil"
 }
 
+type EthError struct {
+	Message string
+}
+
+func (e EthError) Error() string {
+	return e.Message
+}
+
+type BalanceNotEnough struct{}
+
+func (e BalanceNotEnough) Error() string {
+	return "balance not enough"
+}
+
 type APIError struct {
 	Code           string
 	Description    string
@@ -66,6 +81,8 @@ const (
 	ErrStorage
 	ErrAddressNull
 	ErrStorageNotSupport
+	ErrBalanceNotEnough
+	ErrEthError
 )
 
 func (e errorCodeMap) ToAPIErrWithErr(errCode APIErrorCode, err error) APIError {
@@ -109,6 +126,16 @@ var ErrorCodes = errorCodeMap{
 		Description:    "Storage Error",
 		HTTPStatusCode: 518,
 	},
+	ErrBalanceNotEnough: {
+		Code:           "Balance",
+		Description:    "Balance Error",
+		HTTPStatusCode: 519,
+	},
+	ErrEthError: {
+		Code:           "Eth",
+		Description:    "Eth Error",
+		HTTPStatusCode: 520,
+	},
 }
 
 func ToAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
@@ -125,6 +152,10 @@ func ToAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 		apiErr = ErrAddressNull
 	case StorageNotSupport:
 		apiErr = ErrStorageNotSupport
+	case BalanceNotEnough:
+		apiErr = ErrBalanceNotEnough
+	case EthError:
+		apiErr = ErrEthError
 	}
 	return apiErr
 }

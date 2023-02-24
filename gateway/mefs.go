@@ -6,17 +6,22 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"math/big"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/utils"
 	mclient "github.com/memoio/go-mefs-v2/api/client"
 	"github.com/memoio/go-mefs-v2/build"
 	mcode "github.com/memoio/go-mefs-v2/lib/code"
 	mtypes "github.com/memoio/go-mefs-v2/lib/types"
 	metag "github.com/memoio/go-mefs-v2/lib/utils/etag"
+	"golang.org/x/crypto/sha3"
 )
 
 type Mefs struct {
@@ -59,6 +64,20 @@ func (m *Mefs) MakeBucketWithLocation(ctx context.Context, bucket string) error 
 		return funcError(MEFS, makefunc, err)
 	}
 	return nil
+}
+
+func (m *Mefs) GetBucketInfo(ctx context.Context, bucket string) (bi mtypes.BucketInfo, err error) {
+	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
+	if err != nil {
+		return bi, StorageError{Message: err.Error()}
+	}
+	defer closer()
+
+	bi, err = napi.HeadBucket(ctx, bucket)
+	if err != nil {
+		return bi, StorageError{Message: err.Error()}
+	}
+	return bi, nil
 }
 
 func (m *Mefs) QueryPrice(ctx context.Context) (string, error) {
@@ -213,5 +232,51 @@ func (m *Mefs) GetBalanceInfo(ctx context.Context, address string) (string, erro
 		log.Println("create bucket ", address)
 		time.Sleep(20 * time.Second)
 	}
-	return "", nil
+
+	client, err := ethclient.DialContext(ctx, endpoint)
+	if err != nil {
+		log.Println("connect to eth error", err)
+		return "", EthError{Message: err.Error()}
+	}
+
+	defer client.Close()
+
+	addr := common.HexToAddress(address)
+	balanceOfFnSignature := []byte("balanceOf(address)")
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(balanceOfFnSignature)
+	methodID := hash.Sum(nil)[:4]
+
+	paddedAddress := common.LeftPadBytes(addr.Bytes(), 32)
+
+	var data []byte
+	data = append(data, methodID...)
+	data = append(data, paddedAddress...)
+
+	msg := ethereum.CallMsg{
+		To:   &contractAddr,
+		Data: data,
+	}
+	result, err := client.CallContract(ctx, msg, nil)
+	if err != nil {
+		return "", EthError{Message: err.Error()}
+	}
+	bal := new(big.Int)
+	bal.SetBytes(result)
+	log.Printf("address: %s,balance: %s\n", addr, bal)
+
+	return bal.String(), nil
+}
+
+func (m *Mefs) DeleteObject(ctx context.Context, address, object string) error {
+	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
+	if err != nil {
+		return funcError(MEFS, deletefunc, err)
+	}
+	defer closer()
+	err = napi.DeleteObject(ctx, address, object)
+	if err != nil {
+		return funcError(MEFS, deletefunc, err)
+	}
+	return nil
 }
