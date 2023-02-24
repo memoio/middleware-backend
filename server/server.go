@@ -64,6 +64,7 @@ func (s Server) commonregistRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 	s.addGetObjectRoutes(r, storage)
 	s.addListObjectRoutes(r, storage)
 	s.addGetPriceRoutes(r, storage)
+	s.addGetStorageRoutes(r, storage)
 	s.addGetBalanceRoutes(r, storage)
 	s.addPayRoutes(r, storage)
 	s.addS3GetObjectRoutes(r, storage)
@@ -75,6 +76,8 @@ func (s Server) addPutobjectRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 
 	p.POST("/", func(c *gin.Context) {
 		address := c.PostForm("address")
+		paytype := c.PostForm("paytype")
+
 		file, _ := c.FormFile("file")
 		object := file.Filename
 		ud := make(map[string]string)
@@ -84,7 +87,7 @@ func (s Server) addPutobjectRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 			c.JSON(apiErr.HTTPStatusCode, apiErr)
 			return
 		}
-		obi, err := s.Gateway.PutObject(c.Request.Context(), address, object, r, storage, gateway.ObjectOptions{UserDefined: ud})
+		obi, err := s.Gateway.PutObject(c.Request.Context(), address, object, r, storage, gateway.ObjectOptions{PayType: paytype, UserDefined: ud})
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, apiErr)
@@ -164,7 +167,13 @@ func (s Server) addGetBalanceRoutes(r *gin.RouterGroup, storage gateway.StorageT
 	p := r.Group("/")
 	p.GET("/balance/:address", func(c *gin.Context) {
 		address := c.Param("address")
-		c.JSON(http.StatusOK, BalanceResponse{Address: address, Balance: "0"})
+		balance, err := s.Gateway.GetBalanceInfo(c.Request.Context(), address, storage)
+		if err != nil {
+			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
+			c.JSON(apiErr.HTTPStatusCode, apiErr)
+			return
+		}
+		c.JSON(http.StatusOK, BalanceResponse{Address: address, Balance: balance})
 	})
 }
 
@@ -172,7 +181,12 @@ func (s Server) addGetStorageRoutes(r *gin.RouterGroup, storage gateway.StorageT
 	p := r.Group("/")
 	p.GET("/storage/:address", func(c *gin.Context) {
 		address := c.Param("address")
-		c.JSON(http.StatusOK, address)
+		si, err := s.Gateway.GetStorageInfo(c.Request.Context(), address)
+		if err != nil {
+			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
+			c.JSON(apiErr.HTTPStatusCode, apiErr)
+		}
+		c.JSON(http.StatusOK, si)
 	})
 }
 

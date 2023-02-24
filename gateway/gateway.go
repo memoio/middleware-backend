@@ -3,12 +3,18 @@ package gateway
 import (
 	"context"
 	"io"
+	"log"
+	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/config"
 	logging "github.com/memoio/backend/global/log"
 	"github.com/memoio/backend/utils"
 	metag "github.com/memoio/go-mefs-v2/lib/utils/etag"
+	"golang.org/x/crypto/sha3"
 )
 
 var logger = logging.Logger("gateway")
@@ -34,25 +40,41 @@ func (g *Gateway) getMemofs() error {
 	return nil
 }
 
-func (g Gateway) PutObject(ctx context.Context, bucket, object string, r io.Reader, storage StorageType, opt ObjectOptions) (ObjectInfo, error) {
+func (g Gateway) PutObject(ctx context.Context, address, object string, r io.Reader, storage StorageType, opts ObjectOptions) (ObjectInfo, error) {
 	if storage == MEFS {
 		logger.Debug("mefs put object")
 		err := g.getMemofs()
 		if err != nil {
 			return ObjectInfo{}, err
 		}
-		moi, err := g.Mefs.PutObject(ctx, bucket, object, r, opt.UserDefined)
+		date := opts.UserDefined["X-Amz-Meta-Date"]
+		if date == "" {
+			date = "365"
+		}
+
+		moi, err := g.Mefs.PutObject(ctx, address, object, r, opts.UserDefined)
 		if err != nil {
 			return ObjectInfo{}, err
 		}
+
 		etag, _ := metag.ToString(moi.ETag)
+		size := big.NewInt(int64(moi.Size))
+		if opts.PayType != "" {
+			flag := g.verify(ctx, opts.PayType, address, date, etag, size)
+			if !flag {
+				g.Mefs.DeleteObject(ctx, address, object)
+				return ObjectInfo{}, err
+			}
+		}
+
 		ctype := utils.TypeByExtension(object)
+
 		if moi.UserDefined["content-type"] != "" {
 			ctype = moi.UserDefined["content-type"]
 		}
 
 		oi := ObjectInfo{
-			Address: bucket,
+			Address: address,
 			Name:    moi.Name,
 			ModTime: time.Unix(moi.GetTime(), 0),
 			Size:    int64(moi.Size),
@@ -68,11 +90,11 @@ func (g Gateway) PutObject(ctx context.Context, bucket, object string, r io.Read
 			return ObjectInfo{}, err
 		}
 		ctype := utils.TypeByExtension(object)
-		if opt.UserDefined["content-type"] != "" {
-			ctype = opt.UserDefined["content-type"]
+		if opts.UserDefined["content-type"] != "" {
+			ctype = opts.UserDefined["content-type"]
 		}
 		oi := ObjectInfo{
-			Address: bucket,
+			Address: address,
 			Name:    object,
 			ModTime: time.Now(),
 			Cid:     cid,
@@ -145,6 +167,59 @@ func (g *Gateway) GetBalanceInfo(ctx context.Context, address string, storage St
 	return "", StorageNotSupport{}
 }
 
-func (g *Gateway) GetPrice(ctx context.Context, adrress, size, time string) (string, error) {
+func (g *Gateway) GetPrice(ctx context.Context, address, size, time string) (string, error) {
 	return "", NotImplemented{}
+}
+
+func (g *Gateway) GetStorageInfo(ctx context.Context, address string) (StorageInfo, error) {
+	client, err := ethclient.DialContext(ctx, endpoint)
+	if err != nil {
+		log.Println("connect to eth error", err)
+		return StorageInfo{}, err
+	}
+	defer client.Close()
+
+	addr := common.HexToAddress(address)
+	pkgSizeFnSignature := []byte("getPkgSize(address)")
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(pkgSizeFnSignature)
+	methodID := hash.Sum(nil)[:4]
+
+	paddedAddress := common.LeftPadBytes(addr.Bytes(), 32)
+
+	var data []byte
+	data = append(data, methodID...)
+	data = append(data, paddedAddress...)
+
+	msg := ethereum.CallMsg{
+		To:   &contractAddr,
+		Data: data,
+	}
+
+	result, err := client.CallContract(ctx, msg, nil)
+	if err != nil {
+		return StorageInfo{}, err
+	}
+
+	if len(result) != 128 {
+		return StorageInfo{}, StorageError{}
+	}
+
+	available := new(big.Int)
+	available.SetBytes(result[0:32])
+	free := new(big.Int)
+	free.SetBytes(result[32:64])
+	used := new(big.Int)
+	used.SetBytes(result[64:96])
+	files := new(big.Int)
+	files.SetBytes(result[96:])
+
+	si := StorageInfo{
+		Available: available.String(),
+		Free:      free.String(),
+		Used:      used.String(),
+		Files:     files.String(),
+	}
+	log.Println(si)
+	return si, nil
 }
