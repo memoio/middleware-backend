@@ -115,13 +115,16 @@ func (g Gateway) GetObject(ctx context.Context, cid string, storage StorageType,
 		if err != nil {
 			return err
 		}
+		return nil
 	} else if storage == IPFS {
 		data, err := g.Ipfs.GetObject(cid)
 		if err != nil {
 			return err
 		}
 		w.Write(data)
+		return nil
 	}
+
 	return StorageNotSupport{}
 }
 
