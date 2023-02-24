@@ -49,6 +49,14 @@ func (e AddressNull) Error() string {
 	return "address is nil"
 }
 
+type AuthenticationFailed struct{
+	Message string
+}
+
+func (e AuthenticationFailed) Error() string {
+	return e.Message
+}
+
 type APIError struct {
 	Code           string
 	Description    string
@@ -66,6 +74,7 @@ const (
 	ErrStorage
 	ErrAddressNull
 	ErrStorageNotSupport
+	ErrAuthenticationFailed
 )
 
 func (e errorCodeMap) ToAPIErrWithErr(errCode APIErrorCode, err error) APIError {
@@ -74,7 +83,7 @@ func (e errorCodeMap) ToAPIErrWithErr(errCode APIErrorCode, err error) APIError 
 		apiErr = e[ErrInternalError]
 	}
 	if err != nil {
-		apiErr.Description = fmt.Sprintf("%s (%s)", apiErr.Description, err)
+		apiErr.Description = fmt.Sprintf("%s (%s)", apiErr.Description, err.Error())
 	}
 	return apiErr
 }
@@ -109,6 +118,11 @@ var ErrorCodes = errorCodeMap{
 		Description:    "Storage Error",
 		HTTPStatusCode: 518,
 	},
+	ErrAuthenticationFailed: {
+		Code:           "Authentication", 
+		Description:    "Authentication Failed", 
+		HTTPStatusCode: 401, 
+	},
 }
 
 func ToAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
@@ -125,6 +139,8 @@ func ToAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 		apiErr = ErrAddressNull
 	case StorageNotSupport:
 		apiErr = ErrStorageNotSupport
+	case AuthenticationFailed:
+		apiErr = ErrAuthenticationFailed
 	}
 	return apiErr
 }
