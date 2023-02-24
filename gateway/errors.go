@@ -82,6 +82,7 @@ const (
 	ErrAddressNull
 	ErrStorageNotSupport
 	ErrBalanceNotEnough
+	ErrEthError
 )
 
 func (e errorCodeMap) ToAPIErrWithErr(errCode APIErrorCode, err error) APIError {
@@ -130,6 +131,11 @@ var ErrorCodes = errorCodeMap{
 		Description:    "Balance Error",
 		HTTPStatusCode: 519,
 	},
+	ErrEthError: {
+		Code:           "Eth",
+		Description:    "Eth Error",
+		HTTPStatusCode: 520,
+	},
 }
 
 func ToAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
@@ -148,6 +154,8 @@ func ToAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 		apiErr = ErrStorageNotSupport
 	case BalanceNotEnough:
 		apiErr = ErrBalanceNotEnough
+	case EthError:
+		apiErr = ErrEthError
 	}
 	return apiErr
 }
