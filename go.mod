@@ -3,10 +3,10 @@ module github.com/memoio/backend
 go 1.18
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/fxamacker/cbor/v2 v2.3.0
 	github.com/gin-gonic/gin v1.8.2
-	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/ipfs/go-ipfs-api v0.3.0
 	github.com/lib/pq v1.10.4
 	github.com/memoio/go-mefs-v2 v0.0.0-00010101000000-000000000000
