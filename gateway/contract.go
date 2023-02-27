@@ -185,16 +185,13 @@ func (g *Gateway) sendTransaction(ctx context.Context, signedTx *types.Transacti
 	return true
 }
 
-func (g *Gateway) verify(ctx context.Context, paytype, address, date, cid string, size *big.Int) bool {
-
-	if paytype == "membership" {
-		log.Println("membership")
-		return g.memverify(ctx, address, date, cid, size)
-	} else if paytype == "per" {
-		log.Println("per")
+func (g *Gateway) verify(ctx context.Context, address, date, cid string, size *big.Int) bool {
+	flag := g.memverify(ctx, address, date, cid, size)
+	if !flag {
 		return g.perverify(ctx, address, date, cid, size)
 	}
-	return false
+
+	return true
 }
 
 func (g *Gateway) memverify(ctx context.Context, address, date, cid string, size *big.Int) bool {
@@ -205,11 +202,6 @@ func (g *Gateway) memverify(ctx context.Context, address, date, cid string, size
 }
 
 func (g *Gateway) perverify(ctx context.Context, address, date, cid string, size *big.Int) bool {
-	if g.checkStorage(ctx, address, size) {
-		g.updateStorage(ctx, address, cid, size)
-		return true
-	}
-
 	price, err := g.QueryPrice(ctx, address, size.String(), date)
 	if err != nil {
 		log.Println("price error", err)

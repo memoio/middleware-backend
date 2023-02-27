@@ -60,7 +60,7 @@ func (g Gateway) PutObject(ctx context.Context, address, object string, r io.Rea
 		etag, _ := metag.ToString(moi.ETag)
 		size := big.NewInt(int64(moi.Size))
 		if opts.PayType != "" {
-			flag := g.verify(ctx, opts.PayType, address, date, etag, size)
+			flag := g.verify(ctx, address, date, etag, size)
 			if !flag {
 				g.Mefs.DeleteObject(ctx, address, object)
 				return ObjectInfo{}, err
