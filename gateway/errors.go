@@ -13,6 +13,7 @@ const (
 	putfunc     = "put object error %s"
 	getfunc     = "get object error %s"
 	listfunc    = "list object error %s"
+	deletefunc  = "delete object error %s"
 	getinfofunc = "get object info error %s"
 )
 
@@ -57,6 +58,20 @@ func (e AuthenticationFailed) Error() string {
 	return e.Message
 }
 
+type EthError struct {
+	Message string
+}
+
+func (e EthError) Error() string {
+	return e.Message
+}
+
+type BalanceNotEnough struct{}
+
+func (e BalanceNotEnough) Error() string {
+	return "balance not enough"
+}
+
 type APIError struct {
 	Code           string
 	Description    string
@@ -75,6 +90,8 @@ const (
 	ErrAddressNull
 	ErrStorageNotSupport
 	ErrAuthenticationFailed
+	ErrBalanceNotEnough
+	ErrEthError
 )
 
 func (e errorCodeMap) ToAPIErrWithErr(errCode APIErrorCode, err error) APIError {
@@ -122,6 +139,15 @@ var ErrorCodes = errorCodeMap{
 		Code:           "Authentication", 
 		Description:    "Authentication Failed", 
 		HTTPStatusCode: 401, 
+	ErrBalanceNotEnough: {
+		Code:           "Balance",
+		Description:    "Balance Error",
+		HTTPStatusCode: 519,
+	},
+	ErrEthError: {
+		Code:           "Eth",
+		Description:    "Eth Error",
+		HTTPStatusCode: 520,
 	},
 }
 
@@ -141,6 +167,10 @@ func ToAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 		apiErr = ErrStorageNotSupport
 	case AuthenticationFailed:
 		apiErr = ErrAuthenticationFailed
+	case BalanceNotEnough:
+		apiErr = ErrBalanceNotEnough
+	case EthError:
+		apiErr = ErrEthError
 	}
 	return apiErr
 }
