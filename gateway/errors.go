@@ -139,6 +139,7 @@ var ErrorCodes = errorCodeMap{
 		Code:           "Authentication", 
 		Description:    "Authentication Failed", 
 		HTTPStatusCode: 401, 
+	},
 	ErrBalanceNotEnough: {
 		Code:           "Balance",
 		Description:    "Balance Error",
