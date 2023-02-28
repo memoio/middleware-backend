@@ -44,10 +44,12 @@ func (e StorageNotSupport) Error() string {
 	return "storage not support"
 }
 
-type AddressNull struct{}
+type AddressError struct{
+	Message string
+}
 
-func (e AddressNull) Error() string {
-	return "address is nil"
+func (e AddressError) Error() string {
+	return e.Message
 }
 
 type AuthenticationFailed struct{
@@ -87,7 +89,7 @@ const (
 	ErrInternalError
 	ErrNotImplemented
 	ErrStorage
-	ErrAddressNull
+	ErrAddressError
 	ErrStorageNotSupport
 	ErrAuthenticationFailed
 	ErrBalanceNotEnough
@@ -125,7 +127,7 @@ var ErrorCodes = errorCodeMap{
 		Description:    "Error storing file",
 		HTTPStatusCode: 516,
 	},
-	ErrAddressNull: {
+	ErrAddressError: {
 		Code:           "Address",
 		Description:    "Address Error",
 		HTTPStatusCode: 517,
@@ -162,8 +164,8 @@ func ToAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 		apiErr = ErrInternalError
 	case StorageError:
 		apiErr = ErrStorage
-	case AddressNull:
-		apiErr = ErrAddressNull
+	case AddressError:
+		apiErr = ErrAddressError
 	case StorageNotSupport:
 		apiErr = ErrStorageNotSupport
 	case AuthenticationFailed:

@@ -50,7 +50,7 @@ func NewServer() *http.Server {
 			})
 			return
 		}
-		accessToken, freshToken, err := LoginWithEth(nonceManager, request)
+		accessToken, freshToken, err := Login(nonceManager, request)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
@@ -167,7 +167,7 @@ func (s Server) addGetObjectRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 		cid := c.Param("cid")
 
 		if cid == "listobjects" || cid == "balance" || cid == "storage" {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), gateway.AddressNull{}), gateway.AddressNull{})
+			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), gateway.AddressError{"address is null"}), gateway.AddressError{"address is null"})
 			c.JSON(apiErr.HTTPStatusCode, apiErr)
 			return
 		}

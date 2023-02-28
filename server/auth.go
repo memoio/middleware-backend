@@ -2,7 +2,9 @@ package server
 
 import(
 	"time"
+	"context"
 
+	"github.com/shurcooL/graphql"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/memoio/backend/gateway"
 	"github.com/ethereum/go-ethereum/common"
@@ -23,6 +25,17 @@ type LoginRequest struct {
 	Signature string `json:"signature,omitempty"`
 }
 
+type profile struct {
+        DefaultProfile struct {
+            ID   string
+            Name string
+        } `graphql:"defaultProfile(request: $request)"`
+}
+
+type DefaultProfileRequest struct {
+    EthereumAddress string `json:"ethereumAddress"`
+}
+
 var(
 	ErrNullToken = gateway.AuthenticationFailed{"Token is Null"}
 	ErrValidToken = gateway.AuthenticationFailed{"Invalid token"}
@@ -34,9 +47,34 @@ var(
 	DidToken = 0
 	AccessToken = 1
 	FreshToken = 2
+
+	LensAccount = 0x10
+	EthAccount = 0x11 
 )
 
-func LoginWithEth(nonceManager *NonceManager, request LoginRequest) (string, string, error) {
+func Login(nonceManager *NonceManager, request LoginRequest) (string, string, error) {
+	return LoginWithMethod(nonceManager, request, LensAccount)
+}
+
+func LoginWithMethod(nonceManager *NonceManager, request LoginRequest, method int) (string, string, error) {
+	switch method {
+	case LensAccount:
+		return loginWithLens(nonceManager, request)
+	case EthAccount:
+		return loginWithEth(nonceManager, request)
+	}
+	return "", "", gateway.NotImplemented{""}
+}
+
+func loginWithLens(nonceManager *NonceManager, request LoginRequest) (string, string, error) {
+	if err := isLensAccount(request.Address); err != nil {
+		return "", "", err
+	}
+
+	return loginWithEth(nonceManager, request)
+}
+
+func loginWithEth(nonceManager *NonceManager, request LoginRequest) (string, string, error) {
 	var address = request.Address
 	var nonce = request.Nonce
 	var domain = request.Domain
@@ -81,6 +119,26 @@ func LoginWithEth(nonceManager *NonceManager, request LoginRequest) (string, str
 	freshToken, err := GenFreshToken(address)
 
 	return accessToken, freshToken, err
+}
+
+func isLensAccount(address string) error {
+	var query profile
+	var client = graphql.NewClient("https://api-mumbai.lens.dev", nil)
+    var variables = map[string]interface{}{
+        "request": DefaultProfileRequest{
+            EthereumAddress: address,
+        }, 
+    }
+
+    err := client.Query(context.Background(), &query, variables)
+    if err != nil {
+        return err
+    }
+    if query.DefaultProfile.ID == "" {
+    	return gateway.AddressError{"The address{" + address + "} is not registered on lens"}
+    }
+
+    return nil
 }
 
 // Verify token's type, audience, nonce, expires time and signatrue
