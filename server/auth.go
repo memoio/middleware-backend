@@ -24,10 +24,10 @@ type LoginRequest struct {
 }
 
 var(
-	ErrNullToken = gateway.AuthenticationFailed{"Token is Null"}
-	ErrValidToken = gateway.AuthenticationFailed{"Invalid token"}
-	ErrValidType = gateway.AuthenticationFailed{"InValid token type"}
-	ErrValidPayload = gateway.AuthenticationFailed{"Invaliad token payload"}
+	ErrNullToken = gateway.AuthenticationFailed{Message: "Token is Null"}
+	ErrValidToken = gateway.AuthenticationFailed{Message: "Invalid token"}
+	ErrValidType = gateway.AuthenticationFailed{Message: "InValid token type"}
+	ErrValidPayload = gateway.AuthenticationFailed{Message: "Invaliad token payload"}
 
 	jwtkey = []byte("memo.io")
 
@@ -43,34 +43,34 @@ func LoginWithEth(nonceManager *NonceManager, request LoginRequest) (string, str
 	var signature = request.Signature
 
 	if address == "" || nonce == "" || domain == "" || signature == "" {
-		return "", "", gateway.AuthenticationFailed{"There is an empty parameter"}
+		return "", "", gateway.AuthenticationFailed{Message: "There is an empty parameter"}
 	}
 
 	if domain != "memo.io" {
-		return "", "", gateway.AuthenticationFailed{"Got wrong domain"}
+		return "", "", gateway.AuthenticationFailed{Message: "Got wrong domain"}
 	}
 
 	if !nonceManager.VerifyNonce(nonce) {
-		return "", "", gateway.AuthenticationFailed{"Got wrong nonce"}
+		return "", "", gateway.AuthenticationFailed{Message: "Got wrong nonce"}
 	}
 
 	hash := crypto.Keccak256([]byte(address), []byte(nonce), []byte(domain))
 	sig, err := hexutil.Decode(signature)
 	if err != nil {
-		return "", "", gateway.AuthenticationFailed{err.Error()}
+		return "", "", gateway.AuthenticationFailed{Message: err.Error()}
 	}
 
 	pubKey, err := crypto.Ecrecover(hash, sig)
     if err != nil {
-        return "", "", gateway.AuthenticationFailed{err.Error()}
+        return "", "", gateway.AuthenticationFailed{Message: err.Error()}
     }
 
     if address != common.BytesToAddress(crypto.Keccak256(pubKey[1:])[12:]).Hex() {
-    	return "", "", gateway.AuthenticationFailed{"Got wrong address"}
+    	return "", "", gateway.AuthenticationFailed{Message: "Got wrong address"}
     }
 
 	if !crypto.VerifySignature(pubKey, hash, sig[:len(sig)-1]) {
-		return "", "", gateway.AuthenticationFailed{"Got wrong signature"}
+		return "", "", gateway.AuthenticationFailed{Message: "Got wrong signature"}
 	}
 
 	accessToken, err := GenAccessToken(address)
