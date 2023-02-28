@@ -186,7 +186,7 @@ func (g *Gateway) sendTransaction(ctx context.Context, signedTx *types.Transacti
 }
 
 func (g *Gateway) verify(ctx context.Context, address, date, cid string, size *big.Int) bool {
-	flag := g.memverify(ctx, address, date, cid, size)
+	flag := g.memverify(ctx, address, cid, size)
 	if !flag {
 		return g.perverify(ctx, address, date, cid, size)
 	}
@@ -194,7 +194,7 @@ func (g *Gateway) verify(ctx context.Context, address, date, cid string, size *b
 	return true
 }
 
-func (g *Gateway) memverify(ctx context.Context, address, date, cid string, size *big.Int) bool {
+func (g *Gateway) memverify(ctx context.Context, address, cid string, size *big.Int) bool {
 	if !g.checkStorage(ctx, address, size) {
 		return false
 	}

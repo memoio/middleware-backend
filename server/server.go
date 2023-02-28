@@ -132,6 +132,8 @@ func (s Server) addPutobjectRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 	p.POST("/", func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 		file, _ := c.FormFile("file")
+		size := file.Size
+
 		object := file.Filename
 		ud := make(map[string]string)
 		address, err := VerifyAccessToken(tokenString)
@@ -149,7 +151,7 @@ func (s Server) addPutobjectRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 			c.JSON(apiErr.HTTPStatusCode, apiErr)
 			return
 		}
-		obi, err := s.Gateway.PutObject(c.Request.Context(), address, object, r, storage, gateway.ObjectOptions{UserDefined: ud})
+		obi, err := s.Gateway.PutObject(c.Request.Context(), address, object, r, storage, gateway.ObjectOptions{Size: size, UserDefined: ud})
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, apiErr)
