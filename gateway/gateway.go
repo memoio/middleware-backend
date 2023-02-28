@@ -164,17 +164,12 @@ func (g *Gateway) GetObjectInfo(ctx context.Context, storage StorageType, cid st
 	return ObjectInfo{}, StorageNotSupport{}
 }
 
-func (g *Gateway) GetBalanceInfo(ctx context.Context, address string, storage StorageType) (string, error) {
-	if storage == MEFS {
-		err := g.getMemofs()
-		if err != nil {
-			return "", err
-		}
-		return g.Mefs.GetBalanceInfo(ctx, address)
-	} else if storage == IPFS {
-
+func (g *Gateway) GetBalanceInfo(ctx context.Context, address string ) (string, error) {
+	err := g.getMemofs()
+	if err != nil {
+		return "", err
 	}
-	return "", StorageNotSupport{}
+	return g.Mefs.GetBalanceInfo(ctx, address)
 }
 
 func (g *Gateway) GetPrice(ctx context.Context, address, size, time string) (string, error) {

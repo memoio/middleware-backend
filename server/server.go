@@ -249,7 +249,7 @@ func (s Server) addGetBalanceRoutes(r *gin.RouterGroup, storage gateway.StorageT
 			})
 			return
 		}
-		balance, err := s.Gateway.GetBalanceInfo(c.Request.Context(), address, storage)
+		balance, err := s.Gateway.GetBalanceInfo(c.Request.Context(), address)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, apiErr)
