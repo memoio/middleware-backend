@@ -74,7 +74,7 @@ func loginWithLens(request EIP4361Request) (string, string, error) {
 		return "", "", err
 	}
 
-	if err := isLensAccount(message.GetAddress()); err != nil {
+	if err := isLensAccount(message.GetAddress().Hex()); err != nil {
 		return "", "", err
 	}
 
