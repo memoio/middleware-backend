@@ -1,28 +1,29 @@
 package server
 
 import(
-	"time"
+	"fmt"
 	"context"
+	"strings"
 
+	"golang.org/x/xerrors"
+
+	"github.com/spruceid/siwe-go"
 	"github.com/shurcooL/graphql"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/memoio/backend/gateway"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )
-
-type Claims struct {
-	Type  int    `json:"type,omitempty"`
-	// Nonce string `json:"nonce,omitempty"`
-	jwt.StandardClaims
-}
 
 type LoginRequest struct {
 	Address   string `json:"address,omitempty"`
 	Nonce     string `json:"nonce,omitempty"`
 	Domain    string `json:"domain,omitempty"`
 	Signature string `json:"signature,omitempty"`
+}
+
+type EIP4361Request struct {
+	EIP191Message string `json:"message,omitempty"`
+	Signature     string `json:"signature,omitempty"`
 }
 
 type profile struct {
@@ -37,41 +38,78 @@ type DefaultProfileRequest struct {
 }
 
 var(
-	ErrNullToken = gateway.AuthenticationFailed{"Token is Null"}
+	ErrNullToken = gateway.AuthenticationFailed{"Token is Null, not found in `Authorization: Bearer ` header"}
 	ErrValidToken = gateway.AuthenticationFailed{"Invalid token"}
-	ErrValidType = gateway.AuthenticationFailed{"InValid token type"}
-	ErrValidPayload = gateway.AuthenticationFailed{"Invaliad token payload"}
+	ErrValidTokenType = gateway.AuthenticationFailed{"InValid token type"}
 
-	jwtkey = []byte("memo.io")
-
-	DidToken = 0
-	AccessToken = 1
-	FreshToken = 2
-
-	LensAccount = 0x10
-	EthAccount = 0x11 
+	LensMod = 0x10
+	EthMod = 0x11 
 )
 
-func Login(nonceManager *NonceManager, request LoginRequest) (string, string, error) {
-	return LoginWithMethod(nonceManager, request, LensAccount)
+func Login(nonceManager *NonceManager, request interface{}) (string, string, error) {
+	return LoginWithMethod(nonceManager, request, EthMod)
 }
 
-func LoginWithMethod(nonceManager *NonceManager, request LoginRequest, method int) (string, string, error) {
+func LoginWithMethod(nonceManager *NonceManager, request interface{}, method int) (string, string, error) {
 	switch method {
-	case LensAccount:
-		return loginWithLens(nonceManager, request)
-	case EthAccount:
-		return loginWithEth(nonceManager, request)
+	case LensMod:
+		req, ok := request.(EIP4361Request)
+		if !ok {
+			return "", "", xerrors.Errorf("")
+		}
+		return loginWithLens(req)
+	case EthMod:
+		req, ok := request.(LoginRequest)
+		if !ok {
+			return "", "", xerrors.Errorf("")
+		}
+		return loginWithEth(nonceManager, req)
 	}
 	return "", "", gateway.NotImplemented{""}
 }
 
-func loginWithLens(nonceManager *NonceManager, request LoginRequest) (string, string, error) {
-	if err := isLensAccount(request.Address); err != nil {
+func loginWithLens(request EIP4361Request) (string, string, error) {
+	message, err := parseLensMessage(request.EIP191Message)
+	if err != nil {
 		return "", "", err
 	}
 
-	return loginWithEth(nonceManager, request)
+	// if err := isLensAccount(message.GetAddress()); err != nil {
+	// 	return "", "", err
+	// }
+
+	if message.GetDomain() != "memo.io" {
+		return "", "", gateway.AuthenticationFailed{"Got wrong domain"}
+	}
+
+	if message.GetChainID() != 137 {
+		return "", "", gateway.AuthenticationFailed{"Got wrong chain id"}
+	}
+
+	hash := crypto.Keccak256([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(request.EIP191Message), request.EIP191Message)))
+	sig, err := hexutil.Decode(request.Signature)
+	if err != nil {
+		return "", "", gateway.AuthenticationFailed{err.Error()}
+	}
+
+	sig[len(sig)-1] %= 27
+	pubKey, err := crypto.SigToPub(hash, sig)
+    if err != nil {
+        return "", "", gateway.AuthenticationFailed{err.Error()}
+    }
+
+    if message.GetAddress().Hex() != crypto.PubkeyToAddress(*pubKey).Hex() {
+    	return "", "", gateway.AuthenticationFailed{"Got wrong address/signature"}
+    }
+
+	accessToken, err := genAccessToken(message.GetAddress().Hex())
+	if err != nil {
+		return "", "", err
+	}
+
+	freshToken, err := genFreshToken(message.GetAddress().Hex())
+
+	return accessToken, freshToken, err
 }
 
 func loginWithEth(nonceManager *NonceManager, request LoginRequest) (string, string, error) {
@@ -98,32 +136,37 @@ func loginWithEth(nonceManager *NonceManager, request LoginRequest) (string, str
 		return "", "", gateway.AuthenticationFailed{err.Error()}
 	}
 
-	pubKey, err := crypto.Ecrecover(hash, sig)
+	pubKey, err := crypto.SigToPub(hash, sig)
     if err != nil {
         return "", "", gateway.AuthenticationFailed{err.Error()}
     }
 
-    if address != common.BytesToAddress(crypto.Keccak256(pubKey[1:])[12:]).Hex() {
-    	return "", "", gateway.AuthenticationFailed{"Got wrong address"}
+    if address != crypto.PubkeyToAddress(*pubKey).Hex() {
+    	return "", "", gateway.AuthenticationFailed{"Got wrong address/signature"}
     }
 
-	if !crypto.VerifySignature(pubKey, hash, sig[:len(sig)-1]) {
-		return "", "", gateway.AuthenticationFailed{"Got wrong signature"}
-	}
-
-	accessToken, err := GenAccessToken(address)
+	accessToken, err := genAccessToken(address)
 	if err != nil {
 		return "", "", err
 	}
 
-	freshToken, err := GenFreshToken(address)
+	freshToken, err := genFreshToken(address)
 
 	return accessToken, freshToken, err
 }
 
+func parseLensMessage(message string) (*siwe.Message, error) {
+	message = strings.TrimPrefix(message, "\n")
+    message = strings.TrimPrefix(message, "https://")
+    message = strings.TrimPrefix(message, "http://")
+    message = strings.TrimSuffix(message, "\n ")
+
+    return siwe.ParseMessage(message)
+}
+
 func isLensAccount(address string) error {
 	var query profile
-	var client = graphql.NewClient("https://api-mumbai.lens.dev", nil)
+	var client = graphql.NewClient("https://api.lens.dev", nil)
     var variables = map[string]interface{}{
         "request": DefaultProfileRequest{
             EthereumAddress: address,
@@ -152,7 +195,7 @@ func isLensAccount(address string) error {
 // 	claims := &Claims{}
 // 	_, _, err := new(jwt.Parser).ParseUnverified(tokenString, claims)
 // 	if err != nil {
-// 		return "", "", "", ErrValidPayload
+// 		return "", "", "", ErrValidToken
 // 	}
 
 // 	// check Audience
@@ -185,116 +228,3 @@ func isLensAccount(address string) error {
 
 // 	return accessToken, freshToken, claims.Subject, err
 // }
-
-func VerifyAccessToken(tokenString string) (string, error) {
-	if tokenString == "" {
-		return "", ErrNullToken
-	}
-
-	claims := &Claims{}
-	_, _, err := new(jwt.Parser).ParseUnverified(tokenString, claims)
-	if err != nil {
-		return "", ErrValidPayload
-	}
-
-	// check Audience
-	if claims.Audience != "memo.io" || claims.Issuer != "memo.io" {
-		return "", ErrValidToken
-	}
-
-	// check token type
-	if claims.Type != AccessToken {
-		return "", ErrValidType
-	}
-
-	// check signature, Expires time and Issued time
-	token, err := ParseToken(tokenString)
-	if err != nil || !token.Valid {
-		return "", ErrValidToken
-	}
-
-	return claims.Subject, nil
-}
-
-func VerifyFreshToken(tokenString string) (string, error) {
-	if tokenString == "" {
-		return "", ErrNullToken
-	}
-
-	claims := &Claims{}
-	_, _, err := new(jwt.Parser).ParseUnverified(tokenString, claims)
-	if err != nil {
-		return "", ErrValidPayload
-	}
-
-	// check Audience
-	if claims.Audience != "memo.io" || claims.Issuer != "memo.io" {
-		return "", ErrValidToken
-	}
-
-	// check token type
-	if claims.Type != FreshToken {
-		return "", ErrValidType
-	}
-
-	token, err := ParseToken(tokenString)
-	if err != nil || !token.Valid {
-		return "", ErrValidToken
-	} 
-
-	return GenAccessToken(claims.Subject)
-}
-
-func GenAccessToken(did string) (string, error) {
-	expireTime := time.Now().Add(15 * time.Minute)
-    claims := &Claims{
-        Type: AccessToken,
-        StandardClaims: jwt.StandardClaims{
-            ExpiresAt: expireTime.Unix(), 
-            IssuedAt:  time.Now().Unix(), 
-            Audience:  "memo.io", 
-            Issuer:    "memo.io", 
-            Subject:   did, 
-        },
-    }
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    return token.SignedString(jwtkey)
-}
-
-func GenFreshToken(did string) (string, error) {
-	expireTime := time.Now().Add(7 * 24 * time.Hour)
-    claims := &Claims{
-        Type: FreshToken,
-        StandardClaims: jwt.StandardClaims{
-            ExpiresAt: expireTime.Unix(), 
-            IssuedAt:  time.Now().Unix(), 
-            Audience:  "memo.io", 
-            Issuer:    "memo.io", 
-            Subject:   did, 
-        },
-    }
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    return token.SignedString(jwtkey)
-}
-
-// func ParseDidToken(tokenString string, did string) (*jwt.Token, error) {
-//     return jwt.Parse(tokenString, func(token *jwt.Token) (i interface{}, err error) {
-//     	parts := strings.Split(did, ":")
-//     	if len(parts) != 3 || parts[0] != "did" || parts[1] != "eth" {
-//     		return nil, ErrValidPayload
-//     	}
-
-//     	pubKeyBytes, err := hex.DecodeString(parts[2])
-//     	if err != nil {
-//     		return nil, err
-//     	}
-
-//         return crypto.UnmarshalPubkey(pubKeyBytes)
-//     })
-// }
-
-func ParseToken(tokenString string) (*jwt.Token, error) {
-    return jwt.Parse(tokenString, func(token *jwt.Token) (i interface{}, err error) {
-    	return jwtkey, nil
-    })
-}
