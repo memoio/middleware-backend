@@ -161,7 +161,7 @@ func ToAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 
 	switch err.(type) {
 	case NotImplemented:
-		apiErr = ErrInternalError
+		apiErr = ErrNotImplemented
 	case StorageError:
 		apiErr = ErrStorage
 	case AddressError:
@@ -175,5 +175,5 @@ func ToAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 	case EthError:
 		apiErr = ErrEthError
 	}
-	return apiErr
+	return ErrInternalError
 }
