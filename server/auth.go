@@ -74,9 +74,9 @@ func loginWithLens(request EIP4361Request) (string, string, error) {
 		return "", "", err
 	}
 
-	// if err := isLensAccount(message.GetAddress()); err != nil {
-	// 	return "", "", err
-	// }
+	if err := isLensAccount(message.GetAddress()); err != nil {
+		return "", "", err
+	}
 
 	if message.GetDomain() != "memo.io" {
 		return "", "", gateway.AuthenticationFailed{"Got wrong domain"}
