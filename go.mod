@@ -11,6 +11,8 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/memoio/go-mefs-v2 v0.0.0-00010101000000-000000000000
 	github.com/mr-tron/base58 v1.2.0
+	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29
+	github.com/spruceid/siwe-go v0.2.0
 	github.com/urfave/cli/v2 v2.23.7
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.5.0
@@ -24,6 +26,7 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
+	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/filecoin-project/go-jsonrpc v0.1.5 // indirect
@@ -76,6 +79,7 @@ require (
 	github.com/multiformats/go-varint v0.0.6 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/power-devops/perfstat v0.0.0-20220216144756-c35f1ee13d7c // indirect
+	github.com/relvacode/iso8601 v1.1.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/shirou/gopsutil/v3 v3.22.2 // indirect

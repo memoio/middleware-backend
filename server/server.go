@@ -52,7 +52,7 @@ func NewServer(endpoint string) *http.Server {
 			})
 			return
 		}
-		accessToken, freshToken, err := LoginWithEth(nonceManager, request)
+		accessToken, freshToken, err := Login(nonceManager, request)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
@@ -70,6 +70,38 @@ func NewServer(endpoint string) *http.Server {
 		c.JSON(http.StatusOK, map[string]string{
 			"access token": accessToken,
 			"fresh token":  freshToken,
+		})
+	})
+
+	router.POST("/lens/login", func(c *gin.Context) {
+		var request EIP4361Request
+		err := c.BindJSON(&request)
+		if err != nil{
+	    	apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
+	        c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+				Nonce: nonceManager.GetNonce(), 
+				Error: apiErr, 
+			})
+			return
+		}
+		accessToken, freshToken, err := LoginWithMethod(nonceManager, request, LensMod)
+		if err != nil {
+			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
+			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+				Nonce: nonceManager.GetNonce(), 
+				Error: apiErr, 
+			})
+			return
+		}
+
+		// if address is new user in "memo.io" {
+		// 	init usr info
+		// }
+		// fmt.Println(request.Address)
+
+		c.JSON(http.StatusOK, map[string]string{
+			"access token": accessToken, 
+			"fresh token": freshToken,
 		})
 	})
 
@@ -171,7 +203,7 @@ func (s Server) addGetObjectRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 		cid := c.Param("cid")
 
 		if cid == "listobjects" || cid == "balance" || cid == "storage" {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), gateway.AddressNull{}), gateway.AddressNull{})
+			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), gateway.AddressError{"address is null"}), gateway.AddressError{"address is null"})
 			c.JSON(apiErr.HTTPStatusCode, apiErr)
 			return
 		}
