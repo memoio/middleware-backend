@@ -27,6 +27,8 @@ type AuthenticationFaileMessage struct {
 func NewServer(endpoint string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+
+	router.Use(Cors())
 	router.GET("/", func(c *gin.Context) {
 		time.Sleep(5 * time.Second)
 		c.String(http.StatusOK, "Welcome Server")
