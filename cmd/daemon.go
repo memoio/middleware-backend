@@ -25,8 +25,17 @@ var BackendCmd = &cli.Command{
 var runCmd = &cli.Command{
 	Name:  "run",
 	Usage: "run server",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "endpoint",
+			Aliases: []string{"e"},
+			Usage:   "input your endpoint",
+			Value:   ":8080",
+		},
+	},
 	Action: func(ctx *cli.Context) error {
-		srv := server.NewServer()
+		endPoint := ctx.String("endpoint")
+		srv := server.NewServer(endPoint)
 
 		go func() {
 			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

@@ -84,6 +84,10 @@ func (g Gateway) PutObject(ctx context.Context, address, object string, r io.Rea
 		return oi, nil
 	} else if storage == IPFS {
 		logger.Debug("ipfs put object")
+		size := big.NewInt(opts.Size)
+		if !g.checkStorage(ctx, address, size) {
+			return ObjectInfo{}, StorageError{Storage: storage.String(), Message: "storage not enough"}
+		}
 		cid, err := g.Ipfs.Putobject(r)
 		if err != nil {
 			return ObjectInfo{}, err
@@ -91,6 +95,10 @@ func (g Gateway) PutObject(ctx context.Context, address, object string, r io.Rea
 		ctype := utils.TypeByExtension(object)
 		if opts.UserDefined["content-type"] != "" {
 			ctype = opts.UserDefined["content-type"]
+		}
+
+		if !g.updateStorage(ctx, address, cid, size) {
+			return ObjectInfo{}, StorageError{Storage: storage.String(), Message: "storage update error"}
 		}
 		oi := ObjectInfo{
 			Address: address,
@@ -156,17 +164,12 @@ func (g *Gateway) GetObjectInfo(ctx context.Context, storage StorageType, cid st
 	return ObjectInfo{}, StorageNotSupport{}
 }
 
-func (g *Gateway) GetBalanceInfo(ctx context.Context, address string, storage StorageType) (string, error) {
-	if storage == MEFS {
-		err := g.getMemofs()
-		if err != nil {
-			return "", err
-		}
-		return g.Mefs.GetBalanceInfo(ctx, address)
-	} else if storage == IPFS {
-
+func (g *Gateway) GetBalanceInfo(ctx context.Context, address string ) (string, error) {
+	err := g.getMemofs()
+	if err != nil {
+		return "", err
 	}
-	return "", StorageNotSupport{}
+	return g.Mefs.GetBalanceInfo(ctx, address)
 }
 
 func (g *Gateway) GetPrice(ctx context.Context, address, size, time string) (string, error) {

@@ -154,7 +154,7 @@ var ErrorCodes = errorCodeMap{
 	},
 }
 
-func ToAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
+func ToAPIErrorCode(_ context.Context, err error) (apiErr APIErrorCode) {
 	if err == nil {
 		return ErrNone
 	}

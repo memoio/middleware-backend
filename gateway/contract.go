@@ -2,7 +2,6 @@ package gateway
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"math/big"
 	"time"
@@ -53,11 +52,15 @@ func (g Gateway) QueryPrice(ctx context.Context, address, size, time string) (st
 	stime.SetString(time, 10)
 
 	if stime.Cmp(big.NewInt(365)) < 0 {
-		return "", StorageError{Message: fmt.Sprintf("at least storage 365 days")}
+		return "", StorageError{Message: "at least storage 365 days"}
 	}
 	stime.Mul(stime, big.NewInt(86400))
 
 	bi, err := g.Mefs.GetBucketInfo(ctx, address)
+	if err != nil {
+		log.Println("get balance info error")
+		return "", StorageError{Message: "get balance info"}
+	}
 
 	segment := new(big.Int)
 	segment.Mul(ssize, big.NewInt(int64(bi.DataCount+bi.ParityCount)))
@@ -186,7 +189,7 @@ func (g *Gateway) sendTransaction(ctx context.Context, signedTx *types.Transacti
 }
 
 func (g *Gateway) verify(ctx context.Context, address, date, cid string, size *big.Int) bool {
-	flag := g.memverify(ctx, address, date, cid, size)
+	flag := g.memverify(ctx, address, cid, size)
 	if !flag {
 		return g.perverify(ctx, address, date, cid, size)
 	}
@@ -194,7 +197,7 @@ func (g *Gateway) verify(ctx context.Context, address, date, cid string, size *b
 	return true
 }
 
-func (g *Gateway) memverify(ctx context.Context, address, date, cid string, size *big.Int) bool {
+func (g *Gateway) memverify(ctx context.Context, address, cid string, size *big.Int) bool {
 	if !g.checkStorage(ctx, address, size) {
 		return false
 	}
@@ -210,7 +213,11 @@ func (g *Gateway) perverify(ctx context.Context, address, date, cid string, size
 	pri := new(big.Int)
 	pri.SetString(price, 10)
 
-	balance, err := g.GetBalanceInfo(ctx, address, MEFS)
+	balance, err := g.GetBalanceInfo(ctx, address)
+	if err != nil {
+		log.Println("get balance info error")
+		return false
+	}
 	log.Println("Price", price)
 	log.Println("Balance", balance)
 
@@ -240,10 +247,8 @@ func (g *Gateway) checkStorage(ctx context.Context, address string, size *big.In
 	owe = owe.Add(available, free)
 
 	used.Add(size, used)
-	if owe.Cmp(used) < 0 {
-		return false
-	}
-	return true
+
+	return owe.Cmp(used) >= 0
 }
 
 func (g *Gateway) updateStorage(ctx context.Context, address, cid string, size *big.Int) bool {

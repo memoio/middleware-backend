@@ -1,24 +1,24 @@
 package server
 
-import(
-	"time"
+import (
 	"strings"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
 type Claims struct {
-	Type  int    `json:"type,omitempty"`
+	Type int `json:"type,omitempty"`
 	// Nonce string `json:"nonce,omitempty"`
 	jwt.StandardClaims
 }
 
-var(
+var (
 	jwtkey = []byte("memo.io")
 
-	DidToken = 0
+	DidToken    = 0
 	AccessToken = 1
-	FreshToken = 2
+	FreshToken  = 2
 )
 
 func VerifyAccessToken(tokenString string) (string, error) {
@@ -77,41 +77,41 @@ func VerifyFreshToken(tokenString string) (string, error) {
 	token, err := parseToken(parts[1])
 	if err != nil || !token.Valid {
 		return "", ErrValidToken
-	} 
+	}
 
 	return genAccessToken(claims.Subject)
 }
 
 func genAccessToken(did string) (string, error) {
 	expireTime := time.Now().Add(15 * time.Minute)
-    claims := &Claims{
-        Type: AccessToken,
-        StandardClaims: jwt.StandardClaims{
-            ExpiresAt: expireTime.Unix(), 
-            IssuedAt:  time.Now().Unix(), 
-            Audience:  "memo.io", 
-            Issuer:    "memo.io", 
-            Subject:   did, 
-        },
-    }
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    return token.SignedString(jwtkey)
+	claims := &Claims{
+		Type: AccessToken,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expireTime.Unix(),
+			IssuedAt:  time.Now().Unix(),
+			Audience:  "memo.io",
+			Issuer:    "memo.io",
+			Subject:   did,
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtkey)
 }
 
 func genFreshToken(did string) (string, error) {
 	expireTime := time.Now().Add(7 * 24 * time.Hour)
-    claims := &Claims{
-        Type: FreshToken,
-        StandardClaims: jwt.StandardClaims{
-            ExpiresAt: expireTime.Unix(), 
-            IssuedAt:  time.Now().Unix(), 
-            Audience:  "memo.io", 
-            Issuer:    "memo.io", 
-            Subject:   did, 
-        },
-    }
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    return token.SignedString(jwtkey)
+	claims := &Claims{
+		Type: FreshToken,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expireTime.Unix(),
+			IssuedAt:  time.Now().Unix(),
+			Audience:  "memo.io",
+			Issuer:    "memo.io",
+			Subject:   did,
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtkey)
 }
 
 // func ParseDidToken(tokenString string, did string) (*jwt.Token, error) {
@@ -131,7 +131,7 @@ func genFreshToken(did string) (string, error) {
 // }
 
 func parseToken(tokenString string) (*jwt.Token, error) {
-    return jwt.Parse(tokenString, func(token *jwt.Token) (i interface{}, err error) {
-    	return jwtkey, nil
-    })
+	return jwt.Parse(tokenString, func(token *jwt.Token) (i interface{}, err error) {
+		return jwtkey, nil
+	})
 }

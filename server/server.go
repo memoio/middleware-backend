@@ -13,9 +13,9 @@ import (
 )
 
 type Server struct {
-	Router  *gin.Engine
-	Gateway *gateway.Gateway
-	Config  *config.Config
+	Router       *gin.Engine
+	Gateway      *gateway.Gateway
+	Config       *config.Config
 	NonceManager *NonceManager
 }
 
@@ -24,29 +24,31 @@ type AuthenticationFaileMessage struct {
 	Error gateway.APIError
 }
 
-func NewServer() *http.Server {
+func NewServer(endpoint string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+
+	router.Use(Cors())
 	router.GET("/", func(c *gin.Context) {
 		time.Sleep(5 * time.Second)
 		c.String(http.StatusOK, "Welcome Server")
 	})
 
-	nonceManager := NewNonceManager(30 * int64(time.Second.Seconds()), 1 * int64(time.Minute.Seconds()))
+	nonceManager := NewNonceManager(30*int64(time.Second.Seconds()), 1*int64(time.Minute.Seconds()))
 
 	router.GET("/getnonce", func(c *gin.Context) {
 		nonce := nonceManager.GetNonce()
 		c.String(http.StatusOK, nonce)
 	})
-	
+
 	router.POST("/login", func(c *gin.Context) {
 		var request LoginRequest
 		err := c.BindJSON(&request)
-		if err != nil{
-	    	apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-	        c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: nonceManager.GetNonce(), 
-				Error: apiErr, 
+		if err != nil {
+			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
+			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+				Nonce: nonceManager.GetNonce(),
+				Error: apiErr,
 			})
 			return
 		}
@@ -54,8 +56,8 @@ func NewServer() *http.Server {
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: nonceManager.GetNonce(), 
-				Error: apiErr, 
+				Nonce: nonceManager.GetNonce(),
+				Error: apiErr,
 			})
 			return
 		}
@@ -66,8 +68,8 @@ func NewServer() *http.Server {
 		fmt.Println(request.Address)
 
 		c.JSON(http.StatusOK, map[string]string{
-			"access token": accessToken, 
-			"fresh token": freshToken,
+			"access token": accessToken,
+			"fresh token":  freshToken,
 		})
 	})
 
@@ -111,7 +113,7 @@ func NewServer() *http.Server {
 			return
 		}
 		c.JSON(http.StatusOK, map[string]string{
-			"access token": accessToken, 
+			"access token": accessToken,
 		})
 	})
 
@@ -123,16 +125,16 @@ func NewServer() *http.Server {
 	g := gateway.NewGateway(config)
 
 	s := &Server{
-		Router:  router,
-		Gateway: g,
-		Config:  config,
-		NonceManager:  nonceManager, 
+		Router:       router,
+		Gateway:      g,
+		Config:       config,
+		NonceManager: nonceManager,
 	}
 
 	s.registRoute()
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    endpoint,
 		Handler: s.Router,
 	}
 
@@ -164,14 +166,16 @@ func (s Server) addPutobjectRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 	p.POST("/", func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 		file, _ := c.FormFile("file")
+		size := file.Size
+
 		object := file.Filename
 		ud := make(map[string]string)
 		address, err := VerifyAccessToken(tokenString)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: s.NonceManager.GetNonce(), 
-				Error: apiErr, 
+				Nonce: s.NonceManager.GetNonce(),
+				Error: apiErr,
 			})
 			return
 		}
@@ -181,7 +185,7 @@ func (s Server) addPutobjectRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 			c.JSON(apiErr.HTTPStatusCode, apiErr)
 			return
 		}
-		obi, err := s.Gateway.PutObject(c.Request.Context(), address, object, r, storage, gateway.ObjectOptions{UserDefined: ud})
+		obi, err := s.Gateway.PutObject(c.Request.Context(), address, object, r, storage, gateway.ObjectOptions{Size: size, UserDefined: ud})
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, apiErr)
@@ -227,8 +231,8 @@ func (s Server) addListObjectRoutes(r *gin.RouterGroup, storage gateway.StorageT
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: s.NonceManager.GetNonce(), 
-				Error: apiErr, 
+				Nonce: s.NonceManager.GetNonce(),
+				Error: apiErr,
 			})
 			return
 		}
@@ -274,12 +278,12 @@ func (s Server) addGetBalanceRoutes(r *gin.RouterGroup, storage gateway.StorageT
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: s.NonceManager.GetNonce(), 
-				Error: apiErr, 
+				Nonce: s.NonceManager.GetNonce(),
+				Error: apiErr,
 			})
 			return
 		}
-		balance, err := s.Gateway.GetBalanceInfo(c.Request.Context(), address, storage)
+		balance, err := s.Gateway.GetBalanceInfo(c.Request.Context(), address)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, apiErr)
@@ -297,8 +301,8 @@ func (s Server) addGetStorageRoutes(r *gin.RouterGroup, storage gateway.StorageT
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: s.NonceManager.GetNonce(), 
-				Error: apiErr, 
+				Nonce: s.NonceManager.GetNonce(),
+				Error: apiErr,
 			})
 			return
 		}

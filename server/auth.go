@@ -1,17 +1,17 @@
 package server
 
-import(
-	"fmt"
+import (
 	"context"
+	"fmt"
 	"strings"
 
 	"golang.org/x/xerrors"
 
-	"github.com/spruceid/siwe-go"
-	"github.com/shurcooL/graphql"
-	"github.com/memoio/backend/gateway"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/memoio/backend/gateway"
+	"github.com/shurcooL/graphql"
+	"github.com/spruceid/siwe-go"
 )
 
 type LoginRequest struct {
@@ -27,23 +27,23 @@ type EIP4361Request struct {
 }
 
 type profile struct {
-        DefaultProfile struct {
-            ID   string
-            Name string
-        } `graphql:"defaultProfile(request: $request)"`
+	DefaultProfile struct {
+		ID   string
+		Name string
+	} `graphql:"defaultProfile(request: $request)"`
 }
 
 type DefaultProfileRequest struct {
-    EthereumAddress string `json:"ethereumAddress"`
+	EthereumAddress string `json:"ethereumAddress"`
 }
 
-var(
-	ErrNullToken = gateway.AuthenticationFailed{"Token is Null, not found in `Authorization: Bearer ` header"}
-	ErrValidToken = gateway.AuthenticationFailed{"Invalid token"}
-	ErrValidTokenType = gateway.AuthenticationFailed{"InValid token type"}
+var (
+	ErrNullToken      = gateway.AuthenticationFailed{Message: "Token is Null, not found in `Authorization: Bearer ` header"}
+	ErrValidToken     = gateway.AuthenticationFailed{Message: "Invalid token"}
+	ErrValidTokenType = gateway.AuthenticationFailed{Message: "InValid token type"}
 
 	LensMod = 0x10
-	EthMod = 0x11 
+	EthMod  = 0x11
 )
 
 func Login(nonceManager *NonceManager, request interface{}) (string, string, error) {
@@ -65,7 +65,7 @@ func LoginWithMethod(nonceManager *NonceManager, request interface{}, method int
 		}
 		return loginWithEth(nonceManager, req)
 	}
-	return "", "", gateway.NotImplemented{""}
+	return "", "", gateway.NotImplemented{Message: ""}
 }
 
 func loginWithLens(request EIP4361Request) (string, string, error) {
@@ -79,28 +79,28 @@ func loginWithLens(request EIP4361Request) (string, string, error) {
 	}
 
 	if message.GetDomain() != "memo.io" {
-		return "", "", gateway.AuthenticationFailed{"Got wrong domain"}
+		return "", "", gateway.AuthenticationFailed{Message: "Got wrong domain"}
 	}
 
 	if message.GetChainID() != 137 {
-		return "", "", gateway.AuthenticationFailed{"Got wrong chain id"}
+		return "", "", gateway.AuthenticationFailed{Message: "Got wrong chain id"}
 	}
 
 	hash := crypto.Keccak256([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(request.EIP191Message), request.EIP191Message)))
 	sig, err := hexutil.Decode(request.Signature)
 	if err != nil {
-		return "", "", gateway.AuthenticationFailed{err.Error()}
+		return "", "", gateway.AuthenticationFailed{Message: err.Error()}
 	}
 
 	sig[len(sig)-1] %= 27
 	pubKey, err := crypto.SigToPub(hash, sig)
-    if err != nil {
-        return "", "", gateway.AuthenticationFailed{err.Error()}
-    }
+	if err != nil {
+		return "", "", gateway.AuthenticationFailed{Message: err.Error()}
+	}
 
-    if message.GetAddress().Hex() != crypto.PubkeyToAddress(*pubKey).Hex() {
-    	return "", "", gateway.AuthenticationFailed{"Got wrong address/signature"}
-    }
+	if message.GetAddress().Hex() != crypto.PubkeyToAddress(*pubKey).Hex() {
+		return "", "", gateway.AuthenticationFailed{Message: "Got wrong address/signature"}
+	}
 
 	accessToken, err := genAccessToken(message.GetAddress().Hex())
 	if err != nil {
@@ -119,31 +119,31 @@ func loginWithEth(nonceManager *NonceManager, request LoginRequest) (string, str
 	var signature = request.Signature
 
 	if address == "" || nonce == "" || domain == "" || signature == "" {
-		return "", "", gateway.AuthenticationFailed{"There is an empty parameter"}
+		return "", "", gateway.AuthenticationFailed{Message: "There is an empty parameter"}
 	}
 
 	if domain != "memo.io" {
-		return "", "", gateway.AuthenticationFailed{"Got wrong domain"}
+		return "", "", gateway.AuthenticationFailed{Message: "Got wrong domain"}
 	}
 
 	if !nonceManager.VerifyNonce(nonce) {
-		return "", "", gateway.AuthenticationFailed{"Got wrong nonce"}
+		return "", "", gateway.AuthenticationFailed{Message: "Got wrong nonce"}
 	}
 
 	hash := crypto.Keccak256([]byte(address), []byte(nonce), []byte(domain))
 	sig, err := hexutil.Decode(signature)
 	if err != nil {
-		return "", "", gateway.AuthenticationFailed{err.Error()}
+		return "", "", gateway.AuthenticationFailed{Message: err.Error()}
 	}
 
 	pubKey, err := crypto.SigToPub(hash, sig)
-    if err != nil {
-        return "", "", gateway.AuthenticationFailed{err.Error()}
-    }
+	if err != nil {
+		return "", "", gateway.AuthenticationFailed{Message: err.Error()}
+	}
 
-    if address != crypto.PubkeyToAddress(*pubKey).Hex() {
-    	return "", "", gateway.AuthenticationFailed{"Got wrong address/signature"}
-    }
+	if address != crypto.PubkeyToAddress(*pubKey).Hex() {
+		return "", "", gateway.AuthenticationFailed{Message: "Got wrong address/signature"}
+	}
 
 	accessToken, err := genAccessToken(address)
 	if err != nil {
@@ -157,31 +157,31 @@ func loginWithEth(nonceManager *NonceManager, request LoginRequest) (string, str
 
 func parseLensMessage(message string) (*siwe.Message, error) {
 	message = strings.TrimPrefix(message, "\n")
-    message = strings.TrimPrefix(message, "https://")
-    message = strings.TrimPrefix(message, "http://")
-    message = strings.TrimSuffix(message, "\n ")
+	message = strings.TrimPrefix(message, "https://")
+	message = strings.TrimPrefix(message, "http://")
+	message = strings.TrimSuffix(message, "\n ")
 
-    return siwe.ParseMessage(message)
+	return siwe.ParseMessage(message)
 }
 
 func isLensAccount(address string) error {
 	var query profile
 	var client = graphql.NewClient("https://api.lens.dev", nil)
-    var variables = map[string]interface{}{
-        "request": DefaultProfileRequest{
-            EthereumAddress: address,
-        }, 
-    }
+	var variables = map[string]interface{}{
+		"request": DefaultProfileRequest{
+			EthereumAddress: address,
+		},
+	}
 
-    err := client.Query(context.Background(), &query, variables)
-    if err != nil {
-        return err
-    }
-    if query.DefaultProfile.ID == "" {
-    	return gateway.AddressError{"The address{" + address + "} is not registered on lens"}
-    }
+	err := client.Query(context.Background(), &query, variables)
+	if err != nil {
+		return err
+	}
+	if query.DefaultProfile.ID == "" {
+		return gateway.AddressError{Message: "The address{" + address + "} is not registered on lens"}
+	}
 
-    return nil
+	return nil
 }
 
 // Verify token's type, audience, nonce, expires time and signatrue
