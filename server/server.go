@@ -52,7 +52,7 @@ func NewServer(endpoint string) *http.Server {
 			})
 			return
 		}
-		accessToken, freshToken, err := Login(nonceManager, request)
+		accessToken, refreshToken, err := Login(nonceManager, request)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
@@ -68,28 +68,28 @@ func NewServer(endpoint string) *http.Server {
 		fmt.Println(request.Address)
 
 		c.JSON(http.StatusOK, map[string]string{
-			"access token": accessToken,
-			"fresh token":  freshToken,
+			"accessToken":  accessToken,
+			"refreshToken": refreshToken,
 		})
 	})
 
 	router.POST("/lens/login", func(c *gin.Context) {
 		var request EIP4361Request
 		err := c.BindJSON(&request)
-		if err != nil{
-	    	apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-	        c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: nonceManager.GetNonce(), 
-				Error: apiErr, 
-			})
-			return
-		}
-		accessToken, freshToken, err := LoginWithMethod(nonceManager, request, LensMod)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: nonceManager.GetNonce(), 
-				Error: apiErr, 
+				Nonce: nonceManager.GetNonce(),
+				Error: apiErr,
+			})
+			return
+		}
+		accessToken, refreshToken, err := LoginWithMethod(nonceManager, request, LensMod)
+		if err != nil {
+			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
+			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+				Nonce: nonceManager.GetNonce(),
+				Error: apiErr,
 			})
 			return
 		}
@@ -100,16 +100,16 @@ func NewServer(endpoint string) *http.Server {
 		// fmt.Println(request.Address)
 
 		c.JSON(http.StatusOK, map[string]string{
-			"access token": accessToken, 
-			"fresh token": freshToken,
+			"accessToken":  accessToken,
+			"refreshToken": refreshToken,
 		})
 	})
 
-	router.GET("/fresh", func(c *gin.Context) {
+	router.GET("/refresh", func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
-		accessToken, err := VerifyFreshToken(tokenString)
+		accessToken, err := VerifyRefreshToken(tokenString)
 		if err != nil {
-			c.String(http.StatusUnauthorized, "Illegal fresh token")
+			c.String(http.StatusUnauthorized, "Illegal refresh token")
 			return
 		}
 		c.JSON(http.StatusOK, map[string]string{
