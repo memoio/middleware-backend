@@ -16,9 +16,9 @@ type Claims struct {
 var (
 	jwtkey = []byte("memo.io")
 
-	DidToken    = 0
-	AccessToken = 1
-	FreshToken  = 2
+	DidToken     = 0
+	AccessToken  = 1
+	RefreshToken = 2
 )
 
 func VerifyAccessToken(tokenString string) (string, error) {
@@ -52,7 +52,7 @@ func VerifyAccessToken(tokenString string) (string, error) {
 	return claims.Subject, nil
 }
 
-func VerifyFreshToken(tokenString string) (string, error) {
+func VerifyRefreshToken(tokenString string) (string, error) {
 	parts := strings.SplitN(tokenString, " ", 2)
 	if !(len(parts) == 2 && parts[0] == "Bearer") {
 		return "", ErrNullToken
@@ -70,7 +70,7 @@ func VerifyFreshToken(tokenString string) (string, error) {
 	}
 
 	// check token type
-	if claims.Type != FreshToken {
+	if claims.Type != RefreshToken {
 		return "", ErrValidTokenType
 	}
 
@@ -98,10 +98,10 @@ func genAccessToken(did string) (string, error) {
 	return token.SignedString(jwtkey)
 }
 
-func genFreshToken(did string) (string, error) {
+func genRefreshToken(did string) (string, error) {
 	expireTime := time.Now().Add(7 * 24 * time.Hour)
 	claims := &Claims{
-		Type: FreshToken,
+		Type: RefreshToken,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(),
 			IssuedAt:  time.Now().Unix(),

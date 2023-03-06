@@ -107,9 +107,9 @@ func loginWithLens(request EIP4361Request) (string, string, error) {
 		return "", "", err
 	}
 
-	freshToken, err := genFreshToken(message.GetAddress().Hex())
+	refreshToken, err := genRefreshToken(message.GetAddress().Hex())
 
-	return accessToken, freshToken, err
+	return accessToken, refreshToken, err
 }
 
 func loginWithEth(nonceManager *NonceManager, request LoginRequest) (string, string, error) {
@@ -150,9 +150,9 @@ func loginWithEth(nonceManager *NonceManager, request LoginRequest) (string, str
 		return "", "", err
 	}
 
-	freshToken, err := genFreshToken(address)
+	refreshToken, err := genRefreshToken(address)
 
-	return accessToken, freshToken, err
+	return accessToken, refreshToken, err
 }
 
 func parseLensMessage(message string) (*siwe.Message, error) {
@@ -185,7 +185,7 @@ func isLensAccount(address string) error {
 }
 
 // Verify token's type, audience, nonce, expires time and signatrue
-// Then, return access token, fresh token and usr id
+// Then, return access token, refresh token and usr id
 // The format of usr id is did:eth:{usr's publickey key || usr's address}
 // func VerifyDidToken(nonceManager *NonceManager, tokenString string) (string, string, string, error) {
 // 	if tokenString == "" {
@@ -224,7 +224,7 @@ func isLensAccount(address string) error {
 // 		return "", "", "", err
 // 	}
 
-// 	freshToken, err := GenFreshToken(claims.Subject)
+// 	refreshToken, err := GenRefreshToken(claims.Subject)
 
-// 	return accessToken, freshToken, claims.Subject, err
+// 	return accessToken, refreshToken, claims.Subject, err
 // }
