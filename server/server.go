@@ -113,7 +113,7 @@ func NewServer(endpoint string) *http.Server {
 			return
 		}
 		c.JSON(http.StatusOK, map[string]string{
-			"access token": accessToken,
+			"accessToken": accessToken,
 		})
 	})
 
@@ -122,6 +122,7 @@ func NewServer(endpoint string) *http.Server {
 		log.Fatal("config not right")
 		return nil
 	}
+	InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
 	g := gateway.NewGateway(config)
 
 	s := &Server{
