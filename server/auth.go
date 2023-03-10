@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -42,9 +43,28 @@ var (
 	ErrValidToken     = gateway.AuthenticationFailed{Message: "Invalid token"}
 	ErrValidTokenType = gateway.AuthenticationFailed{Message: "InValid token type"}
 
+	JWTKey  []byte
+	Domain  string
+	LensAPI string
+
+	DidToken     = 0
+	AccessToken  = 1
+	RefreshToken = 2
+
 	LensMod = 0x10
 	EthMod  = 0x11
 )
+
+func InitAuthConfig(jwtKey string, domain string, url string) {
+	var err error
+	JWTKey, err = hex.DecodeString(jwtKey)
+	if err != nil {
+		JWTKey = []byte("memo.io")
+	}
+
+	Domain = domain
+	LensAPI = url
+}
 
 func Login(nonceManager *NonceManager, request interface{}) (string, string, error) {
 	return LoginWithMethod(nonceManager, request, EthMod)
@@ -78,7 +98,7 @@ func loginWithLens(request EIP4361Request) (string, string, error) {
 		return "", "", err
 	}
 
-	if message.GetDomain() != "memo.io" {
+	if message.GetDomain() != Domain {
 		return "", "", gateway.AuthenticationFailed{Message: "Got wrong domain"}
 	}
 
@@ -122,7 +142,7 @@ func loginWithEth(nonceManager *NonceManager, request LoginRequest) (string, str
 		return "", "", gateway.AuthenticationFailed{Message: "There is an empty parameter"}
 	}
 
-	if domain != "memo.io" {
+	if domain != Domain {
 		return "", "", gateway.AuthenticationFailed{Message: "Got wrong domain"}
 	}
 
@@ -166,7 +186,7 @@ func parseLensMessage(message string) (*siwe.Message, error) {
 
 func isLensAccount(address string) error {
 	var query profile
-	var client = graphql.NewClient("https://api.lens.dev", nil)
+	var client = graphql.NewClient(LensAPI, nil)
 	var variables = map[string]interface{}{
 		"request": DefaultProfileRequest{
 			EthereumAddress: address,
@@ -199,7 +219,7 @@ func isLensAccount(address string) error {
 // 	}
 
 // 	// check Audience
-// 	if claims.Audience != "memo.io" {
+// 	if claims.Audience != Domain {
 // 		return "", "", "", ErrValidToken
 // 	}
 

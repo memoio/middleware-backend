@@ -13,14 +13,6 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-var (
-	jwtkey = []byte("memo.io")
-
-	DidToken     = 0
-	AccessToken  = 1
-	RefreshToken = 2
-)
-
 func VerifyAccessToken(tokenString string) (string, error) {
 	parts := strings.SplitN(tokenString, " ", 2)
 	if !(len(parts) == 2 && parts[0] == "Bearer") {
@@ -34,7 +26,7 @@ func VerifyAccessToken(tokenString string) (string, error) {
 	}
 
 	// check Audience
-	if claims.Audience != "memo.io" || claims.Issuer != "memo.io" {
+	if claims.Audience != Domain || claims.Issuer != Domain {
 		return "", ErrValidToken
 	}
 
@@ -65,7 +57,7 @@ func VerifyRefreshToken(tokenString string) (string, error) {
 	}
 
 	// check Audience
-	if claims.Audience != "memo.io" || claims.Issuer != "memo.io" {
+	if claims.Audience != Domain || claims.Issuer != Domain {
 		return "", ErrValidToken
 	}
 
@@ -89,13 +81,13 @@ func genAccessToken(did string) (string, error) {
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(),
 			IssuedAt:  time.Now().Unix(),
-			Audience:  "memo.io",
-			Issuer:    "memo.io",
+			Audience:  Domain,
+			Issuer:    Domain,
 			Subject:   did,
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtkey)
+	return token.SignedString(JWTKey)
 }
 
 func genRefreshToken(did string) (string, error) {
@@ -105,13 +97,13 @@ func genRefreshToken(did string) (string, error) {
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(),
 			IssuedAt:  time.Now().Unix(),
-			Audience:  "memo.io",
-			Issuer:    "memo.io",
+			Audience:  Domain,
+			Issuer:    Domain,
 			Subject:   did,
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtkey)
+	return token.SignedString(JWTKey)
 }
 
 // func ParseDidToken(tokenString string, did string) (*jwt.Token, error) {
@@ -132,6 +124,6 @@ func genRefreshToken(did string) (string, error) {
 
 func parseToken(tokenString string) (*jwt.Token, error) {
 	return jwt.Parse(tokenString, func(token *jwt.Token) (i interface{}, err error) {
-		return jwtkey, nil
+		return JWTKey, nil
 	})
 }
