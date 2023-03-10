@@ -67,17 +67,17 @@ func InitAuthConfig(jwtKey string, domain string, url string) {
 }
 
 func Login(nonceManager *NonceManager, request interface{}) (string, string, error) {
-	return LoginWithMethod(nonceManager, request, EthMod)
+	return LoginWithMethod(nonceManager, request, EthMod, false)
 }
 
-func LoginWithMethod(nonceManager *NonceManager, request interface{}, method int) (string, string, error) {
+func LoginWithMethod(nonceManager *NonceManager, request interface{}, method int, checkRegistered bool) (string, string, error) {
 	switch method {
 	case LensMod:
 		req, ok := request.(EIP4361Request)
 		if !ok {
 			return "", "", xerrors.Errorf("")
 		}
-		return loginWithLens(req)
+		return loginWithLens(req, checkRegistered)
 	case EthMod:
 		req, ok := request.(LoginRequest)
 		if !ok {
@@ -88,13 +88,13 @@ func LoginWithMethod(nonceManager *NonceManager, request interface{}, method int
 	return "", "", gateway.NotImplemented{Message: ""}
 }
 
-func loginWithLens(request EIP4361Request) (string, string, error) {
+func loginWithLens(request EIP4361Request, required bool) (string, string, error) {
 	message, err := parseLensMessage(request.EIP191Message)
 	if err != nil {
 		return "", "", err
 	}
 
-	if err := isLensAccount(message.GetAddress().Hex()); err != nil {
+	if err := isLensAccount(message.GetAddress().Hex(), required); err != nil {
 		return "", "", err
 	}
 
@@ -184,21 +184,23 @@ func parseLensMessage(message string) (*siwe.Message, error) {
 	return siwe.ParseMessage(message)
 }
 
-func isLensAccount(address string) error {
-	var query profile
-	var client = graphql.NewClient(LensAPI, nil)
-	var variables = map[string]interface{}{
-		"request": DefaultProfileRequest{
-			EthereumAddress: address,
-		},
-	}
+func isLensAccount(address string, required bool) error {
+	if required {
+		var query profile
+		var client = graphql.NewClient(LensAPI, nil)
+		var variables = map[string]interface{}{
+			"request": DefaultProfileRequest{
+				EthereumAddress: address,
+			},
+		}
 
-	err := client.Query(context.Background(), &query, variables)
-	if err != nil {
-		return err
-	}
-	if query.DefaultProfile.ID == "" {
-		return gateway.AddressError{Message: "The address{" + address + "} is not registered on lens"}
+		err := client.Query(context.Background(), &query, variables)
+		if err != nil {
+			return err
+		}
+		if query.DefaultProfile.ID == "" {
+			return gateway.AddressError{Message: "The address{" + address + "} is not registered on lens"}
+		}
 	}
 
 	return nil

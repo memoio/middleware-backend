@@ -32,10 +32,17 @@ var runCmd = &cli.Command{
 			Usage:   "input your endpoint",
 			Value:   ":8080",
 		},
+		&cli.BoolFlag{
+			Name:    "checkRegistered",
+			Aliases: []string{"c"},
+			Usage:   "check address is registered on lens",
+			Value:   true,
+		},
 	},
 	Action: func(ctx *cli.Context) error {
 		endPoint := ctx.String("endpoint")
-		srv := server.NewServer(endPoint)
+		checkRegistered := ctx.Bool("checkRegistered")
+		srv := server.NewServer(endPoint, checkRegistered)
 
 		go func() {
 			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
