@@ -24,7 +24,7 @@ type AuthenticationFaileMessage struct {
 	Error gateway.APIError
 }
 
-func NewServer(endpoint string) *http.Server {
+func NewServer(endpoint string, checkRegistered bool) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
@@ -84,7 +84,7 @@ func NewServer(endpoint string) *http.Server {
 			})
 			return
 		}
-		accessToken, refreshToken, err := LoginWithMethod(nonceManager, request, LensMod)
+		accessToken, refreshToken, err := LoginWithMethod(nonceManager, request, LensMod, checkRegistered)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
