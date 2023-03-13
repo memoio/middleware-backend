@@ -67,69 +67,74 @@ func InitAuthConfig(jwtKey string, domain string, url string) {
 }
 
 func Login(nonceManager *NonceManager, request interface{}) (string, string, error) {
-	return LoginWithMethod(nonceManager, request, EthMod, false)
-}
-
-func LoginWithMethod(nonceManager *NonceManager, request interface{}, method int, checkRegistered bool) (string, string, error) {
-	switch method {
-	case LensMod:
-		req, ok := request.(EIP4361Request)
-		if !ok {
-			return "", "", xerrors.Errorf("")
-		}
-		return loginWithLens(req, checkRegistered)
-	case EthMod:
-		req, ok := request.(LoginRequest)
-		if !ok {
-			return "", "", xerrors.Errorf("")
-		}
-		return loginWithEth(nonceManager, req)
+	req, ok := request.(LoginRequest)
+	if !ok {
+		return "", "", xerrors.Errorf("")
 	}
-	return "", "", gateway.NotImplemented{Message: ""}
+	return loginWithEth(nonceManager, req)
 }
 
-func loginWithLens(request EIP4361Request, required bool) (string, string, error) {
+// func LoginWithMethod(nonceManager *NonceManager, request interface{}, method int, checkRegistered bool) (string, string, error) {
+// 	switch method {
+// 	case LensMod:
+// 		req, ok := request.(EIP4361Request)
+// 		if !ok {
+// 			return "", "", xerrors.Errorf("")
+// 		}
+// 		return loginWithLens(req, checkRegistered)
+// 	case EthMod:
+// 		req, ok := request.(LoginRequest)
+// 		if !ok {
+// 			return "", "", xerrors.Errorf("")
+// 		}
+// 		return loginWithEth(nonceManager, req)
+// 	}
+// 	return "", "", gateway.NotImplemented{Message: ""}
+// }
+
+func LoginWithLens(request EIP4361Request, required bool) (string, string, bool, error) {
 	message, err := parseLensMessage(request.EIP191Message)
 	if err != nil {
-		return "", "", err
+		return "", "", false, err
 	}
 
-	if err := isLensAccount(message.GetAddress().Hex(), required); err != nil {
-		return "", "", err
+	isRegistered, err := isLensAccount(message.GetAddress().Hex(), required)
+	if err != nil {
+		return "", "", false, err
 	}
 
 	if message.GetDomain() != Domain {
-		return "", "", gateway.AuthenticationFailed{Message: "Got wrong domain"}
+		return "", "", false, gateway.AuthenticationFailed{Message: "Got wrong domain"}
 	}
 
 	if message.GetChainID() != 137 {
-		return "", "", gateway.AuthenticationFailed{Message: "Got wrong chain id"}
+		return "", "", false, gateway.AuthenticationFailed{Message: "Got wrong chain id"}
 	}
 
 	hash := crypto.Keccak256([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(request.EIP191Message), request.EIP191Message)))
 	sig, err := hexutil.Decode(request.Signature)
 	if err != nil {
-		return "", "", gateway.AuthenticationFailed{Message: err.Error()}
+		return "", "", false, gateway.AuthenticationFailed{Message: err.Error()}
 	}
 
 	sig[len(sig)-1] %= 27
 	pubKey, err := crypto.SigToPub(hash, sig)
 	if err != nil {
-		return "", "", gateway.AuthenticationFailed{Message: err.Error()}
+		return "", "", false, gateway.AuthenticationFailed{Message: err.Error()}
 	}
 
 	if message.GetAddress().Hex() != crypto.PubkeyToAddress(*pubKey).Hex() {
-		return "", "", gateway.AuthenticationFailed{Message: "Got wrong address/signature"}
+		return "", "", false, gateway.AuthenticationFailed{Message: "Got wrong address/signature"}
 	}
 
-	accessToken, err := genAccessToken(message.GetAddress().Hex())
+	accessToken, err := genAccessTokenWithFlag(message.GetAddress().Hex(), isRegistered)
 	if err != nil {
-		return "", "", err
+		return "", "", false, err
 	}
 
-	refreshToken, err := genRefreshToken(message.GetAddress().Hex())
+	refreshToken, err := genRefreshTokenWithFlag(message.GetAddress().Hex(), isRegistered)
 
-	return accessToken, refreshToken, err
+	return accessToken, refreshToken, isRegistered, err
 }
 
 func loginWithEth(nonceManager *NonceManager, request LoginRequest) (string, string, error) {
@@ -184,7 +189,7 @@ func parseLensMessage(message string) (*siwe.Message, error) {
 	return siwe.ParseMessage(message)
 }
 
-func isLensAccount(address string, required bool) error {
+func isLensAccount(address string, required bool) (bool, error) {
 	if required {
 		var query profile
 		var client = graphql.NewClient(LensAPI, nil)
@@ -196,14 +201,15 @@ func isLensAccount(address string, required bool) error {
 
 		err := client.Query(context.Background(), &query, variables)
 		if err != nil {
-			return err
+			return false, err
 		}
 		if query.DefaultProfile.ID == "" {
-			return gateway.AddressError{Message: "The address{" + address + "} is not registered on lens"}
+			return false, nil
+			// return false, gateway.AddressError{Message: "The address{" + address + "} is not registered on lens"}
 		}
 	}
 
-	return nil
+	return true, nil
 }
 
 // Verify token's type, audience, nonce, expires time and signatrue

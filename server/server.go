@@ -65,7 +65,7 @@ func NewServer(endpoint string, checkRegistered bool) *http.Server {
 		// if address is new user in "memo.io" {
 		// 	init usr info
 		// }
-		fmt.Println(request.Address)
+		// fmt.Println(request.Address)
 
 		c.JSON(http.StatusOK, map[string]string{
 			"accessToken":  accessToken,
@@ -84,7 +84,7 @@ func NewServer(endpoint string, checkRegistered bool) *http.Server {
 			})
 			return
 		}
-		accessToken, refreshToken, err := LoginWithMethod(nonceManager, request, LensMod, checkRegistered)
+		accessToken, refreshToken, isRegistered, err := LoginWithLens(request, checkRegistered)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
@@ -99,9 +99,10 @@ func NewServer(endpoint string, checkRegistered bool) *http.Server {
 		// }
 		// fmt.Println(request.Address)
 
-		c.JSON(http.StatusOK, map[string]string{
+		c.JSON(http.StatusOK, map[string]interface{}{
 			"accessToken":  accessToken,
 			"refreshToken": refreshToken,
+			"isRegistered": isRegistered,
 		})
 	})
 

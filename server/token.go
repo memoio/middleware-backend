@@ -8,7 +8,8 @@ import (
 )
 
 type Claims struct {
-	Type int `json:"type,omitempty"`
+	Type         int  `json:"type,omitempty"`
+	IsRegistered bool `json:"isRegistered,omitempty"`
 	// Nonce string `json:"nonce,omitempty"`
 	jwt.StandardClaims
 }
@@ -71,10 +72,10 @@ func VerifyRefreshToken(tokenString string) (string, error) {
 		return "", ErrValidToken
 	}
 
-	return genAccessToken(claims.Subject)
+	return genAccessTokenWithFlag(claims.Subject, claims.IsRegistered)
 }
 
-func genAccessToken(did string) (string, error) {
+func genAccessToken(subject string) (string, error) {
 	expireTime := time.Now().Add(15 * time.Minute)
 	claims := &Claims{
 		Type: AccessToken,
@@ -83,14 +84,31 @@ func genAccessToken(did string) (string, error) {
 			IssuedAt:  time.Now().Unix(),
 			Audience:  Domain,
 			Issuer:    Domain,
-			Subject:   did,
+			Subject:   subject,
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(JWTKey)
 }
 
-func genRefreshToken(did string) (string, error) {
+func genAccessTokenWithFlag(subject string, isRegistered bool) (string, error) {
+	expireTime := time.Now().Add(15 * time.Minute)
+	claims := &Claims{
+		Type:         AccessToken,
+		IsRegistered: isRegistered,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expireTime.Unix(),
+			IssuedAt:  time.Now().Unix(),
+			Audience:  Domain,
+			Issuer:    Domain,
+			Subject:   subject,
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(JWTKey)
+}
+
+func genRefreshToken(subject string) (string, error) {
 	expireTime := time.Now().Add(7 * 24 * time.Hour)
 	claims := &Claims{
 		Type: RefreshToken,
@@ -99,7 +117,24 @@ func genRefreshToken(did string) (string, error) {
 			IssuedAt:  time.Now().Unix(),
 			Audience:  Domain,
 			Issuer:    Domain,
-			Subject:   did,
+			Subject:   subject,
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(JWTKey)
+}
+
+func genRefreshTokenWithFlag(subject string, isRegistered bool) (string, error) {
+	expireTime := time.Now().Add(7 * 24 * time.Hour)
+	claims := &Claims{
+		Type:         RefreshToken,
+		IsRegistered: isRegistered,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expireTime.Unix(),
+			IssuedAt:  time.Now().Unix(),
+			Audience:  Domain,
+			Issuer:    Domain,
+			Subject:   subject,
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
