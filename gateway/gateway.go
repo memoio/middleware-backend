@@ -13,7 +13,7 @@ import (
 	"github.com/memoio/backend/config"
 	logging "github.com/memoio/backend/global/log"
 	"github.com/memoio/backend/utils"
-	metag "github.com/memoio/go-mefs-v2/lib/utils/etag"
+	metag "github.com/memoio/go-mefs-v2/lib/etag"
 	"golang.org/x/crypto/sha3"
 )
 
