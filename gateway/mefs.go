@@ -20,7 +20,7 @@ import (
 	"github.com/memoio/go-mefs-v2/build"
 	mcode "github.com/memoio/go-mefs-v2/lib/code"
 	mtypes "github.com/memoio/go-mefs-v2/lib/types"
-	metag "github.com/memoio/go-mefs-v2/lib/utils/etag"
+	metag "github.com/memoio/go-mefs-v2/lib/etag"
 	"golang.org/x/crypto/sha3"
 )
 
