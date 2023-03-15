@@ -16,6 +16,8 @@ import (
 const (
 	payTopic     = "0xc0e3b3bf3b856068b6537f07e399954cb5abc4fade906ee21432a8ded3c36ec8"
 	storageTopic = "0x01bed2f7b5b5c577e49071502e2c9985655c9ca5c1ab432156d99d199f6b1912"
+
+	payratio = 100
 )
 
 var (
@@ -212,7 +214,8 @@ func (g *Gateway) perverify(ctx context.Context, address, date, cid string, size
 	}
 	pri := new(big.Int)
 	pri.SetString(price, 10)
-
+	pri.Mul(pri, big.NewInt(payratio))
+	
 	balance, err := g.GetBalanceInfo(ctx, address)
 	if err != nil {
 		log.Println("get balance info error")
