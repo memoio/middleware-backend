@@ -106,7 +106,17 @@ func (m *Mefs) QueryPrice(ctx context.Context) (string, error) {
 	return out.String(), nil
 }
 
-func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader, UserDefined map[string]string) (objInfo mtypes.ObjectInfo, err error) {
+func (m *Mefs) PutObject(ctx context.Context, address, object string, r io.Reader, UserDefined map[string]string) (objInfo mtypes.ObjectInfo, err error) {
+	err = m.MakeBucketWithLocation(ctx, address)
+	if err != nil {
+		if !strings.Contains(err.Error(), "already exist") {
+			return objInfo, funcError(MEFS, makefunc, err)
+		}
+	} else {
+		log.Println("create bucket ", address)
+		time.Sleep(20 * time.Second)
+	}
+
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
 		return objInfo, funcError(MEFS, putfunc, err)
@@ -117,7 +127,7 @@ func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader
 	for k, v := range UserDefined {
 		poo.UserDefined[k] = v
 	}
-	moi, err := napi.PutObject(ctx, bucket, object, r, poo)
+	moi, err := napi.PutObject(ctx, address, object, r, poo)
 	if err != nil {
 		log.Println(err)
 		return objInfo, funcError(MEFS, putfunc, err)
