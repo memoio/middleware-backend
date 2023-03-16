@@ -294,6 +294,10 @@ func (m *Mefs) DeleteObject(ctx context.Context, address, object string) error {
 }
 
 func (m *Mefs) CheckBucket(ctx context.Context, address string) bool {
-	_, err := m.GetBucketInfo(ctx, address)
-	return err == nil
+	bi, err := m.GetBucketInfo(ctx, address)
+	if err != nil {
+		return false
+	}
+
+	return bi.Confirmed
 }
