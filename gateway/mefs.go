@@ -114,7 +114,9 @@ func (m *Mefs) PutObject(ctx context.Context, address, object string, r io.Reade
 		}
 	} else {
 		log.Println("create bucket ", address)
-		time.Sleep(20 * time.Second)
+		for !m.CheckBucket(ctx, address) {
+			time.Sleep(10 * time.Second)
+		}
 	}
 
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
@@ -289,4 +291,9 @@ func (m *Mefs) DeleteObject(ctx context.Context, address, object string) error {
 		return funcError(MEFS, deletefunc, err)
 	}
 	return nil
+}
+
+func (m *Mefs) CheckBucket(ctx context.Context, address string) bool {
+	_, err := m.GetBucketInfo(ctx, address)
+	return err == nil
 }
