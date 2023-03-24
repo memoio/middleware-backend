@@ -19,8 +19,8 @@ import (
 	mclient "github.com/memoio/go-mefs-v2/api/client"
 	"github.com/memoio/go-mefs-v2/build"
 	mcode "github.com/memoio/go-mefs-v2/lib/code"
+	metag "github.com/memoio/go-mefs-v2/lib/etag"
 	mtypes "github.com/memoio/go-mefs-v2/lib/types"
-	metag "github.com/memoio/go-mefs-v2/lib/utils/etag"
 	"golang.org/x/crypto/sha3"
 )
 

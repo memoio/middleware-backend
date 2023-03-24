@@ -9,6 +9,7 @@ require (
 	github.com/gin-gonic/gin v1.8.2
 	github.com/ipfs/go-ipfs-api v0.3.0
 	github.com/lib/pq v1.10.4
+	github.com/memoio/contractsv2 v0.0.0-00010101000000-000000000000
 	github.com/memoio/go-mefs-v2 v0.0.0-00010101000000-000000000000
 	github.com/mr-tron/base58 v1.2.0
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29
@@ -80,6 +81,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/power-devops/perfstat v0.0.0-20220216144756-c35f1ee13d7c // indirect
 	github.com/relvacode/iso8601 v1.1.0 // indirect
+	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/shirou/gopsutil/v3 v3.22.2 // indirect
