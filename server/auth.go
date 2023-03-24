@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/xerrors"
-
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/memoio/backend/gateway"
@@ -55,13 +53,13 @@ func LoginWithMethod(nonceManager *NonceManager, request interface{}, method int
 	case LensMod:
 		req, ok := request.(EIP4361Request)
 		if !ok {
-			return "", "", xerrors.Errorf("")
+			return "", "", fmt.Errorf("")
 		}
 		return loginWithLens(req)
 	case EthMod:
 		req, ok := request.(LoginRequest)
 		if !ok {
-			return "", "", xerrors.Errorf("")
+			return "", "", fmt.Errorf("")
 		}
 		return loginWithEth(nonceManager, req)
 	}

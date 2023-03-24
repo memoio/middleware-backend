@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
+	"math/big"
+	"os"
 
 	shapi "github.com/ipfs/go-ipfs-api"
 	"github.com/memoio/backend/utils"
@@ -63,4 +65,31 @@ func (i *Ipfs) GetObjectInfo(ctx context.Context, cid string) (ObjectInfo, error
 
 func (i *Ipfs) ListObjects(ctx context.Context, address string) (ListObjectsInfo, error) {
 	return ListObjectsInfo{}, NotImplemented{}
+}
+
+func (i *Ipfs) saveFileInfo(ctx context.Context, address, object, cid string, opts ObjectOptions) error {
+	err := creatFile("address/" + address)
+	if err != nil {
+		return err
+	}
+	f, err := os.OpenFile(address, os.O_RDONLY, 0600)
+	if err != nil {
+		return err
+	}
+	size := big.NewInt(opts.Size)
+	info := object + " " + size.String() + " " + cid + "\n"
+	_, err = f.Write([]byte(info))
+	return err
+}
+
+func creatFile(path string) error {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsExist(err) {
+			return nil
+		}
+		return err
+	}
+	err = os.MkdirAll(path, os.ModePerm)
+	return err
 }

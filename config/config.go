@@ -8,12 +8,18 @@ import (
 )
 
 type Config struct {
-	Storage StorageConfig `json:"storage"`
+	Storage  StorageConfig  `json:"storage"`
+	Contract ContractConfig `json:"contract"`
 }
 
 type StorageConfig struct {
 	Mefs MefsConfig `json:"mefs"`
 	Ipfs IpfsConfig `json:"ipfs"`
+}
+
+type ContractConfig struct {
+	Endpoint     string `json:"endpoint"`
+	ContractAddr string `json:"addr"`
 }
 
 type MefsConfig struct {
@@ -45,9 +51,17 @@ func newDefaultStorageConfig() StorageConfig {
 	}
 }
 
+func newDefaultContractConfig() ContractConfig {
+	return ContractConfig{
+		Endpoint:     "https://chain.metamemo.one:8501",
+		ContractAddr: "0x2A0B376CC39eB2019e43207d00ee2c34878ca36D",
+	}
+}
+
 func NewDefaultConfig() *Config {
 	return &Config{
-		Storage: newDefaultStorageConfig(),
+		Storage:  newDefaultStorageConfig(),
+		Contract: newDefaultContractConfig(),
 	}
 }
 

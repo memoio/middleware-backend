@@ -23,9 +23,3 @@ type ListObjectsInfo struct {
 	Objects []ObjectInfo
 }
 
-type StorageInfo struct {
-	Used      string
-	Available string
-	Free      string
-	Files     string
-}
