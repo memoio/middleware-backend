@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/memoio/backend/global/db"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -215,7 +216,7 @@ func (g *Gateway) perverify(ctx context.Context, address, date, cid string, size
 	pri := new(big.Int)
 	pri.SetString(price, 10)
 	pri.Mul(pri, big.NewInt(payratio))
-	
+
 	balance, err := g.GetBalanceInfo(ctx, address)
 	if err != nil {
 		log.Println("get balance info error")
@@ -235,82 +236,28 @@ func (g *Gateway) perverify(ctx context.Context, address, date, cid string, size
 }
 
 func (g *Gateway) checkStorage(ctx context.Context, address string, size *big.Int) bool {
-	si, err := g.GetStorageInfo(ctx, address)
+	si, err := g.GetPkgSize(ctx, address)
 	if err != nil {
 		return false
 	}
 
-	used := new(big.Int)
-	used.SetString(si.Used, 10)
-	free := new(big.Int)
-	free.SetString(si.Free, 10)
-	available := new(big.Int)
-	available.SetString(si.Available, 10)
-	owe := new(big.Int)
-	owe = owe.Add(available, free)
-
-	used.Add(size, used)
-
-	return owe.Cmp(used) >= 0
+	return si.Available+si.Free > size.Int64()+si.Used
 }
 
 func (g *Gateway) updateStorage(ctx context.Context, address, cid string, size *big.Int) bool {
-	client, err := ethclient.DialContext(ctx, endpoint)
-	if err != nil {
-		log.Println("connect to eth error", err)
-		return false
+	pi := db.PkgInfo{
+		Address:   address,
+		Hashid:    cid,
+		Size:      size.Int64(),
+		IsUpdated: false,
+		UTime:     time.Now(),
 	}
-	defer client.Close()
-
-	nonce, err := client.PendingNonceAt(ctx, GatewayAddr)
-	if err != nil {
-		return false
-	}
-	log.Println("nonce: ", nonce)
-
-	chainID, err := client.NetworkID(ctx)
+	
+	err := pi.Insert()
 	if err != nil {
 		log.Println(err)
 		return false
 	}
-	log.Println("chainID: ", chainID)
 
-	addr := common.HexToAddress(address)
-	storeOrderPkgFnSignature := []byte("storeOrderPkg(address,string,uint256)")
-	hash := sha3.NewLegacyKeccak256()
-	hash.Write(storeOrderPkgFnSignature)
-	methodID := hash.Sum(nil)[:4]
-
-	log.Println(cid)
-	paddedAddress := common.LeftPadBytes(addr.Bytes(), 32)
-	paddedHashLen := common.LeftPadBytes(big.NewInt(int64(len([]byte(cid)))).Bytes(), 32)
-	paddedHashOffset := common.LeftPadBytes(big.NewInt(32*3).Bytes(), 32)
-	paddedMd5 := common.LeftPadBytes([]byte(cid), 32)
-	PaddedSize := common.LeftPadBytes(size.Bytes(), 32)
-
-	var data []byte
-	data = append(data, methodID...)
-	data = append(data, paddedAddress...)
-	data = append(data, paddedHashOffset...)
-	data = append(data, PaddedSize...)
-	data = append(data, paddedHashLen...)
-	data = append(data, paddedMd5...)
-
-	gasLimit := uint64(300000)
-	gasPrice := big.NewInt(1000)
-	tx := types.NewTransaction(nonce, UserAddress, big.NewInt(0), gasLimit, gasPrice, data)
-
-	privateKey, err := crypto.HexToECDSA(GatewaySecretKey)
-	if err != nil {
-		log.Println("get privateKey error: ", err)
-		return false
-	}
-
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-	if err != nil {
-		log.Println("signedTx error: ", err)
-		return false
-	}
-
-	return g.sendTransaction(ctx, signedTx, "storage")
+	return true
 }

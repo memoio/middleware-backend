@@ -6,22 +6,19 @@ import (
 	"encoding/json"
 	"io"
 	"log"
-	"math/big"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/memoio/backend/contract"
 	"github.com/memoio/backend/utils"
 	mclient "github.com/memoio/go-mefs-v2/api/client"
 	"github.com/memoio/go-mefs-v2/build"
 	mcode "github.com/memoio/go-mefs-v2/lib/code"
 	metag "github.com/memoio/go-mefs-v2/lib/etag"
 	mtypes "github.com/memoio/go-mefs-v2/lib/types"
-	"golang.org/x/crypto/sha3"
 )
 
 type Mefs struct {
@@ -235,47 +232,8 @@ func (m *Mefs) ListObjects(ctx context.Context, address string) (ListObjectsInfo
 }
 
 func (m *Mefs) GetBalanceInfo(ctx context.Context, address string) (string, error) {
-	err := m.MakeBucketWithLocation(ctx, address)
-	if err != nil {
-		if !strings.Contains(err.Error(), "already exist") {
-			return "", funcError(MEFS, makefunc, err)
-		}
-	} else {
-		log.Println("create bucket ", address)
-		time.Sleep(20 * time.Second)
-	}
-
-	client, err := ethclient.DialContext(ctx, endpoint)
-	if err != nil {
-		log.Println("connect to eth error", err)
-		return "", EthError{Message: err.Error()}
-	}
-
-	defer client.Close()
-
-	addr := common.HexToAddress(address)
-	balanceOfFnSignature := []byte("balanceOf(address)")
-	hash := sha3.NewLegacyKeccak256()
-	hash.Write(balanceOfFnSignature)
-	methodID := hash.Sum(nil)[:4]
-
-	paddedAddress := common.LeftPadBytes(addr.Bytes(), 32)
-
-	var data []byte
-	data = append(data, methodID...)
-	data = append(data, paddedAddress...)
-
-	msg := ethereum.CallMsg{
-		To:   &contractAddr,
-		Data: data,
-	}
-	result, err := client.CallContract(ctx, msg, nil)
-	if err != nil {
-		return "", EthError{Message: err.Error()}
-	}
-	bal := new(big.Int)
-	bal.SetBytes(result)
-	log.Printf("address: %s,balance: %s\n", addr, bal)
+	bal := contract.BalanceOf(common.HexToAddress(address))
+	log.Printf("address: %s,balance: %s\n", address, bal)
 
 	return bal.String(), nil
 }

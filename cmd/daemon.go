@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	db "github.com/memoio/backend/global/db"
 	"github.com/memoio/backend/server"
 	"github.com/urfave/cli/v2"
 )
@@ -36,6 +37,8 @@ var runCmd = &cli.Command{
 	Action: func(ctx *cli.Context) error {
 		endPoint := ctx.String("endpoint")
 		srv := server.NewServer(endPoint)
+
+		db.NewCron()
 
 		go func() {
 			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

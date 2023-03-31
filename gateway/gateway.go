@@ -2,15 +2,19 @@ package gateway
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/config"
+	"github.com/memoio/backend/contract"
 	"github.com/memoio/backend/global"
+	"github.com/memoio/backend/global/db"
 	logging "github.com/memoio/backend/global/log"
 	"golang.org/x/crypto/sha3"
 )
@@ -134,11 +138,70 @@ func (g *Gateway) GetStorageInfo(ctx context.Context, address string) (global.St
 	files.SetBytes(result[96:])
 
 	si := global.StorageInfo{
-		Available: available.String(),
-		Free:      free.String(),
-		Used:      used.String(),
-		Files:     files.String(),
+		Available: available.Int64(),
+		Free:      free.Int64(),
+		Used:      used.Int64(),
+		Files:     int(files.Int64()),
 	}
 	log.Println(si)
+	return si, nil
+}
+
+func (g *Gateway) GetPkgSize(ctx context.Context, address string) (global.StorageInfo, error) {
+	ai, err := db.QueryPkgSize(address)
+	if err != nil {
+		log.Println(err)
+		if err == db.ErrNotExist {
+			si, err := contract.GetPkgSize(address)
+			if err != nil {
+				return si, err
+			}
+
+			ai = db.AddressInfo{
+				Address:    address,
+				Available:  si.Available,
+				Free:       si.Free,
+				Used:       si.Used,
+				Files:      si.Files,
+				UpdateTime: time.Now(),
+			}
+
+			err = ai.Insert()
+			if err != nil {
+				return global.StorageInfo{}, err
+			}
+			return si, nil
+		}
+	}
+
+	return global.StorageInfo{Available: ai.Available, Used: ai.Used, Free: ai.Free, Files: ai.Files}, nil
+}
+
+func (g *Gateway) TestPutobject(ctx context.Context, address, hashid string, size int64) error {
+	if !g.checkStorage(ctx, address, big.NewInt(size)) {
+		return StorageError{Message: "storage not enough"}
+	}
+
+	pi := db.PkgInfo{
+		Address:   address,
+		Hashid:    hashid,
+		Size:      size,
+		IsUpdated: false,
+		UTime:     time.Now(),
+	}
+
+	return pi.Insert()
+}
+
+func (g *Gateway) TestUpdatePkg(ctx context.Context, address, hashid string, size int64) (global.StorageInfo, error) {
+	if !contract.StoreOrderPkg(address, hashid, big.NewInt(size)) {
+		return global.StorageInfo{}, fmt.Errorf("update error")
+	}
+
+	si, err := contract.GetPkgSize(address)
+	if err != nil {
+		return global.StorageInfo{}, err
+	}
+
 	return si, nil
 }

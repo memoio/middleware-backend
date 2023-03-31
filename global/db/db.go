@@ -1,25 +1,95 @@
-package global
+package db
 
 import (
 	"database/sql"
 	"log"
 
-	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-func InitDB() {
-	db, err := sql.Open("postgres", "postgres://gateway:Memo1234@127.0.0.1:5432/gateway?sslmode=disable")
+func OpenDataBase() (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", "./backend.db")
 	if err != nil {
 		log.Println(err)
-		return
+		return nil, err
 	}
-	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
 		log.Println(err)
-		return
+		return nil, err
 	}
-	log.Println("connect database success")
-	DB = db
+
+	return db, nil
+}
+
+func InitDB() bool {
+	return CreateTable()
+}
+
+func CreateTable() bool {
+	db, err := OpenDataBase()
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	defer db.Close()
+
+	addressTableSql := `
+	CREATE TABLE IF NOT EXISTS address (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		address TEXT UNIQUE,
+		available_space INTEGER,
+		free_space INTEGER,
+		used_space INTEGER,
+		file_count INTEGER,
+		update_time DATETIME
+	);
+	`
+
+	pkgInfoTableSql := `
+	CREATE TABLE IF NOT EXISTS pkginfo (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		address_id INTEGER,
+		hash TEXT,
+		size INTEGER,
+		time DATETIME,
+		is_updated BOOLEAN,
+		UNIQUE (address_id, hash) ON CONFLICT IGNORE,
+		FOREIGN KEY (address_id) REFERENCES address(id)
+	);
+	`
+
+	_, err = db.Exec(addressTableSql)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	_, err = db.Exec(pkgInfoTableSql)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	log.Println("Create Table Success!")
+	return true
+}
+
+func execSql(db *sql.DB, message string, args ...any) error {
+	stmt, err := db.Prepare(message)
+	if err != nil {
+		log.Println("exec sql error:", err)
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(args...)
+	if err != nil {
+		log.Println("get result error: ", err)
+		log.Println(args...)
+		return err
+	}
+	return err
 }

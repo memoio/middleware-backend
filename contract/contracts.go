@@ -6,8 +6,6 @@ import (
 	"log"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -58,44 +56,14 @@ func GetPkgSize(address string) (global.StorageInfo, error) {
 
 	log.Println(available, free, used, files)
 	return global.StorageInfo{
-		Available: available.String(),
-		Free:      free.String(),
-		Used:      used.String(),
-		Files:     files.String(),
+		Available: available.Int64(),
+		Free:      free.Int64(),
+		Used:      used.Int64(),
+		Files:     int(files.Int64()),
 	}, nil
 }
 
-func CallContract(name string, args interface{}) ([]byte, error) {
-	client, err := ethclient.DialContext(context.TODO(), global.Endpoint)
-	if err != nil {
-		return nil, err
-	}
-	defer client.Close()
-
-	contractABI := getContractABI(name)
-
-	encodeData, err := contractABI.Pack(name, args)
-	if err != nil {
-		return nil, err
-	}
-
-	msg := ethereum.CallMsg{
-		To:   &global.ContractAddr,
-		Data: encodeData,
-	}
-	result, err := client.CallContract(context.TODO(), msg, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-func getContractABI(name string) abi.ABI {
-	switch name {
-	case "getPkgSize":
-		return createAbi(getPkgSizeAbi)
-	}
-
-	return abi.ABI{}
+func StoreOrderPkg(address, mid string, size *big.Int) bool {
+	log.Println("mid", mid)
+	return sendTransaction("storage", "storeOrderPkg", common.HexToAddress(address), mid, size)
 }
