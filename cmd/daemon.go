@@ -38,7 +38,7 @@ var runCmd = &cli.Command{
 		endPoint := ctx.String("endpoint")
 		srv := server.NewServer(endPoint)
 
-		db.NewCron()
+		go db.NewCron()
 
 		go func() {
 			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

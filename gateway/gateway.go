@@ -53,11 +53,11 @@ func (g Gateway) GetObject(ctx context.Context, cid string, storage StorageType,
 	return StorageNotSupport{}
 }
 
-func (g *Gateway) ListObjects(ctx context.Context, address string, storage StorageType) (ListObjectsInfo, error) {
+func (g *Gateway) ListObjects(ctx context.Context, address string, storage StorageType) ([]ObjectInfo, error) {
 	if storage == MEFS {
 		err := g.getMemofs()
 		if err != nil {
-			return ListObjectsInfo{}, err
+			return []ObjectInfo{}, err
 		}
 		return g.Mefs.ListObjects(ctx, address)
 	}
@@ -65,7 +65,7 @@ func (g *Gateway) ListObjects(ctx context.Context, address string, storage Stora
 		return g.Ipfs.ListObjects(ctx, address)
 	}
 
-	return ListObjectsInfo{}, StorageNotSupport{}
+	return []ObjectInfo{}, StorageNotSupport{}
 }
 
 func (g *Gateway) GetObjectInfo(ctx context.Context, storage StorageType, cid string) (ObjectInfo, error) {
@@ -204,4 +204,12 @@ func (g *Gateway) TestUpdatePkg(ctx context.Context, address, hashid string, siz
 	}
 
 	return si, nil
+}
+
+func (g *Gateway) TestPay(ctx context.Context, address, hash string, amount, size int64) bool {
+	return contract.StoreOrderPay(address, hash, big.NewInt(amount), big.NewInt(size))
+}
+
+func (g *Gateway) TestGetPkgInfo(ctx context.Context) error {
+	return contract.StoreGetPkgInfos()
 }

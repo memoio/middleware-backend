@@ -204,8 +204,8 @@ func (m *Mefs) GetObjectInfo(ctx context.Context, cid string) (ObjectInfo, error
 	}, nil
 }
 
-func (m *Mefs) ListObjects(ctx context.Context, address string) (ListObjectsInfo, error) {
-	loi := ListObjectsInfo{}
+func (m *Mefs) ListObjects(ctx context.Context, address string) ([]ObjectInfo, error) {
+	var loi []ObjectInfo
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
 		return loi, funcError(MEFS, listfunc, err)
@@ -218,7 +218,7 @@ func (m *Mefs) ListObjects(ctx context.Context, address string) (ListObjectsInfo
 
 	for _, oi := range mloi.Objects {
 		etag, _ := metag.ToString(oi.ETag)
-		loi.Objects = append(loi.Objects, ObjectInfo{
+		loi = append(loi, ObjectInfo{
 			Address:     address,
 			Name:        oi.GetName(),
 			ModTime:     time.Unix(oi.GetTime(), 0).UTC(),

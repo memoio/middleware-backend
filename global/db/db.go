@@ -39,7 +39,7 @@ func CreateTable() bool {
 	CREATE TABLE IF NOT EXISTS address (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		address TEXT UNIQUE,
-		available_space INTEGER,
+		pay_space INTEGER,
 		free_space INTEGER,
 		used_space INTEGER,
 		file_count INTEGER,
@@ -53,12 +53,21 @@ func CreateTable() bool {
 		address_id INTEGER,
 		hash TEXT,
 		size INTEGER,
-		time DATETIME,
 		is_updated BOOLEAN,
+		time DATETIME,
 		UNIQUE (address_id, hash) ON CONFLICT IGNORE,
 		FOREIGN KEY (address_id) REFERENCES address(id)
 	);
 	`
+
+	ipfsObjectSql := `CREATE TABLE IF NOT EXISTS ipfsobjects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        address_id INTEGER,
+        name TEXT,
+        size INTEGER,
+        hash TEXT,
+        FOREIGN KEY(address_id) REFERENCES address(id)
+    );`
 
 	_, err = db.Exec(addressTableSql)
 	if err != nil {
@@ -67,6 +76,12 @@ func CreateTable() bool {
 	}
 
 	_, err = db.Exec(pkgInfoTableSql)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	_, err = db.Exec(ipfsObjectSql)
 	if err != nil {
 		log.Println(err)
 		return false

@@ -15,7 +15,7 @@ func (g Gateway) IpfsPutObject(ctx context.Context, address, object string, r io
 	if !g.checkStorage(ctx, address, size) {
 		return ObjectInfo{}, StorageError{Storage: IPFS.String(), Message: "storage not enough"}
 	}
-	cid, err := g.Ipfs.Putobject(r)
+	cid, err := g.Ipfs.Putobject(address, object, size.Int64(), r)
 	if err != nil {
 		return ObjectInfo{}, err
 	}

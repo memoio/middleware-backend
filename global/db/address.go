@@ -45,7 +45,7 @@ func (a AddressInfo) Insert() error {
 	}
 
 	message := `
-	INSERT INTO address (address, available_space, free_space, used_space, file_count, update_time)
+	INSERT INTO address (address, pay_space, free_space, used_space, file_count, update_time)
 	VALUES (?, ?, ?, ?, ?, ?)
 	`
 
@@ -72,7 +72,7 @@ func (a AddressInfo) Update() error {
 
 	message := `
 	UPDATE address
-	SET available_space = ?, free_space = ?, used_space = ?, file_count = ?, update_time = ?
+	SET pay_space = ?, free_space = ?, used_space = ?, file_count = ?, update_time = ?
 	WHERE address = ?
 	`
 
@@ -98,7 +98,7 @@ func QueryPkgSize(address string) (AddressInfo, error) {
 	}
 	defer db.Close()
 
-	row := db.QueryRow("SELECT id, address, available_space, free_space, used_space, file_count, update_time FROM address WHERE address = ?", address)
+	row := db.QueryRow("SELECT id, address, pay_space, free_space, used_space, file_count, update_time FROM address WHERE address = ?", address)
 
 	var result AddressInfo
 	err = row.Scan(&result.ID, &result.Address, &result.Available, &result.Free, &result.Used, &result.Files, &result.UpdateTime)

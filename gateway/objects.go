@@ -1,6 +1,10 @@
 package gateway
 
-import "time"
+import (
+	"time"
+
+	"github.com/memoio/backend/global/db"
+)
 
 type ObjectOptions struct {
 	Size         int64
@@ -9,17 +13,6 @@ type ObjectOptions struct {
 	UserDefined  map[string]string
 }
 
-type ObjectInfo struct {
-	Address     string
-	Name        string
-	Size        int64
-	Cid         string
-	ModTime     time.Time
-	CType       string
-	UserDefined map[string]string
-}
+type ObjectInfo db.ObjectInfo
 
-type ListObjectsInfo struct {
-	Objects []ObjectInfo
-}
 

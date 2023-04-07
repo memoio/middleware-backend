@@ -4,10 +4,9 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
-	"math/big"
-	"os"
 
 	shapi "github.com/ipfs/go-ipfs-api"
+	"github.com/memoio/backend/global/db"
 	"github.com/memoio/backend/utils"
 )
 
@@ -28,7 +27,7 @@ func NewIpfsClient(host string) *Ipfs {
 	}
 }
 
-func (i *Ipfs) Putobject(r io.Reader) (string, error) {
+func (i *Ipfs) Putobject(address, name string, size int64, r io.Reader) (string, error) {
 	sh := shapi.NewShell(i.host)
 	cidvereion := shapi.CidVersion(1)
 	chunkersize := ChunkerSize("size-253952")
@@ -36,6 +35,12 @@ func (i *Ipfs) Putobject(r io.Reader) (string, error) {
 	if err != nil {
 		return "", funcError(IPFS, putfunc, err)
 	}
+	oi := db.ObjectInfo{Address: address, Name: name, Size: size, Cid: hash}
+	err = oi.Insert()
+	if err != nil {
+		return "", funcError(IPFS, putfunc, err)
+	}
+
 	return hash, nil
 }
 
@@ -63,33 +68,16 @@ func (i *Ipfs) GetObjectInfo(ctx context.Context, cid string) (ObjectInfo, error
 	}, nil
 }
 
-func (i *Ipfs) ListObjects(ctx context.Context, address string) (ListObjectsInfo, error) {
-	return ListObjectsInfo{}, NotImplemented{}
-}
+func (i *Ipfs) ListObjects(ctx context.Context, address string) ([]ObjectInfo, error) {
+	ob, err := db.ListObjects(address)
+	if err != nil {
+		return []ObjectInfo{}, err
+	}
 
-func (i *Ipfs) saveFileInfo(ctx context.Context, address, object, cid string, opts ObjectOptions) error {
-	err := creatFile("address/" + address)
-	if err != nil {
-		return err
-	}
-	f, err := os.OpenFile(address, os.O_RDONLY, 0600)
-	if err != nil {
-		return err
-	}
-	size := big.NewInt(opts.Size)
-	info := object + " " + size.String() + " " + cid + "\n"
-	_, err = f.Write([]byte(info))
-	return err
-}
+	var objects []ObjectInfo
 
-func creatFile(path string) error {
-	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsExist(err) {
-			return nil
-		}
-		return err
+	for _, oj := range ob {
+		objects = append(objects, ObjectInfo(oj))
 	}
-	err = os.MkdirAll(path, os.ModePerm)
-	return err
+	return objects, nil
 }

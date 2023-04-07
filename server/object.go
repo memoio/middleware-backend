@@ -105,7 +105,7 @@ func (s Server) addListObjectRoutes(r *gin.RouterGroup, storage gateway.StorageT
 			Storage: storage.String(),
 		}
 
-		for _, oi := range loi.Objects {
+		for _, oi := range loi {
 			lresponse.Object = append(lresponse.Object, ObjectResponse{
 				Name:        oi.Name,
 				Size:        oi.Size,
