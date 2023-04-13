@@ -10,7 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/memoio/backend/global/db"
+	"github.com/memoio/backend/contract"
+	db "github.com/memoio/backend/global/database"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -26,7 +27,6 @@ var (
 	endpoint         = "https://chain.metamemo.one:8501"
 	GatewayAddr      = common.HexToAddress("0x31e7829Ea2054fDF4BCB921eDD3a98a825242267")
 	GatewaySecretKey = "8a87053d296a0f0b4600173773c8081b12917cef7419b2675943b0aa99429b62"
-	UserAddress      = common.HexToAddress("0x2A0B376CC39eB2019e43207d00ee2c34878ca36D")
 )
 
 func (g Gateway) QueryPrice(ctx context.Context, address, size, time string) (string, error) {
@@ -120,7 +120,7 @@ func (g Gateway) Pay(ctx context.Context, to common.Address, cid string, amount,
 
 	gasLimit := uint64(300000)
 	gasPrice := big.NewInt(1000)
-	tx := types.NewTransaction(nonce, UserAddress, big.NewInt(0), gasLimit, gasPrice, data)
+	tx := types.NewTransaction(nonce, contractAddr, big.NewInt(0), gasLimit, gasPrice, data)
 
 	privateKey, err := crypto.HexToECDSA(GatewaySecretKey)
 	if err != nil {
@@ -191,8 +191,8 @@ func (g *Gateway) sendTransaction(ctx context.Context, signedTx *types.Transacti
 	return true
 }
 
-func (g *Gateway) verify(ctx context.Context, address, date, cid string, size *big.Int) bool {
-	flag := g.memverify(ctx, address, cid, size)
+func (g *Gateway) verify(ctx context.Context, storage StorageType, address, date, cid string, size *big.Int) bool {
+	flag := g.memverify(ctx, storage, address, cid, size)
 	if !flag {
 		return g.perverify(ctx, address, date, cid, size)
 	}
@@ -200,8 +200,8 @@ func (g *Gateway) verify(ctx context.Context, address, date, cid string, size *b
 	return true
 }
 
-func (g *Gateway) memverify(ctx context.Context, address, cid string, size *big.Int) bool {
-	if !g.checkStorage(ctx, address, size) {
+func (g *Gateway) memverify(ctx context.Context, storage StorageType, address, cid string, size *big.Int) bool {
+	if !g.checkStorage(ctx, storage, address, size) {
 		return false
 	}
 	return g.updateStorage(ctx, address, cid, size)
@@ -217,31 +217,26 @@ func (g *Gateway) perverify(ctx context.Context, address, date, cid string, size
 	pri.SetString(price, 10)
 	pri.Mul(pri, big.NewInt(payratio))
 
-	balance, err := g.GetBalanceInfo(ctx, address)
-	if err != nil {
-		log.Println("get balance info error")
-		return false
-	}
+	balance := contract.BalanceOf(ctx, address)
+
 	log.Println("Price", price)
 	log.Println("Balance", balance)
 
-	bal := new(big.Int)
-	bal.SetString(balance, 10)
-	if bal.Cmp(pri) < 0 {
-		log.Printf("allow: %d, price: %d, allowance not enough\n", bal, pri)
+	if balance.Cmp(pri) < 0 {
+		log.Printf("allow: %d, price: %d, allowance not enough\n", balance, pri)
 		return false
 	}
 
-	return g.Pay(ctx, UserAddress, cid, pri, size)
+	return g.Pay(ctx, contractAddr, cid, pri, size)
 }
 
-func (g *Gateway) checkStorage(ctx context.Context, address string, size *big.Int) bool {
-	si, err := g.GetPkgSize(ctx, address)
+func (g *Gateway) checkStorage(ctx context.Context, storage StorageType, address string, size *big.Int) bool {
+	si, err := g.GetPkgSize(ctx, storage, address)
 	if err != nil {
 		return false
 	}
 
-	return si.Available+si.Free > size.Int64()+si.Used
+	return si.Buysize+si.Free > size.Int64()+si.Used
 }
 
 func (g *Gateway) updateStorage(ctx context.Context, address, cid string, size *big.Int) bool {
@@ -252,7 +247,7 @@ func (g *Gateway) updateStorage(ctx context.Context, address, cid string, size *
 		IsUpdated: false,
 		UTime:     time.Now(),
 	}
-	
+
 	err := pi.Insert()
 	if err != nil {
 		log.Println(err)

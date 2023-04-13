@@ -126,51 +126,6 @@ func (s Server) addGetPriceRoutes(r *gin.RouterGroup, stroage gateway.StorageTyp
 	})
 }
 
-func (s Server) addGetBalanceRoutes(r *gin.RouterGroup, storage gateway.StorageType) {
-	p := r.Group("/")
-	p.GET("/balance", func(c *gin.Context) {
-		tokenString := c.GetHeader("Authorization")
-		address, err := VerifyAccessToken(tokenString)
-		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: s.NonceManager.GetNonce(),
-				Error: apiErr,
-			})
-			return
-		}
-		balance, err := s.Gateway.GetBalanceInfo(c.Request.Context(), address)
-		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, apiErr)
-			return
-		}
-		c.JSON(http.StatusOK, BalanceResponse{Address: address, Balance: balance})
-	})
-}
-
-func (s Server) addGetStorageRoutes(r *gin.RouterGroup, storage gateway.StorageType) {
-	p := r.Group("/")
-	p.GET("/storage", func(c *gin.Context) {
-		tokenString := c.GetHeader("Authorization")
-		address, err := VerifyAccessToken(tokenString)
-		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: s.NonceManager.GetNonce(),
-				Error: apiErr,
-			})
-			return
-		}
-		si, err := s.Gateway.GetStorageInfo(c.Request.Context(), address)
-		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, apiErr)
-		}
-		c.JSON(http.StatusOK, si)
-	})
-}
-
 func (s Server) addS3GetObjectRoutes(r *gin.RouterGroup, storage gateway.StorageType) {
 	p := r.Group("/")
 	p.GET("/S3/*url", func(c *gin.Context) {

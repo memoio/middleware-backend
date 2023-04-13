@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/gateway"
+	db "github.com/memoio/backend/global/database"
 )
 
 func LoginHandler(nonceManager *NonceManager) gin.HandlerFunc {
@@ -84,6 +85,14 @@ func FreshHandler() gin.HandlerFunc {
 			c.String(http.StatusUnauthorized, "Illegal fresh token")
 			return
 		}
+
+		address, err := VerifyAccessToken(tokenString)
+		if err != nil {
+			c.String(http.StatusUnauthorized, "Illegal fresh token")
+			return
+		}
+
+		db.AddressInfo{Address: address}.Insert()
 		c.JSON(http.StatusOK, map[string]string{
 			"access token": accessToken,
 		})

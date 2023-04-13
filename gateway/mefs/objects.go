@@ -1,4 +1,4 @@
-package gateway
+package mefs
 
 import (
 	"bytes"
@@ -11,8 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/memoio/backend/contract"
+	"github.com/memoio/backend/gateway/types"
 	"github.com/memoio/backend/utils"
 	mclient "github.com/memoio/go-mefs-v2/api/client"
 	"github.com/memoio/go-mefs-v2/build"
@@ -21,25 +20,29 @@ import (
 	mtypes "github.com/memoio/go-mefs-v2/lib/types"
 )
 
+type ObjectInfo = types.ObjectInfo
+
 type Mefs struct {
 	addr    string
 	headers http.Header
 }
 
-func newMefs() (*Mefs, error) {
+func New() (*Mefs, error) {
+	l := types.New("New")
+
 	repoDir := os.Getenv("MEFS_PATH")
 	addr, headers, err := mclient.GetMemoClientInfo(repoDir)
 	if err != nil {
-		return nil, funcError(MEFS, newfunc, err)
+		return nil, l.DealError(err)
 	}
 	napi, closer, err := mclient.NewUserNode(context.Background(), addr, headers)
 	if err != nil {
-		return nil, funcError(MEFS, newfunc, err)
+		return nil, l.DealError(err)
 	}
 	defer closer()
 	_, err = napi.ShowStorage(context.Background())
 	if err != nil {
-		return nil, funcError(MEFS, newfunc, err)
+		return nil, l.DealError(err)
 	}
 
 	return &Mefs{
@@ -49,65 +52,69 @@ func newMefs() (*Mefs, error) {
 }
 
 func (m *Mefs) MakeBucketWithLocation(ctx context.Context, bucket string) error {
+	l := types.New("MakeBucketWithLocation")
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return funcError(MEFS, makefunc, err)
+		return l.DealError(err)
 	}
 	defer closer()
 	opts := mcode.DefaultBucketOptions()
 
 	_, err = napi.CreateBucket(ctx, bucket, opts)
 	if err != nil {
-		return funcError(MEFS, makefunc, err)
+		return l.DealError(err)
 	}
 	return nil
 }
 
 func (m *Mefs) GetBucketInfo(ctx context.Context, bucket string) (bi mtypes.BucketInfo, err error) {
+	l := types.New("GetBucketInfo")
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return bi, StorageError{Message: err.Error()}
+		return bi, l.DealError(err)
 	}
 	defer closer()
 
 	bi, err = napi.HeadBucket(ctx, bucket)
 	if err != nil {
-		return bi, StorageError{Message: err.Error()}
+		return bi, l.DealError(err)
 	}
 	return bi, nil
 }
 
 func (m *Mefs) QueryPrice(ctx context.Context) (string, error) {
+	l := types.New("QueryPrice")
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return "", funcError(MEFS, pricefunc, err)
+		return "", l.DealError(err)
 	}
 	defer closer()
 
 	res, err := napi.ConfigGet(ctx, "order.price")
 	if err != nil {
-		return "", funcError(MEFS, pricefunc, err)
+		return "", l.DealError(err)
 	}
 
 	bs, err := json.MarshalIndent(res, "", "\t")
 	if err != nil {
-		return "", funcError(MEFS, pricefunc, err)
+		return "", l.DealError(err)
 	}
 
 	var out bytes.Buffer
 	err = json.Indent(&out, bs, "", "\t")
 	if err != nil {
-		return "", funcError(MEFS, pricefunc, err)
+		return "", l.DealError(err)
 	}
 
 	return out.String(), nil
 }
 
 func (m *Mefs) PutObject(ctx context.Context, address, object string, r io.Reader, UserDefined map[string]string) (objInfo mtypes.ObjectInfo, err error) {
+	l := types.New("PutObject")
 	err = m.MakeBucketWithLocation(ctx, address)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
-			return objInfo, funcError(MEFS, makefunc, err)
+			return objInfo, l.DealError(err)
 		}
 	} else {
 		log.Println("create bucket ", address)
@@ -118,7 +125,7 @@ func (m *Mefs) PutObject(ctx context.Context, address, object string, r io.Reade
 
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return objInfo, funcError(MEFS, putfunc, err)
+		return objInfo, l.DealError(err)
 	}
 	defer closer()
 
@@ -129,21 +136,22 @@ func (m *Mefs) PutObject(ctx context.Context, address, object string, r io.Reade
 	moi, err := napi.PutObject(ctx, address, object, r, poo)
 	if err != nil {
 		log.Println(err)
-		return objInfo, funcError(MEFS, putfunc, err)
+		return objInfo, l.DealError(err)
 	}
 	return moi, nil
 }
 
 func (m *Mefs) GetObject(ctx context.Context, objectName string, writer io.Writer) error {
+	l := types.New("PutObject")
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return funcError(MEFS, getfunc, err)
+		return l.DealError(err)
 	}
 	defer closer()
 
 	objInfo, err := napi.HeadObject(ctx, "", objectName)
 	if err != nil {
-		return funcError(MEFS, getfunc, err)
+		return l.DealError(err)
 	}
 
 	length := int64(objInfo.Size)
@@ -183,15 +191,16 @@ func (m *Mefs) GetObject(ctx context.Context, objectName string, writer io.Write
 }
 
 func (m *Mefs) GetObjectInfo(ctx context.Context, cid string) (ObjectInfo, error) {
+	l := types.New("PutObject")
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return ObjectInfo{}, funcError(MEFS, getfunc, err)
+		return ObjectInfo{}, l.DealError(err)
 	}
 	defer closer()
 
 	objInfo, err := napi.HeadObject(ctx, "", cid)
 	if err != nil {
-		return ObjectInfo{}, funcError(MEFS, getfunc, err)
+		return ObjectInfo{}, l.DealError(err)
 	}
 	ctype := utils.TypeByExtension(objInfo.Name)
 	if objInfo.UserDefined["content-type"] != "" {
@@ -205,15 +214,16 @@ func (m *Mefs) GetObjectInfo(ctx context.Context, cid string) (ObjectInfo, error
 }
 
 func (m *Mefs) ListObjects(ctx context.Context, address string) ([]ObjectInfo, error) {
+	l := types.New("PutObject")
 	var loi []ObjectInfo
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return loi, funcError(MEFS, listfunc, err)
+		return loi, l.DealError(err)
 	}
 	defer closer()
 	mloi, err := napi.ListObjects(ctx, address, mtypes.ListObjectsOptions{MaxKeys: 1000})
 	if err != nil {
-		return loi, funcError(MEFS, listfunc, err)
+		return loi, l.DealError(err)
 	}
 
 	for _, oi := range mloi.Objects {
@@ -231,22 +241,23 @@ func (m *Mefs) ListObjects(ctx context.Context, address string) ([]ObjectInfo, e
 	return loi, nil
 }
 
-func (m *Mefs) GetBalanceInfo(ctx context.Context, address string) (string, error) {
-	bal := contract.BalanceOf(common.HexToAddress(address))
-	log.Printf("address: %s,balance: %s\n", address, bal)
+// func (m *Mefs) GetBalanceInfo(ctx context.Context, address string) (string, error) {
+// 	bal := contract.BalanceOf(common.HexToAddress(address))
+// 	log.Printf("address: %s,balance: %s\n", address, bal)
 
-	return bal.String(), nil
-}
+// 	return bal.String(), nil
+// }
 
 func (m *Mefs) DeleteObject(ctx context.Context, address, object string) error {
+	l := types.New("PutObject")
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return funcError(MEFS, deletefunc, err)
+		return l.DealError(err)
 	}
 	defer closer()
 	err = napi.DeleteObject(ctx, address, object)
 	if err != nil {
-		return funcError(MEFS, deletefunc, err)
+		return l.DealError(err)
 	}
 	return nil
 }

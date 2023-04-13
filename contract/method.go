@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -17,8 +18,14 @@ import (
 )
 
 const (
-	getPkgSizeABI    = `[{"constant":true,"inputs":[{"name":"to","type":"address"}],"name":"getPkgSize","outputs":[{"name":"used","type":"uint256"},{"name":"available","type":"uint256"},{"name":"total","type":"uint256"},{"name":"expires","type":"uint64"}],"payable":false,"stateMutability":"view","type":"function"}]`
-	storeOrderPkgABI = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"hashid","type":"string"},{"name":"size","type":"uint256"}],"name":"storeOrderPkg","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"from","type":"address"},{"indexed":false,"name":"to","type":"address"},{"indexed":false,"name":"hashid","type":"string"},{"indexed":false,"name":"size","type":"uint256"},{"indexed":false,"name":"nonce","type":"uint256"}],"name":"StoreOrderPkg","type":"event"}]`
+	getPkgSizeABI       = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"kind","type":"uint8"}],"name":"getPkgSize","outputs":[{"name":"used","type":"uint256"},{"name":"available","type":"uint256"},{"name":"total","type":"uint256"},{"name":"expires","type":"uint64"}],"payable":false,"stateMutability":"view","type":"function"}]`
+	storeOrderPkgABI    = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"hashid","type":"string"},{"name":"kind","type":"uint8"},{"name":"size","type":"uint256"}],"name":"storeOrderPkg","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"from","type":"address"},{"indexed":false,"name":"to","type":"address"},{"indexed":false,"name":"hashid","type":"string"},{"indexed":false,"name":"size","type":"uint256"},{"indexed":false,"name":"nonce","type":"uint256"}],"name":"StoreOrderPkg","type":"event"}]`
+	storeOrderPayABI    = `[{"constant":false,"inputs":[{"name":"_addr","type":"address"},{"name":"_str","type":"string"},{"name":"_uint1","type":"uint256"},{"name":"_uint2","type":"uint256"}],"name":"storeOrderpay","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
+	buyPkgABI           = `[{"constant":false,"inputs":[{"name":"pkgId","type":"uint64"},{"name":"amount","type":"uint256"},{"name":"starttime","type":"uint64"}],"name":"buyPkg","outputs":[],"payable":true,"stateMutability":"payable","type":"function"}]`
+	storeBuyPkgABI      = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"pkgId","type":"uint64"},{"name":"amount","type":"uint256"},{"name":"starttime","type":"uint64"},{"name":"chainId","type":"string"}],"name":"storeBuyPkg","outputs":[],"payable":true,"stateMutability":"payable","type":"function"}]`
+	storeGetPkgInfosABI = `[{"constant":true,"inputs":[],"name":"storeGetPkgInfos","outputs":[{"components":[{"name":"time","type":"uint64"},{"name":"kind","type":"uint8"},{"name":"buysize","type":"uint256"},{"name":"amount","type":"uint256"},{"name":"state","type":"uint8"}],"name":"","type":"tuple[]"}],"payable":false,"stateMutability":"view","type":"function"}]`
+	adminAddPkgInfoABI  = `[{"constant":false,"inputs":[{"name":"time","type":"uint64"},{"name":"amount","type":"uint256"},{"name":"kind","type":"uint8"},{"name":"buysize","type":"uint256"}],"name":"adminAddPkgInfo","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
+	storeGetBuyPkgsABI  = `[{"constant":false,"inputs":[{"name":"to","type":"address"}],"name":"storeGetBuyPkgs","outputs":[{"components":[{"name":"starttime","type":"uint64"},{"name":"endtime","type":"uint64"},{"name":"kind","type":"uint8"},{"name":"buysize","type":"uint256"},{"name":"amount","type":"uint256"},{"name":"state","type":"uint8"}],"name":"","type":"tuple[]"}],"payable":false,"stateMutability":"view","type":"function"}]`
 )
 
 func createAbi(cabi string) abi.ABI {
@@ -35,39 +42,64 @@ func getContractABI(name string) abi.ABI {
 		return createAbi(getPkgSizeABI)
 	case "storeOrderPkg":
 		return createAbi(storeOrderPkgABI)
+	case "storeOrderpay":
+		return createAbi(storeOrderPayABI)
+	case "buyPkg":
+		return createAbi(buyPkgABI)
+	case "storeBuyPkg":
+		return createAbi(storeBuyPkgABI)
+	case "storeGetPkgInfos":
+		return createAbi(storeGetPkgInfosABI)
+	case "adminAddPkgInfo":
+		return createAbi(adminAddPkgInfoABI)
+	case "storeGetBuyPkgs":
+		return createAbi(storeGetBuyPkgsABI)
 	}
 
 	return abi.ABI{}
 }
 
-func CallContract(name string, args ...interface{}) ([]byte, error) {
+func CallContract(results *[]interface{}, name string, contract common.Address, args ...interface{}) error {
 	client, err := ethclient.DialContext(context.TODO(), global.Endpoint)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer client.Close()
+
+	log.Println("connected eth")
+	if results == nil {
+		results = new([]interface{})
+	}
 
 	contractABI := getContractABI(name)
 
 	encodeData, err := contractABI.Pack(name, args...)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
+	log.Println("packed!")
 	msg := ethereum.CallMsg{
-		To:   &global.ContractAddr,
+		To:   &contract,
 		Data: encodeData,
 	}
 
 	result, err := client.CallContract(context.TODO(), msg, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return result, nil
+	if len(*results) == 0 {
+		res, err := contractABI.Unpack(name, result)
+		*results = res
+		return err
+	}
+	res := *results
+	return contractABI.UnpackIntoInterface(res[0], name, result)
+
 }
 
-func sendTransaction(trtype, name string, args ...interface{}) bool {
+func sendTransaction(trtype, name string, contract common.Address, args ...interface{}) bool {
+	log.Println("sendTransaction")
 	client, err := ethclient.DialContext(context.TODO(), global.Endpoint)
 	if err != nil {
 		log.Println("sendt error: ", err)
@@ -105,7 +137,7 @@ func sendTransaction(trtype, name string, args ...interface{}) bool {
 
 	gasLimit := uint64(300000)
 	gasPrice := big.NewInt(1000)
-	tx := types.NewTransaction(nonce, global.ContractAddr, big.NewInt(0), gasLimit, gasPrice, data)
+	tx := types.NewTransaction(nonce, contract, big.NewInt(0), gasLimit, gasPrice, data)
 
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
 	if err != nil {
@@ -136,6 +168,8 @@ func checkResult(trtype string, receipt *types.Receipt) bool {
 		topic = global.PayTopic
 	case "storage":
 		topic = global.StorageTopic
+	case "buy":
+		topic = global.BuyTopic
 	}
 
 	if receipt.Status != 1 {
@@ -147,7 +181,7 @@ func checkResult(trtype string, receipt *types.Receipt) bool {
 
 	if len(receipt.Logs) == 0 {
 		log.Println("no logs")
-		return false
+		return trtype == "setpkg"
 	}
 
 	if len(receipt.Logs[0].Topics) == 0 {

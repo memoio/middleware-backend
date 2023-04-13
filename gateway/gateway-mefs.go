@@ -6,13 +6,14 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/memoio/backend/gateway/mefs"
 	"github.com/memoio/backend/utils"
 	metag "github.com/memoio/go-mefs-v2/lib/etag"
 )
 
 func (g *Gateway) getMemofs() error {
 	var err error
-	g.Mefs, err = newMefs()
+	g.Mefs, err = mefs.New()
 	if err != nil {
 		return err
 	}
@@ -38,7 +39,7 @@ func (g Gateway) MefsPutObject(ctx context.Context, address, object string, r io
 	etag, _ := metag.ToString(moi.ETag)
 	size := big.NewInt(int64(moi.Size))
 
-	flag := g.verify(ctx, address, date, etag, size)
+	flag := g.verify(ctx, MEFS, address, date, etag, size)
 	if !flag {
 		g.Mefs.DeleteObject(ctx, address, object)
 		return ObjectInfo{}, err

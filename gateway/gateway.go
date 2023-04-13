@@ -8,28 +8,29 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/contract"
+	"github.com/memoio/backend/gateway/ipfs"
+	"github.com/memoio/backend/gateway/mefs"
+	"github.com/memoio/backend/gateway/types"
 	"github.com/memoio/backend/global"
-	"github.com/memoio/backend/global/db"
+	db "github.com/memoio/backend/global/database"
 	logging "github.com/memoio/backend/global/log"
-	"golang.org/x/crypto/sha3"
 )
+
+type ObjectInfo = types.ObjectInfo
 
 var logger = logging.Logger("gateway")
 
 type Gateway struct {
-	Mefs *Mefs
-	Ipfs *Ipfs
+	Mefs *mefs.Mefs
+	Ipfs *ipfs.Ipfs
 }
 
 func NewGateway(c *config.Config) *Gateway {
 	g := &Gateway{}
 	g.getMemofs()
-	g.Ipfs = NewIpfsClient(c.Storage.Ipfs.Host)
+	g.Ipfs = ipfs.New(c.Storage.Ipfs.Host)
 	return g
 }
 
@@ -82,84 +83,30 @@ func (g *Gateway) GetObjectInfo(ctx context.Context, storage StorageType, cid st
 	return ObjectInfo{}, StorageNotSupport{}
 }
 
-func (g *Gateway) GetBalanceInfo(ctx context.Context, address string) (string, error) {
-	err := g.getMemofs()
-	if err != nil {
-		return "", err
-	}
-	return g.Mefs.GetBalanceInfo(ctx, address)
-}
+// func (g *Gateway) GetBalanceInfo(ctx context.Context, address string) (string, error) {
+// 	err := g.getMemofs()
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return g.Mefs.GetBalanceInfo(ctx, address)
+// }
 
 func (g *Gateway) GetPrice(ctx context.Context, address, size, time string) (string, error) {
 	return "", NotImplemented{}
 }
 
-func (g *Gateway) GetStorageInfo(ctx context.Context, address string) (global.StorageInfo, error) {
-	client, err := ethclient.DialContext(ctx, endpoint)
+func (g *Gateway) GetPkgSize(ctx context.Context, storage StorageType, address string) (global.StorageInfo, error) {
+	ai, err := db.QueryPkgSize(address, uint8(storage))
 	if err != nil {
-		log.Println("connect to eth error", err)
-		return global.StorageInfo{}, err
-	}
-	defer client.Close()
-
-	addr := common.HexToAddress(address)
-	pkgSizeFnSignature := []byte("getPkgSize(address)")
-	hash := sha3.NewLegacyKeccak256()
-	hash.Write(pkgSizeFnSignature)
-	methodID := hash.Sum(nil)[:4]
-
-	paddedAddress := common.LeftPadBytes(addr.Bytes(), 32)
-
-	var data []byte
-	data = append(data, methodID...)
-	data = append(data, paddedAddress...)
-
-	msg := ethereum.CallMsg{
-		To:   &contractAddr,
-		Data: data,
-	}
-
-	result, err := client.CallContract(ctx, msg, nil)
-	if err != nil {
-		return global.StorageInfo{}, err
-	}
-
-	if len(result) != 128 {
-		return global.StorageInfo{}, StorageError{}
-	}
-
-	available := new(big.Int)
-	available.SetBytes(result[0:32])
-	free := new(big.Int)
-	free.SetBytes(result[32:64])
-	used := new(big.Int)
-	used.SetBytes(result[64:96])
-	files := new(big.Int)
-	files.SetBytes(result[96:])
-
-	si := global.StorageInfo{
-		Available: available.Int64(),
-		Free:      free.Int64(),
-		Used:      used.Int64(),
-		Files:     int(files.Int64()),
-	}
-	log.Println(si)
-	return si, nil
-}
-
-func (g *Gateway) GetPkgSize(ctx context.Context, address string) (global.StorageInfo, error) {
-	ai, err := db.QueryPkgSize(address)
-	if err != nil {
-		log.Println(err)
 		if err == db.ErrNotExist {
-			si, err := contract.GetPkgSize(address)
+			si, err := contract.GetPkgSize(uint8(storage), address)
 			if err != nil {
 				return si, err
 			}
-
-			ai = db.AddressInfo{
+			log.Println("si", si)
+			ai = db.Storage{
 				Address:    address,
-				Available:  si.Available,
+				Buysize:    si.Buysize,
 				Free:       si.Free,
 				Used:       si.Used,
 				Files:      si.Files,
@@ -172,13 +119,14 @@ func (g *Gateway) GetPkgSize(ctx context.Context, address string) (global.Storag
 			}
 			return si, nil
 		}
+		return global.StorageInfo{}, err
 	}
 
-	return global.StorageInfo{Available: ai.Available, Used: ai.Used, Free: ai.Free, Files: ai.Files}, nil
+	return global.StorageInfo{Buysize: ai.Buysize, Used: ai.Used, Free: ai.Free, Files: ai.Files}, nil
 }
 
 func (g *Gateway) TestPutobject(ctx context.Context, address, hashid string, size int64) error {
-	if !g.checkStorage(ctx, address, big.NewInt(size)) {
+	if !g.checkStorage(ctx, MEFS, address, big.NewInt(size)) {
 		return StorageError{Message: "storage not enough"}
 	}
 
@@ -193,12 +141,12 @@ func (g *Gateway) TestPutobject(ctx context.Context, address, hashid string, siz
 	return pi.Insert()
 }
 
-func (g *Gateway) TestUpdatePkg(ctx context.Context, address, hashid string, size int64) (global.StorageInfo, error) {
-	if !contract.StoreOrderPkg(address, hashid, big.NewInt(size)) {
+func (g *Gateway) TestUpdatePkg(ctx context.Context, storage StorageType, address, hashid string, size int64) (global.StorageInfo, error) {
+	if !contract.StoreOrderPkg(address, hashid, uint8(storage), big.NewInt(size)) {
 		return global.StorageInfo{}, fmt.Errorf("update error")
 	}
 
-	si, err := contract.GetPkgSize(address)
+	si, err := contract.GetPkgSize(uint8(storage), address)
 	if err != nil {
 		return global.StorageInfo{}, err
 	}
@@ -208,8 +156,4 @@ func (g *Gateway) TestUpdatePkg(ctx context.Context, address, hashid string, siz
 
 func (g *Gateway) TestPay(ctx context.Context, address, hash string, amount, size int64) bool {
 	return contract.StoreOrderPay(address, hash, big.NewInt(amount), big.NewInt(size))
-}
-
-func (g *Gateway) TestGetPkgInfo(ctx context.Context) error {
-	return contract.StoreGetPkgInfos()
 }

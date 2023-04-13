@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	db "github.com/memoio/backend/global/db"
+	db "github.com/memoio/backend/global/database"
 	"github.com/urfave/cli/v2"
 )
 

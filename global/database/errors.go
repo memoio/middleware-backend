@@ -1,4 +1,4 @@
-package db
+package database
 
 import (
 	"fmt"
@@ -14,5 +14,5 @@ type DataBase struct {
 }
 
 func (d DataBase) Error() string {
-	return d.message
+	return "DataBase Error: " + d.message
 }

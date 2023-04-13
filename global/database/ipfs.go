@@ -1,8 +1,15 @@
-package db
+package database
 
 import (
 	"fmt"
 )
+
+type ObjectInfo struct {
+	Address string
+	Name    string
+	Size    int64
+	Cid     string
+}
 
 func (o ObjectInfo) Insert() error {
 	db, err := OpenDataBase()

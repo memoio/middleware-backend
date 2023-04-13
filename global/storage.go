@@ -1,8 +1,8 @@
 package global
 
 type StorageInfo struct {
-	Used      int64
-	Available int64
-	Free      int64
-	Files     int
+	Used    int64
+	Buysize int64
+	Free    int64
+	Files   int
 }

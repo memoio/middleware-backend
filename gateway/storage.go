@@ -1,6 +1,10 @@
 package gateway
 
-type StorageType int
+import (
+	"math/big"
+)
+
+type StorageType uint8
 
 const (
 	MEFS StorageType = iota
@@ -19,4 +23,10 @@ func (s StorageType) String() string {
 	default:
 		return "unknow storage"
 	}
+}
+
+func ToStorageType(s string) StorageType {
+	storage := new(big.Int)
+	storage.SetString(s, 10)
+	return StorageType(storage.Uint64())
 }

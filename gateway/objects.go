@@ -2,8 +2,6 @@ package gateway
 
 import (
 	"time"
-
-	"github.com/memoio/backend/global/db"
 )
 
 type ObjectOptions struct {
@@ -12,7 +10,5 @@ type ObjectOptions struct {
 	DeleteMarker bool
 	UserDefined  map[string]string
 }
-
-type ObjectInfo db.ObjectInfo
 
 

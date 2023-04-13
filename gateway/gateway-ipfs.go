@@ -12,7 +12,7 @@ import (
 func (g Gateway) IpfsPutObject(ctx context.Context, address, object string, r io.Reader, opts ObjectOptions) (ObjectInfo, error) {
 	logger.Debug("ipfs put object")
 	size := big.NewInt(opts.Size)
-	if !g.checkStorage(ctx, address, size) {
+	if !g.checkStorage(ctx, IPFS, address, size) {
 		return ObjectInfo{}, StorageError{Storage: IPFS.String(), Message: "storage not enough"}
 	}
 	cid, err := g.Ipfs.Putobject(address, object, size.Int64(), r)

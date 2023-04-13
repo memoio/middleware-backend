@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	db "github.com/memoio/backend/global/db"
+	db "github.com/memoio/backend/global/database"
 	"github.com/memoio/backend/server"
 	"github.com/urfave/cli/v2"
 )
