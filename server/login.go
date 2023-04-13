@@ -43,7 +43,7 @@ func LoginHandler(nonceManager *NonceManager) gin.HandlerFunc {
 	}
 }
 
-func LensLoginHandler(nonceManager *NonceManager) gin.HandlerFunc {
+func LensLoginHandler(nonceManager *NonceManager, checkRegistered bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request EIP4361Request
 		err := c.BindJSON(&request)
@@ -55,7 +55,7 @@ func LensLoginHandler(nonceManager *NonceManager) gin.HandlerFunc {
 			})
 			return
 		}
-		accessToken, freshToken, err := LoginWithMethod(nonceManager, request, LensMod)
+		accessToken, refreshToken, isRegistered, err := LoginWithLens(request, checkRegistered)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
@@ -70,17 +70,19 @@ func LensLoginHandler(nonceManager *NonceManager) gin.HandlerFunc {
 		// }
 		// fmt.Println(request.Address)
 
-		c.JSON(http.StatusOK, map[string]string{
-			"access token": accessToken,
-			"fresh token":  freshToken,
+		c.JSON(http.StatusOK, map[string]interface{}{
+			"accessToken":  accessToken,
+			"refreshToken": refreshToken,
+			"isRegistered": isRegistered,
 		})
+
 	}
 }
 
 func FreshHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
-		accessToken, err := VerifyFreshToken(tokenString)
+		accessToken, err := VerifyRefreshToken(tokenString)
 		if err != nil {
 			c.String(http.StatusUnauthorized, "Illegal fresh token")
 			return

@@ -1,15 +1,22 @@
 package config
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
+
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type Config struct {
-	Storage  StorageConfig  `json:"storage"`
-	Contract ContractConfig `json:"contract"`
+	Storage     StorageConfig  `json:"storage"`
+	Contract    ContractConfig `json:"contract"`
+	SecurityKey string         `json:"securityKey"`
+	Domain      string         `json:"domain"`
+	LensAPIUrl  string         `json:"lensAPIUrl"`
 }
 
 type StorageConfig struct {
@@ -58,10 +65,21 @@ func newDefaultContractConfig() ContractConfig {
 	}
 }
 
+func newDefaultSecurityKeyConfig() string {
+	return hex.EncodeToString(crypto.Keccak256([]byte(time.Now().String())))
+}
+
+func newDefaultDomainConfig() string {
+	return "memo.io"
+}
+
 func NewDefaultConfig() *Config {
 	return &Config{
-		Storage:  newDefaultStorageConfig(),
-		Contract: newDefaultContractConfig(),
+		Storage:     newDefaultStorageConfig(),
+		Contract:    newDefaultContractConfig(),
+		SecurityKey: newDefaultSecurityKeyConfig(),
+		Domain:      newDefaultDomainConfig(),
+		LensAPIUrl:  "https://api.lens.dev",
 	}
 }
 

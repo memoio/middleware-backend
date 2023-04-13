@@ -44,7 +44,7 @@ func (e StorageNotSupport) Error() string {
 	return "storage not support"
 }
 
-type AddressError struct{
+type AddressError struct {
 	Message string
 }
 
@@ -52,7 +52,7 @@ func (e AddressError) Error() string {
 	return e.Message
 }
 
-type AuthenticationFailed struct{
+type AuthenticationFailed struct {
 	Message string
 }
 
@@ -138,9 +138,9 @@ var ErrorCodes = errorCodeMap{
 		HTTPStatusCode: 518,
 	},
 	ErrAuthenticationFailed: {
-		Code:           "Authentication", 
-		Description:    "Authentication Failed", 
-		HTTPStatusCode: 401, 
+		Code:           "Authentication",
+		Description:    "Authentication Failed",
+		HTTPStatusCode: 401,
 	},
 	ErrBalanceNotEnough: {
 		Code:           "Balance",
@@ -174,6 +174,8 @@ func ToAPIErrorCode(_ context.Context, err error) (apiErr APIErrorCode) {
 		apiErr = ErrBalanceNotEnough
 	case EthError:
 		apiErr = ErrEthError
+	default:
+		apiErr = ErrInternalError
 	}
-	return ErrInternalError
+	return apiErr
 }

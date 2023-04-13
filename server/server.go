@@ -23,9 +23,7 @@ type AuthenticationFaileMessage struct {
 	Error gateway.APIError
 }
 
-func NewServer(endpoint string) *http.Server {
-	log.Println("Server Start")
-
+func NewServer(endpoint string, checkRegistered bool) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
@@ -44,7 +42,7 @@ func NewServer(endpoint string) *http.Server {
 
 	router.POST("/login", LoginHandler(nonceManager))
 
-	router.POST("/lens/login", LensLoginHandler(nonceManager))
+	router.POST("/lens/login", LensLoginHandler(nonceManager, checkRegistered))
 
 	router.GET("/fresh", FreshHandler())
 
@@ -53,6 +51,7 @@ func NewServer(endpoint string) *http.Server {
 		log.Fatal("config not right")
 		return nil
 	}
+	InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
 	g := gateway.NewGateway(config)
 
 	s := &Server{

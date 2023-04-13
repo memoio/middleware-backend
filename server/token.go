@@ -8,18 +8,11 @@ import (
 )
 
 type Claims struct {
-	Type int `json:"type,omitempty"`
+	Type         int  `json:"type,omitempty"`
+	IsRegistered bool `json:"isRegistered,omitempty"`
 	// Nonce string `json:"nonce,omitempty"`
 	jwt.StandardClaims
 }
-
-var (
-	jwtkey = []byte("memo.io")
-
-	DidToken    = 0
-	AccessToken = 1
-	FreshToken  = 2
-)
 
 func VerifyAccessToken(tokenString string) (string, error) {
 	parts := strings.SplitN(tokenString, " ", 2)
@@ -34,7 +27,7 @@ func VerifyAccessToken(tokenString string) (string, error) {
 	}
 
 	// check Audience
-	if claims.Audience != "memo.io" || claims.Issuer != "memo.io" {
+	if claims.Audience != Domain || claims.Issuer != Domain {
 		return "", ErrValidToken
 	}
 
@@ -52,7 +45,7 @@ func VerifyAccessToken(tokenString string) (string, error) {
 	return claims.Subject, nil
 }
 
-func VerifyFreshToken(tokenString string) (string, error) {
+func VerifyRefreshToken(tokenString string) (string, error) {
 	parts := strings.SplitN(tokenString, " ", 2)
 	if !(len(parts) == 2 && parts[0] == "Bearer") {
 		return "", ErrNullToken
@@ -65,12 +58,12 @@ func VerifyFreshToken(tokenString string) (string, error) {
 	}
 
 	// check Audience
-	if claims.Audience != "memo.io" || claims.Issuer != "memo.io" {
+	if claims.Audience != Domain || claims.Issuer != Domain {
 		return "", ErrValidToken
 	}
 
 	// check token type
-	if claims.Type != FreshToken {
+	if claims.Type != RefreshToken {
 		return "", ErrValidTokenType
 	}
 
@@ -79,39 +72,73 @@ func VerifyFreshToken(tokenString string) (string, error) {
 		return "", ErrValidToken
 	}
 
-	return genAccessToken(claims.Subject)
+	return genAccessTokenWithFlag(claims.Subject, claims.IsRegistered)
 }
 
-func genAccessToken(did string) (string, error) {
+func genAccessToken(subject string) (string, error) {
 	expireTime := time.Now().Add(15 * time.Minute)
 	claims := &Claims{
 		Type: AccessToken,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(),
 			IssuedAt:  time.Now().Unix(),
-			Audience:  "memo.io",
-			Issuer:    "memo.io",
-			Subject:   did,
+			Audience:  Domain,
+			Issuer:    Domain,
+			Subject:   subject,
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtkey)
+	return token.SignedString(JWTKey)
 }
 
-func genFreshToken(did string) (string, error) {
-	expireTime := time.Now().Add(7 * 24 * time.Hour)
+func genAccessTokenWithFlag(subject string, isRegistered bool) (string, error) {
+	expireTime := time.Now().Add(15 * time.Minute)
 	claims := &Claims{
-		Type: FreshToken,
+		Type:         AccessToken,
+		IsRegistered: isRegistered,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(),
 			IssuedAt:  time.Now().Unix(),
-			Audience:  "memo.io",
-			Issuer:    "memo.io",
-			Subject:   did,
+			Audience:  Domain,
+			Issuer:    Domain,
+			Subject:   subject,
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtkey)
+	return token.SignedString(JWTKey)
+}
+
+func genRefreshToken(subject string) (string, error) {
+	expireTime := time.Now().Add(7 * 24 * time.Hour)
+	claims := &Claims{
+		Type: RefreshToken,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expireTime.Unix(),
+			IssuedAt:  time.Now().Unix(),
+			Audience:  Domain,
+			Issuer:    Domain,
+			Subject:   subject,
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(JWTKey)
+}
+
+func genRefreshTokenWithFlag(subject string, isRegistered bool) (string, error) {
+	expireTime := time.Now().Add(7 * 24 * time.Hour)
+	claims := &Claims{
+		Type:         RefreshToken,
+		IsRegistered: isRegistered,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expireTime.Unix(),
+			IssuedAt:  time.Now().Unix(),
+			Audience:  Domain,
+			Issuer:    Domain,
+			Subject:   subject,
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(JWTKey)
 }
 
 // func ParseDidToken(tokenString string, did string) (*jwt.Token, error) {
@@ -132,6 +159,6 @@ func genFreshToken(did string) (string, error) {
 
 func parseToken(tokenString string) (*jwt.Token, error) {
 	return jwt.Parse(tokenString, func(token *jwt.Token) (i interface{}, err error) {
-		return jwtkey, nil
+		return JWTKey, nil
 	})
 }
