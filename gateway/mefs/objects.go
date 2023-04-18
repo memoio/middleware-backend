@@ -142,7 +142,7 @@ func (m *Mefs) PutObject(ctx context.Context, address, object string, r io.Reade
 }
 
 func (m *Mefs) GetObject(ctx context.Context, objectName string, writer io.Writer) error {
-	l := types.New("PutObject")
+	l := types.New("GetObject")
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
 		return l.DealError(err)
@@ -191,7 +191,7 @@ func (m *Mefs) GetObject(ctx context.Context, objectName string, writer io.Write
 }
 
 func (m *Mefs) GetObjectInfo(ctx context.Context, cid string) (ObjectInfo, error) {
-	l := types.New("PutObject")
+	l := types.New("GetObjectInfo")
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
 		return ObjectInfo{}, l.DealError(err)
@@ -214,7 +214,7 @@ func (m *Mefs) GetObjectInfo(ctx context.Context, cid string) (ObjectInfo, error
 }
 
 func (m *Mefs) ListObjects(ctx context.Context, address string) ([]ObjectInfo, error) {
-	l := types.New("PutObject")
+	l := types.New("ListObjects")
 	var loi []ObjectInfo
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
@@ -249,7 +249,7 @@ func (m *Mefs) ListObjects(ctx context.Context, address string) ([]ObjectInfo, e
 // }
 
 func (m *Mefs) DeleteObject(ctx context.Context, address, object string) error {
-	l := types.New("PutObject")
+	l := types.New("DeleteObject")
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
 		return l.DealError(err)

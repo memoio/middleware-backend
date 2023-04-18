@@ -2,6 +2,7 @@ package server
 
 import (
 	"log"
+	"math/big"
 	"net/http"
 	"time"
 
@@ -24,6 +25,7 @@ type AuthenticationFaileMessage struct {
 }
 
 func NewServer(endpoint string, checkRegistered bool) *http.Server {
+	log.Println("Server Start")
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
@@ -74,6 +76,7 @@ func NewServer(endpoint string, checkRegistered bool) *http.Server {
 func (s Server) registRoute() {
 	mefs := s.Router.Group("/mefs")
 	s.commonRegistRoutes(mefs, gateway.MEFS)
+	s.mefsRegistRoutes(mefs)
 	ipfs := s.Router.Group("/ipfs")
 	s.commonRegistRoutes(ipfs, gateway.IPFS)
 	account := s.Router.Group("/account")
@@ -88,6 +91,10 @@ func (s Server) commonRegistRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 	s.addListObjectRoutes(r, storage)
 	s.addGetPriceRoutes(r, storage)
 
+}
+
+func (s Server) mefsRegistRoutes(r *gin.RouterGroup) {
+	s.addDeleteRoutes(r)
 }
 
 func (s Server) accountRegistRoutes(r *gin.RouterGroup) {
@@ -144,6 +151,13 @@ func (s Server) testRegistRoutes(r *gin.RouterGroup) {
 
 		c.JSON(http.StatusOK, si)
 	})
+	p.GET("/delete", func(c *gin.Context) {
+		address := c.Query("address")
+		hashid := c.Query("hash")
+
+		r := contract.StoreOrderPkgExpiration(address, hashid, uint8(gateway.MEFS), big.NewInt(1124))
+		c.JSON(200, r)
+	})
 
 	p.GET("/balance", func(c *gin.Context) {
 		address := c.Query("address")
@@ -192,6 +206,10 @@ func (s Server) testRegistRoutes(r *gin.RouterGroup) {
 			return
 		}
 		c.JSON(http.StatusOK, pi)
+	})
+	p.GET("/getall", func(c *gin.Context) {
+		a := contract.GetStoreAllSize()
+		c.JSON(http.StatusOK, a)
 	})
 
 }

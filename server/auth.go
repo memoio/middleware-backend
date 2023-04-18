@@ -11,7 +11,6 @@ import (
 	"github.com/memoio/backend/gateway"
 	"github.com/shurcooL/graphql"
 	"github.com/spruceid/siwe-go"
-	"golang.org/x/xerrors"
 )
 
 type LoginRequest struct {
@@ -68,7 +67,7 @@ func InitAuthConfig(jwtKey string, domain string, url string) {
 func Login(nonceManager *NonceManager, request interface{}) (string, string, error) {
 	req, ok := request.(LoginRequest)
 	if !ok {
-		return "", "", xerrors.Errorf("")
+		return "", "", fmt.Errorf("")
 	}
 	return loginWithEth(nonceManager, req)
 }

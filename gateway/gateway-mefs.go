@@ -2,10 +2,12 @@ package gateway
 
 import (
 	"context"
+	"errors"
 	"io"
 	"math/big"
 	"time"
 
+	"github.com/memoio/backend/contract"
 	"github.com/memoio/backend/gateway/mefs"
 	"github.com/memoio/backend/utils"
 	metag "github.com/memoio/go-mefs-v2/lib/etag"
@@ -71,6 +73,32 @@ func (g Gateway) MefsGetObject(ctx context.Context, cid string, w io.Writer, opt
 	err = g.Mefs.GetObject(ctx, cid, w)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func (g Gateway) MefsDeleteObject(ctx context.Context, address, mid string) error {
+	err := g.getMemofs()
+	if err != nil {
+		return err
+	}
+	oi, err := g.Mefs.GetObjectInfo(ctx, mid)
+	if err != nil {
+		return err
+	}
+
+	if oi.Address != address {
+		return nil
+	}
+
+	err = g.Mefs.DeleteObject(ctx, address, oi.Name)
+	if err != nil {
+		return err
+	}
+
+	r := contract.StoreOrderPkgExpiration(address, mid, uint8(MEFS), big.NewInt(oi.Size))
+	if !r {
+		return errors.New("contract error")
 	}
 	return nil
 }

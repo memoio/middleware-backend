@@ -42,7 +42,7 @@ func (p PkgInfo) Insert() error {
 		return err
 	}
 
-	err = ai.UpdateSize(p.Size)
+	err = ai.AddSize(p.Size)
 	if err != nil {
 		return err
 	}

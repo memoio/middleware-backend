@@ -13,6 +13,8 @@ import (
 	"github.com/memoio/contractsv2/go_contracts/erc"
 )
 
+var contractVersion = global.ContractAddrV3
+
 type pkgInfo struct {
 	Time    uint64
 	Kind    uint8
@@ -38,7 +40,7 @@ func BalanceOf(ctx context.Context, addr string) *big.Int {
 	}
 	defer client.Close()
 
-	erc20Ins, err := erc.NewERC20(global.ContractAddrV2, client)
+	erc20Ins, err := erc.NewERC20(contractVersion, client)
 	if err != nil {
 		return res
 	}
@@ -55,7 +57,7 @@ func BalanceOf(ctx context.Context, addr string) *big.Int {
 func GetPkgSize(kind uint8, address string) (global.StorageInfo, error) {
 	var out []interface{}
 	log.Println(kind)
-	err := CallContract(&out, "getPkgSize", global.ContractAddrV2, common.HexToAddress(address), kind)
+	err := CallContract(&out, "getPkgSize", contractVersion, common.HexToAddress(address), kind)
 	if err != nil {
 		log.Println(err)
 		return global.StorageInfo{}, err
@@ -78,7 +80,7 @@ func GetPkgSize(kind uint8, address string) (global.StorageInfo, error) {
 func StoreGetPkgInfos() ([]pkgInfo, error) {
 	log.Println("StoreGetPkgInfos:")
 	var out []interface{}
-	err := CallContract(&out, "storeGetPkgInfos", global.ContractAddrV2)
+	err := CallContract(&out, "storeGetPkgInfos", contractVersion)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -91,18 +93,18 @@ func StoreGetPkgInfos() ([]pkgInfo, error) {
 
 func StoreOrderPkg(address, mid string, stype uint8, size *big.Int) bool {
 	log.Println("StoreOrderPkg:", stype, address, mid, size)
-	return sendTransaction("storage", "storeOrderPkg", global.ContractAddrV2, common.HexToAddress(address), mid, stype, size)
+	return sendTransaction("storage", "storeOrderPkg", contractVersion, common.HexToAddress(address), mid, stype, size)
 }
 
 func StoreOrderPay(address, hash string, amount *big.Int, size *big.Int) bool {
 	log.Println("StoreOrderPay:", address, hash, amount, size)
-	return sendTransaction("pay", "storeOrderpay", global.ContractAddrV2, common.HexToAddress(address), hash, amount, size)
+	return sendTransaction("pay", "storeOrderpay", contractVersion, common.HexToAddress(address), hash, amount, size)
 }
 
 func StoreBuyPkg(address string, pkgid uint64, amount int64, starttime uint64, chainid string) bool {
 	log.Println("StoreBuyPkg:", address, pkgid, amount, starttime, chainid)
 	a := big.NewInt(amount)
-	return sendTransaction("buy", "storeBuyPkg", global.ContractAddrV2, common.HexToAddress(address), pkgid, a, starttime, chainid)
+	return sendTransaction("buy", "storeBuyPkg", contractVersion, common.HexToAddress(address), pkgid, a, starttime, chainid)
 }
 
 func AdminAddPkgInfo(time string, amount string, kind string, size string) bool {
@@ -112,13 +114,13 @@ func AdminAddPkgInfo(time string, amount string, kind string, size string) bool 
 	a.SetString(amount, 10)
 	k.SetString(kind, 10)
 	s.SetString(size, 10)
-	return sendTransaction("buy", "adminAddPkgInfo", global.ContractAddrV2, t.Uint64(), a, uint8(k.Uint64()), s)
+	return sendTransaction("buy", "adminAddPkgInfo", contractVersion, t.Uint64(), a, uint8(k.Uint64()), s)
 }
 
 func StoreGetBuyPkgs(address string) ([]storeInfo, error) {
 	log.Println("StoreGetBuyPkgs:")
 	var out []interface{}
-	err := CallContract(&out, "storeGetBuyPkgs", global.ContractAddrV2, common.HexToAddress(address))
+	err := CallContract(&out, "storeGetBuyPkgs", contractVersion, common.HexToAddress(address))
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -126,4 +128,21 @@ func StoreGetBuyPkgs(address string) ([]storeInfo, error) {
 
 	out0 := *abi.ConvertType(out[0], new([]storeInfo)).(*[]storeInfo)
 	return out0, nil
+}
+
+func StoreOrderPkgExpiration(address, mid string, stype uint8, size *big.Int) bool {
+	log.Println("storeOrderPkgExpiration:", stype, address, mid, size)
+	return sendTransaction("delpkg", "storeOrderPkgExpiration", contractVersion, common.HexToAddress(address), mid, stype, size)
+}
+
+func GetStoreAllSize() *big.Int {
+	var out []interface{}
+	err := CallContract(&out, "getStoreAllSize", contractVersion)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	available := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	return available
 }

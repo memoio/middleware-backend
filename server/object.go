@@ -53,7 +53,7 @@ func (s Server) addGetObjectRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 		cid := c.Param("cid")
 
 		if cid == "listobjects" || cid == "balance" || cid == "storage" {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), gateway.AddressError{"address is null"}), gateway.AddressError{"address is null"})
+			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), gateway.AddressError{Message: "address is null"}), gateway.AddressError{Message: "address is null"})
 			c.JSON(apiErr.HTTPStatusCode, apiErr)
 			return
 		}
@@ -123,6 +123,29 @@ func (s Server) addGetPriceRoutes(r *gin.RouterGroup, stroage gateway.StorageTyp
 	p := r.Group("/")
 	p.GET("/getprice", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "")
+	})
+}
+
+func (s Server) addDeleteRoutes(r *gin.RouterGroup) {
+	p := r.Group("/")
+	p.GET("/delete", func(c *gin.Context) {
+		tokenString := c.GetHeader("Authorization")
+		address, err := VerifyAccessToken(tokenString)
+		if err != nil {
+			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
+			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+				Nonce: s.NonceManager.GetNonce(),
+				Error: apiErr,
+			})
+			return
+		}
+		mid := c.Query("mid")
+		err = s.Gateway.MefsDeleteObject(c.Request.Context(), address, mid)
+		if err != nil {
+
+			return
+		}
+
 	})
 }
 

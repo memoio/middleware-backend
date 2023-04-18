@@ -28,7 +28,7 @@ func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
 
 func (s Server) addGetStorageRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
-	p.GET("/buypkg", func(c *gin.Context) {
+	p.GET("/getstorage", func(c *gin.Context) {
 		stype := c.Query("stype")
 
 		tokenString := c.GetHeader("Authorization")

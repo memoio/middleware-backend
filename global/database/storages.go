@@ -54,7 +54,7 @@ func (s Storage) Update() error {
 	return execSql(db, message, s.Buysize, s.Free, s.Used, s.Files, s.Address, s.SType)
 }
 
-func (a Storage) UpdateSize(fsize int64) error {
+func (a Storage) AddSize(fsize int64) error {
 	a.Used += fsize
 	a.Files += 1
 	a.UpdateTime = time.Now()
