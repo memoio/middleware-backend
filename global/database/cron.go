@@ -24,36 +24,57 @@ func NewCron() {
 	}
 	defer db.Close()
 
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(10 * time.Minute)
 	for range ticker.C {
-		rows, err := db.Query(`SELECT p.id, p.stype, p.hash, p.size, a.address
-				FROM pkginfo p
-				JOIN address a ON p.address_id = a.id
-				WHERE p.is_updated = false
-			`)
-		if err != nil {
-			log.Println(err)
+		updatePkgInfo()
+
+		updateStorage()
+	}
+}
+func updatePkgInfo() {
+	db, err := OpenDataBase()
+	if err != nil {
+		log.Println("open database error")
+		return
+	}
+	defer db.Close()
+	rows, err := db.Query(`SELECT p.id, p.stype, p.hash, p.size, a.address
+	FROM pkginfo p
+	JOIN address a ON p.address_id = a.id
+	WHERE p.is_updated = false
+`)
+	if err != nil {
+		log.Println("updatepkg: ", err)
+		return
+	}
+
+	var update []UpdateAddress
+
+	for rows.Next() {
+		u := UpdateAddress{}
+		if err := rows.Scan(&u.id, &u.stype, &u.hash, &u.size, &u.address); err != nil {
+			log.Printf("Error scanning pkginfo: %v", err)
 			continue
 		}
 
-		var update []UpdateAddress
-
-		for rows.Next() {
-			u := UpdateAddress{}
-			if err := rows.Scan(&u.id, &u.stype, &u.hash, &u.size, &u.address); err != nil {
-				log.Printf("Error scanning pkginfo: %v", err)
-				continue
-			}
-
-			if contract.StoreOrderPkg(u.address, u.hash, u.stype, big.NewInt(u.size)) {
-				update = append(update, u)
-			}
+		if contract.StoreOrderPkg(u.address, u.hash, u.stype, big.NewInt(u.size)) {
+			update = append(update, u)
 		}
+	}
 
-		rows.Close()
-		log.Println("update ", update)
+	rows.Close()
+	log.Println("update ", update)
 
-		updateStorage()
+	for _, up := range update {
+		log.Println(up)
+		_, err = db.Exec(`
+				UPDATE pkginfo
+				SET is_updated = true, time = ?
+				WHERE id = ?`, time.Now(), up.id)
+		if err != nil {
+			log.Printf("Error updating pkginfo: %v", err)
+			return
+		}
 	}
 }
 

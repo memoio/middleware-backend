@@ -10,6 +10,8 @@ import (
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/contract"
 	"github.com/memoio/backend/gateway"
+	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/internal/storage"
 )
 
 type Server struct {
@@ -75,17 +77,17 @@ func NewServer(endpoint string, checkRegistered bool) *http.Server {
 
 func (s Server) registRoute() {
 	mefs := s.Router.Group("/mefs")
-	s.commonRegistRoutes(mefs, gateway.MEFS)
+	s.commonRegistRoutes(mefs, storage.MEFS)
 	s.mefsRegistRoutes(mefs)
 	ipfs := s.Router.Group("/ipfs")
-	s.commonRegistRoutes(ipfs, gateway.IPFS)
+	s.commonRegistRoutes(ipfs, storage.IPFS)
 	account := s.Router.Group("/account")
 	s.accountRegistRoutes(account)
 	// test := s.Router.Group("/test")
 	// s.testRegistRoutes(test)
 }
 
-func (s Server) commonRegistRoutes(r *gin.RouterGroup, storage gateway.StorageType) {
+func (s Server) commonRegistRoutes(r *gin.RouterGroup, storage storage.StorageType) {
 	s.addPutobjectRoutes(r, storage)
 	s.addGetObjectRoutes(r, storage)
 	s.addListObjectRoutes(r, storage)
@@ -109,7 +111,7 @@ func (s Server) testRegistRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/storage", func(c *gin.Context) {
 		address := c.Query("address")
-		si, err := s.Gateway.GetPkgSize(c.Request.Context(), gateway.MEFS, address)
+		si, err := s.Gateway.GetPkgSize(c.Request.Context(), storage.MEFS, address)
 		if err != nil {
 			c.JSON(516, err.Error())
 			return
@@ -129,7 +131,7 @@ func (s Server) testRegistRoutes(r *gin.RouterGroup) {
 			return
 		}
 
-		si, err := s.Gateway.GetPkgSize(c.Request.Context(), gateway.MEFS, address)
+		si, err := s.Gateway.GetPkgSize(c.Request.Context(), storage.MEFS, address)
 		if err != nil {
 			c.JSON(516, err)
 			return
@@ -142,7 +144,7 @@ func (s Server) testRegistRoutes(r *gin.RouterGroup) {
 		address := c.Query("address")
 		hashid := c.Query("hash")
 
-		si, err := s.Gateway.TestUpdatePkg(c.Request.Context(), gateway.MEFS, address, hashid, 1024)
+		si, err := s.Gateway.TestUpdatePkg(c.Request.Context(), storage.MEFS, address, hashid, 1024)
 		if err != nil {
 			log.Println("TEST: ", err)
 			c.JSON(520, err.Error())
@@ -152,11 +154,11 @@ func (s Server) testRegistRoutes(r *gin.RouterGroup) {
 		c.JSON(http.StatusOK, si)
 	})
 	p.GET("/delete", func(c *gin.Context) {
-		address := c.Query("address")
-		hashid := c.Query("hash")
+		address := "0x2Dc689e597fA3545F0c5f6aF2f4c1De2d334C8EC"
+		hashid := c.Query("mid")
 
-		r := contract.StoreOrderPkgExpiration(address, hashid, uint8(gateway.MEFS), big.NewInt(1124))
-		c.JSON(200, r)
+		r := contract.StoreOrderPkgExpiration(address, hashid, uint8(storage.MEFS), big.NewInt(1124))
+		c.JSON(http.StatusOK, toResponse(r))
 	})
 
 	p.GET("/balance", func(c *gin.Context) {
@@ -195,8 +197,8 @@ func (s Server) testRegistRoutes(r *gin.RouterGroup) {
 		address := c.Query("address")
 		chainId := c.Query("chainid")
 		times := time.Now()
-		flag := contract.StoreBuyPkg(address, 2, 1, uint64(times.Second()), chainId)
-		c.JSON(http.StatusOK, flag)
+		flag := contract.StoreBuyPkg(address, 1, 1, uint64(times.Second()), chainId)
+		c.JSON(http.StatusOK, toResponse(flag))
 	})
 	p.GET("getbuypkg", func(c *gin.Context) {
 		address := c.Query("address")
@@ -211,5 +213,7 @@ func (s Server) testRegistRoutes(r *gin.RouterGroup) {
 		a := contract.GetStoreAllSize()
 		c.JSON(http.StatusOK, a)
 	})
-
+	p.GET("/error", func(c *gin.Context) {
+		c.JSON(533, logs.ErrResponse{})
+	})
 }

@@ -7,9 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/gateway"
+	"github.com/memoio/backend/internal/storage"
 )
 
-func (s Server) addPutobjectRoutes(r *gin.RouterGroup, storage gateway.StorageType) {
+func (s Server) addPutobjectRoutes(r *gin.RouterGroup, storage storage.StorageType) {
 	s.Router.MaxMultipartMemory = 8 << 20 // 8 MiB
 	p := r.Group("/")
 
@@ -47,7 +48,7 @@ func (s Server) addPutobjectRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 	})
 }
 
-func (s Server) addGetObjectRoutes(r *gin.RouterGroup, storage gateway.StorageType) {
+func (s Server) addGetObjectRoutes(r *gin.RouterGroup, storage storage.StorageType) {
 	p := r.Group("/")
 	p.GET("/:cid", func(c *gin.Context) {
 		cid := c.Param("cid")
@@ -79,7 +80,7 @@ func (s Server) addGetObjectRoutes(r *gin.RouterGroup, storage gateway.StorageTy
 	})
 }
 
-func (s Server) addListObjectRoutes(r *gin.RouterGroup, storage gateway.StorageType) {
+func (s Server) addListObjectRoutes(r *gin.RouterGroup, storage storage.StorageType) {
 	p := r.Group("/")
 	p.GET("/listobjects", func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
@@ -119,7 +120,7 @@ func (s Server) addListObjectRoutes(r *gin.RouterGroup, storage gateway.StorageT
 	})
 }
 
-func (s Server) addGetPriceRoutes(r *gin.RouterGroup, stroage gateway.StorageType) {
+func (s Server) addGetPriceRoutes(r *gin.RouterGroup, stroage storage.StorageType) {
 	p := r.Group("/")
 	p.GET("/getprice", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "")
@@ -142,14 +143,14 @@ func (s Server) addDeleteRoutes(r *gin.RouterGroup) {
 		mid := c.Query("mid")
 		err = s.Gateway.MefsDeleteObject(c.Request.Context(), address, mid)
 		if err != nil {
-
+			c.JSON(521, err.Error())
 			return
 		}
-
+		c.JSON(http.StatusOK, response{Status: "Success"})
 	})
 }
 
-func (s Server) addS3GetObjectRoutes(r *gin.RouterGroup, storage gateway.StorageType) {
+func (s Server) addS3GetObjectRoutes(r *gin.RouterGroup, storage storage.StorageType) {
 	p := r.Group("/")
 	p.GET("/S3/*url", func(c *gin.Context) {
 		url := c.Param("url")

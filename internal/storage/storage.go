@@ -1,8 +1,15 @@
-package gateway
+package storage
 
 import (
 	"math/big"
 )
+
+type StorageInfo struct {
+	Used    int64
+	Buysize int64
+	Free    int64
+	Files   int
+}
 
 type StorageType uint8
 

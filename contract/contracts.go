@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/global"
+	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/contractsv2/go_contracts/erc"
 )
 
@@ -54,13 +55,13 @@ func BalanceOf(ctx context.Context, addr string) *big.Int {
 	return res.Set(bal)
 }
 
-func GetPkgSize(kind uint8, address string) (global.StorageInfo, error) {
+func GetPkgSize(kind uint8, address string) (storage.StorageInfo, error) {
 	var out []interface{}
 	log.Println(kind)
 	err := CallContract(&out, "getPkgSize", contractVersion, common.HexToAddress(address), kind)
 	if err != nil {
 		log.Println(err)
-		return global.StorageInfo{}, err
+		return storage.StorageInfo{}, err
 	}
 
 	available := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
@@ -69,7 +70,7 @@ func GetPkgSize(kind uint8, address string) (global.StorageInfo, error) {
 	files := *abi.ConvertType(out[3], new(uint64)).(*uint64)
 
 	log.Println(available, free, used, files)
-	return global.StorageInfo{
+	return storage.StorageInfo{
 		Buysize: available.Int64(),
 		Free:    free.Int64(),
 		Used:    used.Int64(),
@@ -109,12 +110,12 @@ func StoreBuyPkg(address string, pkgid uint64, amount int64, starttime uint64, c
 
 func AdminAddPkgInfo(time string, amount string, kind string, size string) bool {
 	log.Println("AdminAddPkgInfo:", time, amount, kind, size)
-	t, a, k, s := new(big.Int), new(big.Int), new(big.Int), new(big.Int)
+	t, a, s := new(big.Int), new(big.Int), new(big.Int)
 	t.SetString(time, 10)
 	a.SetString(amount, 10)
-	k.SetString(kind, 10)
 	s.SetString(size, 10)
-	return sendTransaction("buy", "adminAddPkgInfo", contractVersion, t.Uint64(), a, uint8(k.Uint64()), s)
+	k := storage.ToStorageType(kind)
+	return sendTransaction("setpkg", "adminAddPkgInfo", contractVersion, t.Uint64(), a, uint8(k), s)
 }
 
 func StoreGetBuyPkgs(address string) ([]storeInfo, error) {

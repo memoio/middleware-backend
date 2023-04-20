@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/contract"
 	db "github.com/memoio/backend/global/database"
+	"github.com/memoio/backend/internal/storage"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -191,7 +192,7 @@ func (g *Gateway) sendTransaction(ctx context.Context, signedTx *types.Transacti
 	return true
 }
 
-func (g *Gateway) verify(ctx context.Context, storage StorageType, address, date, cid string, size *big.Int) bool {
+func (g *Gateway) verify(ctx context.Context, storage storage.StorageType, address, date, cid string, size *big.Int) bool {
 	flag := g.memverify(ctx, storage, address, cid, size)
 	if !flag {
 		return g.perverify(ctx, address, date, cid, size)
@@ -200,7 +201,7 @@ func (g *Gateway) verify(ctx context.Context, storage StorageType, address, date
 	return true
 }
 
-func (g *Gateway) memverify(ctx context.Context, storage StorageType, address, cid string, size *big.Int) bool {
+func (g *Gateway) memverify(ctx context.Context, storage storage.StorageType, address, cid string, size *big.Int) bool {
 	if !g.checkStorage(ctx, storage, address, size) {
 		return false
 	}
@@ -230,7 +231,7 @@ func (g *Gateway) perverify(ctx context.Context, address, date, cid string, size
 	return g.Pay(ctx, contractAddr, cid, pri, size)
 }
 
-func (g *Gateway) checkStorage(ctx context.Context, storage StorageType, address string, size *big.Int) bool {
+func (g *Gateway) checkStorage(ctx context.Context, storage storage.StorageType, address string, size *big.Int) bool {
 	si, err := g.GetPkgSize(ctx, storage, address)
 	if err != nil {
 		return false

@@ -10,6 +10,25 @@ import (
 	"github.com/memoio/backend/gateway"
 )
 
+func toInt64(s string) int64 {
+	b := new(big.Int)
+	b.SetString(s, 10)
+	return b.Int64()
+}
+
+type response struct {
+	Status string
+}
+
+func toResponse(f bool) response {
+	if f {
+		return response{Status: "Success!"}
+	} else {
+		return response{Status: "Failed!"}
+	}
+
+}
+
 func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/buypkg", func(c *gin.Context) {
@@ -31,7 +50,7 @@ func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 		if !flag {
 			c.JSON(521, "buy pkg failed")
 		}
-		c.JSON(http.StatusOK, flag)
+		c.JSON(http.StatusOK, toResponse(flag))
 	})
 }
 
@@ -48,7 +67,7 @@ func (s Server) addGetPkgListRoutes(r *gin.RouterGroup) {
 
 func (s Server) addGetBuyPkgRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
-	p.GET("/buypkgs", func(c *gin.Context) {
+	p.GET("/getbuypkgs", func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 		address, err := VerifyAccessToken(tokenString)
 		if err != nil {
@@ -67,9 +86,4 @@ func (s Server) addGetBuyPkgRoutes(r *gin.RouterGroup) {
 		}
 		c.JSON(http.StatusOK, pi)
 	})
-}
-func toInt64(s string) int64 {
-	b := new(big.Int)
-	b.SetString(s, 10)
-	return b.Int64()
 }

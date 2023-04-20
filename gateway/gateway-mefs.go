@@ -9,6 +9,7 @@ import (
 
 	"github.com/memoio/backend/contract"
 	"github.com/memoio/backend/gateway/mefs"
+	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/backend/utils"
 	metag "github.com/memoio/go-mefs-v2/lib/etag"
 )
@@ -41,7 +42,7 @@ func (g Gateway) MefsPutObject(ctx context.Context, address, object string, r io
 	etag, _ := metag.ToString(moi.ETag)
 	size := big.NewInt(int64(moi.Size))
 
-	flag := g.verify(ctx, MEFS, address, date, etag, size)
+	flag := g.verify(ctx, storage.MEFS, address, date, etag, size)
 	if !flag {
 		g.Mefs.DeleteObject(ctx, address, object)
 		return ObjectInfo{}, err
@@ -96,7 +97,7 @@ func (g Gateway) MefsDeleteObject(ctx context.Context, address, mid string) erro
 		return err
 	}
 
-	r := contract.StoreOrderPkgExpiration(address, mid, uint8(MEFS), big.NewInt(oi.Size))
+	r := contract.StoreOrderPkgExpiration(address, mid, uint8(storage.MEFS), big.NewInt(oi.Size))
 	if !r {
 		return errors.New("contract error")
 	}

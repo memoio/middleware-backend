@@ -6,14 +6,15 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/backend/utils"
 )
 
 func (g Gateway) IpfsPutObject(ctx context.Context, address, object string, r io.Reader, opts ObjectOptions) (ObjectInfo, error) {
 	logger.Debug("ipfs put object")
 	size := big.NewInt(opts.Size)
-	if !g.checkStorage(ctx, IPFS, address, size) {
-		return ObjectInfo{}, StorageError{Storage: IPFS.String(), Message: "storage not enough"}
+	if !g.checkStorage(ctx, storage.IPFS, address, size) {
+		return ObjectInfo{}, StorageError{Storage: storage.IPFS.String(), Message: "storage not enough"}
 	}
 	cid, err := g.Ipfs.Putobject(address, object, size.Int64(), r)
 	if err != nil {
@@ -25,7 +26,7 @@ func (g Gateway) IpfsPutObject(ctx context.Context, address, object string, r io
 	}
 
 	if !g.updateStorage(ctx, address, cid, size) {
-		return ObjectInfo{}, StorageError{Storage: IPFS.String(), Message: "storage update error"}
+		return ObjectInfo{}, StorageError{Storage: storage.IPFS.String(), Message: "storage update error"}
 	}
 	oi := ObjectInfo{
 		Address: address,

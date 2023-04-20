@@ -10,5 +10,3 @@ type ObjectOptions struct {
 	DeleteMarker bool
 	UserDefined  map[string]string
 }
-
-

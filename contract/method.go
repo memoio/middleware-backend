@@ -160,7 +160,7 @@ func sendTransaction(trtype, name string, contract common.Address, args ...inter
 
 	receipt, err := client.TransactionReceipt(context.TODO(), signedTx.Hash())
 	if err != nil {
-		log.Println(err)
+		log.Println("receipt:", err)
 		return false
 	}
 
@@ -176,7 +176,7 @@ func checkResult(trtype string, receipt *types.Receipt) bool {
 		topic = global.StorageTopic
 	case "buy":
 		topic = global.BuyTopic
-	case "deletepkg":
+	case "delpkg":
 		topic = global.DelTopic
 	}
 

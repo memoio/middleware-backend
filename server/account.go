@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/contract"
 	"github.com/memoio/backend/gateway"
+	"github.com/memoio/backend/internal/storage"
 )
 
 func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
@@ -41,7 +42,7 @@ func (s Server) addGetStorageRoutes(r *gin.RouterGroup) {
 			})
 			return
 		}
-		si, err := s.Gateway.GetPkgSize(c.Request.Context(), gateway.ToStorageType(stype), address)
+		si, err := s.Gateway.GetPkgSize(c.Request.Context(), storage.ToStorageType(stype), address)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, apiErr)
