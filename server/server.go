@@ -4,6 +4,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -39,9 +40,30 @@ func NewServer(endpoint string, checkRegistered bool) *http.Server {
 
 	nonceManager := NewNonceManager(30*int64(time.Second.Seconds()), 1*int64(time.Minute.Seconds()))
 
-	router.GET("/getnonce", func(c *gin.Context) {
+	router.GET("/challenge", func(c *gin.Context) {
+		address := c.Query("address")
+		uri, err := url.Parse(c.GetHeader("Origin"))
+		if err != nil {
+			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
+			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+				Nonce: nonceManager.GetNonce(),
+				Error: apiErr,
+			})
+			return
+		}
+		domain := uri.Host
 		nonce := nonceManager.GetNonce()
-		c.String(http.StatusOK, nonce)
+
+		challenge, err := Challenge(domain, address, uri.String(), nonce)
+		if err != nil {
+			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
+			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+				Nonce: nonceManager.GetNonce(),
+				Error: apiErr,
+			})
+			return
+		}
+		c.String(http.StatusOK, challenge)
 	})
 
 	router.POST("/login", LoginHandler(nonceManager))
