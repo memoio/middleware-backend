@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/memoio/backend/internal/storage"
 )
 
 const (
@@ -26,7 +28,7 @@ func (e StorageError) Error() string {
 	return e.Storage + ":" + e.Message
 }
 
-func funcError(storage StorageType, efun string, err error) error {
+func funcError(storage storage.StorageType, efun string, err error) error {
 	return StorageError{Storage: storage.String(), Message: fmt.Sprintf(efun, err)}
 }
 

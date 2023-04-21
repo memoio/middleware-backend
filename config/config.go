@@ -12,15 +12,21 @@ import (
 )
 
 type Config struct {
-	Storage     StorageConfig `json:"storage"`
-	SecurityKey string        `json:"securityKey"`
-	Domain      string        `json:"domain"`
-	LensAPIUrl  string        `json:"lensAPIUrl"`
+	Storage     StorageConfig  `json:"storage"`
+	Contract    ContractConfig `json:"contract"`
+	SecurityKey string         `json:"securityKey"`
+	Domain      string         `json:"domain"`
+	LensAPIUrl  string         `json:"lensAPIUrl"`
 }
 
 type StorageConfig struct {
 	Mefs MefsConfig `json:"mefs"`
 	Ipfs IpfsConfig `json:"ipfs"`
+}
+
+type ContractConfig struct {
+	Endpoint     string `json:"endpoint"`
+	ContractAddr string `json:"addr"`
 }
 
 type MefsConfig struct {
@@ -52,6 +58,13 @@ func newDefaultStorageConfig() StorageConfig {
 	}
 }
 
+func newDefaultContractConfig() ContractConfig {
+	return ContractConfig{
+		Endpoint:     "https://chain.metamemo.one:8501",
+		ContractAddr: "0x2A0B376CC39eB2019e43207d00ee2c34878ca36D",
+	}
+}
+
 func newDefaultSecurityKeyConfig() string {
 	return hex.EncodeToString(crypto.Keccak256([]byte(time.Now().String())))
 }
@@ -63,6 +76,7 @@ func newDefaultDomainConfig() string {
 func NewDefaultConfig() *Config {
 	return &Config{
 		Storage:     newDefaultStorageConfig(),
+		Contract:    newDefaultContractConfig(),
 		SecurityKey: newDefaultSecurityKeyConfig(),
 		Domain:      newDefaultDomainConfig(),
 		LensAPIUrl:  "https://api.lens.dev",

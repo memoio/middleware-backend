@@ -2,229 +2,158 @@ package gateway
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/config"
+	"github.com/memoio/backend/contract"
+	"github.com/memoio/backend/gateway/ipfs"
+	"github.com/memoio/backend/gateway/mefs"
+	"github.com/memoio/backend/gateway/types"
+	db "github.com/memoio/backend/global/database"
 	logging "github.com/memoio/backend/global/log"
-	"github.com/memoio/backend/utils"
-	metag "github.com/memoio/go-mefs-v2/lib/etag"
-	"golang.org/x/crypto/sha3"
+	"github.com/memoio/backend/internal/storage"
 )
+
+type ObjectInfo = types.ObjectInfo
 
 var logger = logging.Logger("gateway")
 
 type Gateway struct {
-	Mefs *Mefs
-	Ipfs *Ipfs
+	Mefs *mefs.Mefs
+	Ipfs *ipfs.Ipfs
 }
 
 func NewGateway(c *config.Config) *Gateway {
 	g := &Gateway{}
 	g.getMemofs()
-	g.Ipfs = NewIpfsClient(c.Storage.Ipfs.Host)
+	g.Ipfs = ipfs.New(c.Storage.Ipfs.Host)
 	return g
 }
 
-func (g *Gateway) getMemofs() error {
-	var err error
-	g.Mefs, err = newMefs()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (g Gateway) PutObject(ctx context.Context, address, object string, r io.Reader, storage StorageType, opts ObjectOptions) (ObjectInfo, error) {
-	if storage == MEFS {
-		logger.Debug("mefs put object")
-		err := g.getMemofs()
-		if err != nil {
-			return ObjectInfo{}, err
-		}
-		date := opts.UserDefined["X-Amz-Meta-Date"]
-		if date == "" {
-			date = "365"
-		}
-
-		moi, err := g.Mefs.PutObject(ctx, address, object, r, opts.UserDefined)
-		if err != nil {
-			return ObjectInfo{}, err
-		}
-
-		etag, _ := metag.ToString(moi.ETag)
-		size := big.NewInt(int64(moi.Size))
-
-		flag := g.verify(ctx, address, date, etag, size)
-		if !flag {
-			g.Mefs.DeleteObject(ctx, address, object)
-			return ObjectInfo{}, err
-		}
-
-		ctype := utils.TypeByExtension(object)
-
-		if moi.UserDefined["content-type"] != "" {
-			ctype = moi.UserDefined["content-type"]
-		}
-
-		oi := ObjectInfo{
-			Address: address,
-			Name:    moi.Name,
-			ModTime: time.Unix(moi.GetTime(), 0),
-			Size:    int64(moi.Size),
-			Cid:     etag,
-			CType:   ctype,
-		}
-
-		return oi, nil
-	} else if storage == IPFS {
-		logger.Debug("ipfs put object")
-		size := big.NewInt(opts.Size)
-		if !g.checkStorage(ctx, address, size) {
-			return ObjectInfo{}, StorageError{Storage: storage.String(), Message: "storage not enough"}
-		}
-		cid, err := g.Ipfs.Putobject(r)
-		if err != nil {
-			return ObjectInfo{}, err
-		}
-		ctype := utils.TypeByExtension(object)
-		if opts.UserDefined["content-type"] != "" {
-			ctype = opts.UserDefined["content-type"]
-		}
-
-		if !g.updateStorage(ctx, address, cid, size) {
-			return ObjectInfo{}, StorageError{Storage: storage.String(), Message: "storage update error"}
-		}
-		oi := ObjectInfo{
-			Address: address,
-			Name:    object,
-			ModTime: time.Now(),
-			Cid:     cid,
-			CType:   ctype,
-		}
-		return oi, nil
+func (g Gateway) PutObject(ctx context.Context, address, object string, r io.Reader, st storage.StorageType, opts ObjectOptions) (ObjectInfo, error) {
+	switch st {
+	case storage.MEFS:
+		return g.MefsPutObject(ctx, address, object, r, opts)
+	case storage.IPFS:
+		return g.IpfsPutObject(ctx, address, object, r, opts)
 	}
 	return ObjectInfo{}, StorageNotSupport{}
 }
 
-func (g Gateway) GetObject(ctx context.Context, cid string, storage StorageType, w io.Writer, opt ObjectOptions) error {
-	if storage == MEFS {
-		err := g.getMemofs()
-		if err != nil {
-			return err
-		}
-		err = g.Mefs.GetObject(ctx, cid, w)
-		if err != nil {
-			return err
-		}
-		return nil
-	} else if storage == IPFS {
-		data, err := g.Ipfs.GetObject(cid)
-		if err != nil {
-			return err
-		}
-		w.Write(data)
-		return nil
+func (g Gateway) GetObject(ctx context.Context, cid string, st storage.StorageType, w io.Writer, opt ObjectOptions) error {
+	switch st {
+	case storage.MEFS:
+		return g.MefsGetObject(ctx, cid, w, opt)
+	case storage.IPFS:
+		return g.IpfsGetObject(ctx, cid, w, opt)
 	}
-
 	return StorageNotSupport{}
 }
 
-func (g *Gateway) ListObjects(ctx context.Context, address string, storage StorageType) (ListObjectsInfo, error) {
-	if storage == MEFS {
+func (g *Gateway) ListObjects(ctx context.Context, address string, st storage.StorageType) ([]ObjectInfo, error) {
+	if st == storage.MEFS {
 		err := g.getMemofs()
 		if err != nil {
-			return ListObjectsInfo{}, err
+			return []ObjectInfo{}, err
 		}
 		return g.Mefs.ListObjects(ctx, address)
 	}
-	if storage == IPFS {
+	if st == storage.IPFS {
 		return g.Ipfs.ListObjects(ctx, address)
 	}
 
-	return ListObjectsInfo{}, StorageNotSupport{}
+	return []ObjectInfo{}, StorageNotSupport{}
 }
 
-func (g *Gateway) GetObjectInfo(ctx context.Context, storage StorageType, cid string) (ObjectInfo, error) {
-	if storage == MEFS {
+func (g *Gateway) GetObjectInfo(ctx context.Context, st storage.StorageType, cid string) (ObjectInfo, error) {
+	if st == storage.MEFS {
 		err := g.getMemofs()
 		if err != nil {
 			return ObjectInfo{}, err
 		}
 		return g.Mefs.GetObjectInfo(ctx, cid)
-	} else if storage == IPFS {
+	} else if st == storage.IPFS {
 		return g.Ipfs.GetObjectInfo(ctx, cid)
 	}
 
 	return ObjectInfo{}, StorageNotSupport{}
 }
 
-func (g *Gateway) GetBalanceInfo(ctx context.Context, address string ) (string, error) {
-	err := g.getMemofs()
-	if err != nil {
-		return "", err
-	}
-	return g.Mefs.GetBalanceInfo(ctx, address)
-}
+// func (g *Gateway) GetBalanceInfo(ctx context.Context, address string) (string, error) {
+// 	err := g.getMemofs()
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return g.Mefs.GetBalanceInfo(ctx, address)
+// }
 
 func (g *Gateway) GetPrice(ctx context.Context, address, size, time string) (string, error) {
 	return "", NotImplemented{}
 }
 
-func (g *Gateway) GetStorageInfo(ctx context.Context, address string) (StorageInfo, error) {
-	client, err := ethclient.DialContext(ctx, endpoint)
+func (g *Gateway) GetPkgSize(ctx context.Context, st storage.StorageType, address string) (storage.StorageInfo, error) {
+	ai, err := db.QueryPkgSize(address, uint8(st))
 	if err != nil {
-		log.Println("connect to eth error", err)
-		return StorageInfo{}, err
+		if err == db.ErrNotExist {
+			si, err := contract.GetPkgSize(uint8(st), address)
+			if err != nil {
+				return si, err
+			}
+			log.Println("si", si)
+			ai = db.Storage{
+				Address:    address,
+				Buysize:    si.Buysize,
+				Free:       si.Free,
+				Used:       si.Used,
+				Files:      si.Files,
+				UpdateTime: time.Now(),
+			}
+
+			err = ai.Insert()
+			if err != nil {
+				return storage.StorageInfo{}, err
+			}
+			return si, nil
+		}
+		return storage.StorageInfo{}, err
 	}
-	defer client.Close()
 
-	addr := common.HexToAddress(address)
-	pkgSizeFnSignature := []byte("getPkgSize(address)")
-	hash := sha3.NewLegacyKeccak256()
-	hash.Write(pkgSizeFnSignature)
-	methodID := hash.Sum(nil)[:4]
+	return storage.StorageInfo{Buysize: ai.Buysize, Used: ai.Used, Free: ai.Free, Files: ai.Files}, nil
+}
 
-	paddedAddress := common.LeftPadBytes(addr.Bytes(), 32)
-
-	var data []byte
-	data = append(data, methodID...)
-	data = append(data, paddedAddress...)
-
-	msg := ethereum.CallMsg{
-		To:   &contractAddr,
-		Data: data,
+func (g *Gateway) TestPutobject(ctx context.Context, address, hashid string, size int64) error {
+	if !g.checkStorage(ctx, storage.MEFS, address, big.NewInt(size)) {
+		return StorageError{Message: "storage not enough"}
 	}
 
-	result, err := client.CallContract(ctx, msg, nil)
+	pi := db.PkgInfo{
+		Address:   address,
+		Hashid:    hashid,
+		Size:      size,
+		IsUpdated: false,
+		UTime:     time.Now(),
+	}
+
+	return pi.Insert()
+}
+
+func (g *Gateway) TestUpdatePkg(ctx context.Context, st storage.StorageType, address, hashid string, size int64) (storage.StorageInfo, error) {
+	if !contract.StoreOrderPkg(address, hashid, uint8(st), big.NewInt(size)) {
+		return storage.StorageInfo{}, fmt.Errorf("update error")
+	}
+
+	si, err := contract.GetPkgSize(uint8(st), address)
 	if err != nil {
-		return StorageInfo{}, err
+		return storage.StorageInfo{}, err
 	}
 
-	if len(result) != 128 {
-		return StorageInfo{}, StorageError{}
-	}
-
-	available := new(big.Int)
-	available.SetBytes(result[0:32])
-	free := new(big.Int)
-	free.SetBytes(result[32:64])
-	used := new(big.Int)
-	used.SetBytes(result[64:96])
-	files := new(big.Int)
-	files.SetBytes(result[96:])
-
-	si := StorageInfo{
-		Available: available.String(),
-		Free:      free.String(),
-		Used:      used.String(),
-		Files:     files.String(),
-	}
-	log.Println(si)
 	return si, nil
+}
+
+func (g *Gateway) TestPay(ctx context.Context, address, hash string, amount, size int64) bool {
+	return contract.StoreOrderPay(address, hash, big.NewInt(amount), big.NewInt(size))
 }

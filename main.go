@@ -11,6 +11,8 @@ import (
 func main() {
 	local := make([]*cli.Command, 0, 1)
 	local = append(local, cmd.BackendCmd)
+	local = append(local, cmd.InitCmd)
+	local = append(local, cmd.ContractCmd)
 	app := cli.App{
 		Commands: local,
 	}

@@ -6,21 +6,12 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/xerrors"
-
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/memoio/backend/gateway"
 	"github.com/shurcooL/graphql"
 	"github.com/spruceid/siwe-go"
 )
-
-type LoginRequest struct {
-	Address   string `json:"address,omitempty"`
-	Nonce     string `json:"nonce,omitempty"`
-	Domain    string `json:"domain,omitempty"`
-	Signature string `json:"signature,omitempty"`
-}
 
 type EIP4361Request struct {
 	EIP191Message string `json:"message,omitempty"`
@@ -42,6 +33,9 @@ var (
 	ErrNullToken      = gateway.AuthenticationFailed{Message: "Token is Null, not found in `Authorization: Bearer ` header"}
 	ErrValidToken     = gateway.AuthenticationFailed{Message: "Invalid token"}
 	ErrValidTokenType = gateway.AuthenticationFailed{Message: "InValid token type"}
+
+	ChainID = 985
+	Version = 1
 
 	JWTKey  []byte
 	Domain  string
@@ -66,10 +60,21 @@ func InitAuthConfig(jwtKey string, domain string, url string) {
 	LensAPI = url
 }
 
+func Challenge(domain, address, uri, nonce string) (string, error) {
+	var opt = map[string]interface{}{
+		"chainId": ChainID,
+	}
+	msg, err := siwe.InitMessage(domain, address, uri, nonce, opt)
+	if err != nil {
+		return "", err
+	}
+	return msg.String(), nil
+}
+
 func Login(nonceManager *NonceManager, request interface{}) (string, string, error) {
-	req, ok := request.(LoginRequest)
+	req, ok := request.(EIP4361Request)
 	if !ok {
-		return "", "", xerrors.Errorf("")
+		return "", "", fmt.Errorf("")
 	}
 	return loginWithEth(nonceManager, req)
 }
@@ -137,45 +142,46 @@ func LoginWithLens(request EIP4361Request, required bool) (string, string, bool,
 	return accessToken, refreshToken, isRegistered, err
 }
 
-func loginWithEth(nonceManager *NonceManager, request LoginRequest) (string, string, error) {
-	var address = request.Address
-	var nonce = request.Nonce
-	var domain = request.Domain
-	var signature = request.Signature
-
-	if address == "" || nonce == "" || domain == "" || signature == "" {
-		return "", "", gateway.AuthenticationFailed{Message: "There is an empty parameter"}
+func loginWithEth(nonceManager *NonceManager, request EIP4361Request) (string, string, error) {
+	message, err := parseLensMessage(request.EIP191Message)
+	if err != nil {
+		return "", "", err
 	}
 
-	if domain != Domain {
+	if message.GetDomain() != Domain {
 		return "", "", gateway.AuthenticationFailed{Message: "Got wrong domain"}
 	}
 
-	if !nonceManager.VerifyNonce(nonce) {
+	if message.GetChainID() != ChainID {
+		return "", "", gateway.AuthenticationFailed{Message: "Got wrong chain id"}
+	}
+
+	if !nonceManager.VerifyNonce(message.GetNonce()) {
 		return "", "", gateway.AuthenticationFailed{Message: "Got wrong nonce"}
 	}
 
-	hash := crypto.Keccak256([]byte(address), []byte(nonce), []byte(domain))
-	sig, err := hexutil.Decode(signature)
+	hash := crypto.Keccak256([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(request.EIP191Message), request.EIP191Message)))
+	sig, err := hexutil.Decode(request.Signature)
 	if err != nil {
 		return "", "", gateway.AuthenticationFailed{Message: err.Error()}
 	}
 
+	sig[len(sig)-1] %= 27
 	pubKey, err := crypto.SigToPub(hash, sig)
 	if err != nil {
 		return "", "", gateway.AuthenticationFailed{Message: err.Error()}
 	}
 
-	if address != crypto.PubkeyToAddress(*pubKey).Hex() {
+	if message.GetAddress().Hex() != crypto.PubkeyToAddress(*pubKey).Hex() {
 		return "", "", gateway.AuthenticationFailed{Message: "Got wrong address/signature"}
 	}
 
-	accessToken, err := genAccessToken(address)
+	accessToken, err := genAccessToken(message.GetAddress().Hex())
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := genRefreshToken(address)
+	refreshToken, err := genRefreshToken(message.GetAddress().Hex())
 
 	return accessToken, refreshToken, err
 }
