@@ -148,10 +148,6 @@ func loginWithEth(nonceManager *NonceManager, request EIP4361Request) (string, s
 		return "", "", err
 	}
 
-	if message.GetDomain() != Domain {
-		return "", "", gateway.AuthenticationFailed{Message: "Got wrong domain"}
-	}
-
 	if message.GetChainID() != ChainID {
 		return "", "", gateway.AuthenticationFailed{Message: "Got wrong chain id"}
 	}
