@@ -43,7 +43,7 @@ func (s Server) addPutobjectRoutes(r *gin.RouterGroup, storage storage.StorageTy
 			return
 		}
 		result := make(map[string]string)
-		result["cid"] = obi.Cid
+		result["id"] = obi.Cid
 		c.JSON(http.StatusOK, result)
 	})
 }
