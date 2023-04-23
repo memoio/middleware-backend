@@ -39,10 +39,7 @@ func NewServer(endpoint string, checkRegistered bool) *http.Server {
 
 	nonceManager := NewNonceManager(30*int64(time.Second.Seconds()), 1*int64(time.Minute.Seconds()))
 
-	router.GET("/getnonce", func(c *gin.Context) {
-		nonce := nonceManager.GetNonce()
-		c.String(http.StatusOK, nonce)
-	})
+	router.GET("/challenge", ChallengeHandler(nonceManager))
 
 	router.POST("/login", LoginHandler(nonceManager))
 
