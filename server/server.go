@@ -45,7 +45,7 @@ func NewServer(endpoint string, checkRegistered bool) *http.Server {
 
 	router.POST("/lens/login", LensLoginHandler(nonceManager, checkRegistered))
 
-	router.GET("/fresh", FreshHandler())
+	router.GET("/refresh", RefreshHandler())
 
 	config, err := config.ReadFile("")
 	if err != nil {

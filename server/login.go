@@ -49,7 +49,7 @@ func LoginHandler(nonceManager *NonceManager) gin.HandlerFunc {
 			})
 			return
 		}
-		accessToken, freshToken, err := Login(nonceManager, request)
+		accessToken, refreshToken, err := Login(nonceManager, request)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
@@ -65,8 +65,8 @@ func LoginHandler(nonceManager *NonceManager) gin.HandlerFunc {
 		// fmt.Println(request.Address)
 
 		c.JSON(http.StatusOK, map[string]string{
-			"access token": accessToken,
-			"fresh token":  freshToken,
+			"accessToken":  accessToken,
+			"refreshToken": refreshToken,
 		})
 	}
 }
@@ -107,24 +107,24 @@ func LensLoginHandler(nonceManager *NonceManager, checkRegistered bool) gin.Hand
 	}
 }
 
-func FreshHandler() gin.HandlerFunc {
+func RefreshHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 		accessToken, err := VerifyRefreshToken(tokenString)
 		if err != nil {
-			c.String(http.StatusUnauthorized, "Illegal fresh token")
+			c.String(http.StatusUnauthorized, "Illegal refresh token")
 			return
 		}
 
 		address, err := VerifyAccessToken(tokenString)
 		if err != nil {
-			c.String(http.StatusUnauthorized, "Illegal fresh token")
+			c.String(http.StatusUnauthorized, "Illegal refresh token")
 			return
 		}
 
 		db.AddressInfo{Address: address}.Insert()
 		c.JSON(http.StatusOK, map[string]string{
-			"access token": accessToken,
+			"accessToken": accessToken,
 		})
 	}
 }
