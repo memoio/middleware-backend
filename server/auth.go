@@ -71,10 +71,10 @@ func Challenge(domain, address, uri, nonce string) (string, error) {
 	return msg.String(), nil
 }
 
-func Login(nonceManager *NonceManager, request interface{}) (string, string, error) {
+func Login(nonceManager *NonceManager, request interface{}) (string, string, string, error) {
 	req, ok := request.(EIP4361Request)
 	if !ok {
-		return "", "", fmt.Errorf("")
+		return "", "", "", fmt.Errorf("")
 	}
 	return loginWithEth(nonceManager, req)
 }
@@ -97,89 +97,89 @@ func Login(nonceManager *NonceManager, request interface{}) (string, string, err
 // 	return "", "", gateway.NotImplemented{Message: ""}
 // }
 
-func LoginWithLens(request EIP4361Request, required bool) (string, string, bool, error) {
+func LoginWithLens(request EIP4361Request, required bool) (string, string, string, bool, error) {
 	message, err := parseLensMessage(request.EIP191Message)
 	if err != nil {
-		return "", "", false, err
+		return "", "", "", false, err
 	}
 
 	isRegistered, err := isLensAccount(message.GetAddress().Hex(), required)
 	if err != nil {
-		return "", "", false, err
+		return "", "", "", false, err
 	}
 
 	if message.GetDomain() != Domain {
-		return "", "", false, gateway.AuthenticationFailed{Message: "Got wrong domain"}
+		return "", "", "", false, gateway.AuthenticationFailed{Message: "Got wrong domain"}
 	}
 
 	if message.GetChainID() != 137 {
-		return "", "", false, gateway.AuthenticationFailed{Message: "Got wrong chain id"}
+		return "", "", "", false, gateway.AuthenticationFailed{Message: "Got wrong chain id"}
 	}
 
 	hash := crypto.Keccak256([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(request.EIP191Message), request.EIP191Message)))
 	sig, err := hexutil.Decode(request.Signature)
 	if err != nil {
-		return "", "", false, gateway.AuthenticationFailed{Message: err.Error()}
+		return "", "", "", false, gateway.AuthenticationFailed{Message: err.Error()}
 	}
 
 	sig[len(sig)-1] %= 27
 	pubKey, err := crypto.SigToPub(hash, sig)
 	if err != nil {
-		return "", "", false, gateway.AuthenticationFailed{Message: err.Error()}
+		return "", "", "", false, gateway.AuthenticationFailed{Message: err.Error()}
 	}
 
 	if message.GetAddress().Hex() != crypto.PubkeyToAddress(*pubKey).Hex() {
-		return "", "", false, gateway.AuthenticationFailed{Message: "Got wrong address/signature"}
+		return "", "", "", false, gateway.AuthenticationFailed{Message: "Got wrong address/signature"}
 	}
 
 	accessToken, err := genAccessTokenWithFlag(message.GetAddress().Hex(), isRegistered)
 	if err != nil {
-		return "", "", false, err
+		return "", "", "", false, err
 	}
 
 	refreshToken, err := genRefreshTokenWithFlag(message.GetAddress().Hex(), isRegistered)
 
-	return accessToken, refreshToken, isRegistered, err
+	return accessToken, refreshToken, message.GetAddress().Hex(), isRegistered, err
 }
 
-func loginWithEth(nonceManager *NonceManager, request EIP4361Request) (string, string, error) {
+func loginWithEth(nonceManager *NonceManager, request EIP4361Request) (string, string, string, error) {
 	message, err := parseLensMessage(request.EIP191Message)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	if message.GetChainID() != ChainID {
-		return "", "", gateway.AuthenticationFailed{Message: "Got wrong chain id"}
+		return "", "", "", gateway.AuthenticationFailed{Message: "Got wrong chain id"}
 	}
 
 	if !nonceManager.VerifyNonce(message.GetNonce()) {
-		return "", "", gateway.AuthenticationFailed{Message: "Got wrong nonce"}
+		return "", "", "", gateway.AuthenticationFailed{Message: "Got wrong nonce"}
 	}
 
 	hash := crypto.Keccak256([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(request.EIP191Message), request.EIP191Message)))
 	sig, err := hexutil.Decode(request.Signature)
 	if err != nil {
-		return "", "", gateway.AuthenticationFailed{Message: err.Error()}
+		return "", "", "", gateway.AuthenticationFailed{Message: err.Error()}
 	}
 
 	sig[len(sig)-1] %= 27
 	pubKey, err := crypto.SigToPub(hash, sig)
 	if err != nil {
-		return "", "", gateway.AuthenticationFailed{Message: err.Error()}
+		return "", "", "", gateway.AuthenticationFailed{Message: err.Error()}
 	}
 
 	if message.GetAddress().Hex() != crypto.PubkeyToAddress(*pubKey).Hex() {
-		return "", "", gateway.AuthenticationFailed{Message: "Got wrong address/signature"}
+		return "", "", "", gateway.AuthenticationFailed{Message: "Got wrong address/signature"}
 	}
 
 	accessToken, err := genAccessToken(message.GetAddress().Hex())
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	refreshToken, err := genRefreshToken(message.GetAddress().Hex())
 
-	return accessToken, refreshToken, err
+	return accessToken, refreshToken, message.GetAddress().Hex(), err
 }
 
 func parseLensMessage(message string) (*siwe.Message, error) {
