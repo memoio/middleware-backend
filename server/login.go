@@ -49,7 +49,7 @@ func LoginHandler(nonceManager *NonceManager) gin.HandlerFunc {
 			})
 			return
 		}
-		accessToken, refreshToken, err := Login(nonceManager, request)
+		accessToken, refreshToken, address, err := Login(nonceManager, request)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
@@ -58,12 +58,9 @@ func LoginHandler(nonceManager *NonceManager) gin.HandlerFunc {
 			})
 			return
 		}
-		address, err := VerifyAccessToken(accessToken)
-		if err != nil {
-			c.String(http.StatusUnauthorized, "Illegal Lens token")
-			return
-		}
+
 		db.AddressInfo{Address: address}.Insert()
+
 		// if address is new user in "memo.io" {
 		// 	init usr info
 		// }
@@ -88,7 +85,7 @@ func LensLoginHandler(nonceManager *NonceManager, checkRegistered bool) gin.Hand
 			})
 			return
 		}
-		accessToken, refreshToken, isRegistered, err := LoginWithLens(request, checkRegistered)
+		accessToken, refreshToken, address, isRegistered, err := LoginWithLens(request, checkRegistered)
 		if err != nil {
 			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
 			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
@@ -97,12 +94,9 @@ func LensLoginHandler(nonceManager *NonceManager, checkRegistered bool) gin.Hand
 			})
 			return
 		}
-		address, err := VerifyAccessToken(accessToken)
-		if err != nil {
-			c.String(http.StatusUnauthorized, "Illegal Lens token")
-			return
-		}
+
 		db.AddressInfo{Address: address}.Insert()
+
 		// if address is new user in "memo.io" {
 		// 	init usr info
 		// }
@@ -126,13 +120,6 @@ func RefreshHandler() gin.HandlerFunc {
 			return
 		}
 
-		// address, err := VerifyAccessToken(tokenString)
-		// if err != nil {
-		// 	c.String(http.StatusUnauthorized, "Illegal refresh token")
-		// 	return
-		// }
-
-		// db.AddressInfo{Address: address}.Insert()
 		c.JSON(http.StatusOK, map[string]string{
 			"accessToken": accessToken,
 		})
