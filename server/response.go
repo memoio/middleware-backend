@@ -16,7 +16,7 @@ type ListObjectsResponse struct {
 type ObjectResponse struct {
 	Name        string
 	Size        int64
-	Cid         string
+	Mid         string
 	ModTime     time.Time
 	UserDefined map[string]string
 }

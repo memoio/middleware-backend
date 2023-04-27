@@ -71,6 +71,7 @@ func GetPkgSize(kind uint8, address string) (storage.StorageInfo, error) {
 
 	log.Println(available, free, used, files)
 	return storage.StorageInfo{
+		Storage: storage.Uint8ToStorageType(kind).String(),
 		Buysize: available.Int64(),
 		Free:    free.Int64(),
 		Used:    used.Int64(),
@@ -114,7 +115,7 @@ func AdminAddPkgInfo(time string, amount string, kind string, size string) bool 
 	t.SetString(time, 10)
 	a.SetString(amount, 10)
 	s.SetString(size, 10)
-	k := storage.ToStorageType(kind)
+	k := storage.StringToStorageType(kind)
 	return sendTransaction("setpkg", "adminAddPkgInfo", contractVersion, t.Uint64(), a, uint8(k), s)
 }
 

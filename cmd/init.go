@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/memoio/backend/config"
 	db "github.com/memoio/backend/global/database"
 	"github.com/urfave/cli/v2"
 )
@@ -14,6 +15,7 @@ var InitCmd = &cli.Command{
 		if !db.InitDB() {
 			return fmt.Errorf("init database error")
 		}
+		config.Init()
 
 		return nil
 	},
