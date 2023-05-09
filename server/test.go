@@ -1,12 +1,7 @@
 package server
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
-	"github.com/memoio/backend/internal/gateway/ipfs"
-	"github.com/memoio/backend/internal/gateway/mefs"
-	"github.com/memoio/backend/internal/logs"
 )
 
 func (s Server) testRegistRoutes(r *gin.RouterGroup) {
@@ -139,41 +134,41 @@ func (s Server) testRegistRoutes(r *gin.RouterGroup) {
 	// p.GET("/error", func(c *gin.Context) {
 	// 	c.JSON(533, logs.ErrResponse{})
 	// })
-	s.addTestGetStorageRoutes(r)
+	// s.addTestGetStorageRoutes(r)
 }
 
-func (s Server) addTestGetStorageRoutes(r *gin.RouterGroup) {
-	p := r.Group("/")
-	p.GET("/getstorage", func(c *gin.Context) {
-		var sr StorageResponse
+// func (s Server) addTestGetStorageRoutes(r *gin.RouterGroup) {
+// 	p := r.Group("/")
+// 	p.GET("/getstorage", func(c *gin.Context) {
+// 		var sr StorageResponse
 
-		address := c.Query("address")
-		sr.Address = address
+// 		address := c.Query("address")
+// 		sr.Address = address
 
-		api, err := mefs.NewGateway()
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
+// 		api, err := mefs.NewGateway()
+// 		if err != nil {
+// 			errRes := logs.ToAPIErrorCode(err)
+// 			c.JSON(errRes.HTTPStatusCode, errRes)
+// 			return
+// 		}
 
-		si, err := api.GetPkgSize(c.Request.Context(), address)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
-		sr.StorageList = append(sr.StorageList, si)
+// 		si, err := api.GetPkgSize(c.Request.Context(), address)
+// 		if err != nil {
+// 			errRes := logs.ToAPIErrorCode(err)
+// 			c.JSON(errRes.HTTPStatusCode, errRes)
+// 			return
+// 		}
+// 		sr.StorageList = append(sr.StorageList, si)
 
-		api = ipfs.NewGateway(s.Config.Storage.Ipfs.Host)
-		si, err = api.GetPkgSize(c.Request.Context(), address)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
-		sr.StorageList = append(sr.StorageList, si)
+// 		api, err = ipfs.NewGateway()
+// 		si, err = api.GetPkgSize(c.Request.Context(), address)
+// 		if err != nil {
+// 			errRes := logs.ToAPIErrorCode(err)
+// 			c.JSON(errRes.HTTPStatusCode, errRes)
+// 			return
+// 		}
+// 		sr.StorageList = append(sr.StorageList, si)
 
-		c.JSON(http.StatusOK, sr)
-	})
-}
+// 		c.JSON(http.StatusOK, sr)
+// 	})
+// }

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/memoio/backend/contract"
-	"github.com/memoio/backend/gateway"
+	"github.com/memoio/backend/internal/contract"
+	"github.com/memoio/backend/internal/logs"
 )
 
 func toInt64(s string) int64 {
@@ -39,11 +39,10 @@ func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 		tokenString := c.GetHeader("Authorization")
 		address, err := VerifyAccessToken(tokenString)
 		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
 				Nonce: s.NonceManager.GetNonce(),
-				Error: apiErr,
-			})
+				Error: errRes})
 			return
 		}
 		flag := contract.StoreBuyPkg(address, uint64(toInt64(pkgid)), toInt64(amount), uint64(times.Second()), chainId)
@@ -71,11 +70,10 @@ func (s Server) addGetBuyPkgRoutes(r *gin.RouterGroup) {
 		tokenString := c.GetHeader("Authorization")
 		address, err := VerifyAccessToken(tokenString)
 		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
 				Nonce: s.NonceManager.GetNonce(),
-				Error: apiErr,
-			})
+				Error: errRes})
 			return
 		}
 

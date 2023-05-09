@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/memoio/backend/contract"
 	db "github.com/memoio/backend/global/database"
+	"github.com/memoio/backend/internal/contract"
 	"github.com/memoio/backend/internal/gateway"
 	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/backend/utils"
@@ -23,6 +23,8 @@ import (
 	metag "github.com/memoio/go-mefs-v2/lib/etag"
 	mtypes "github.com/memoio/go-mefs-v2/lib/types"
 )
+
+var _ gateway.IGateway = (*Mefs)(nil)
 
 type Mefs struct {
 	addr    string
@@ -269,7 +271,7 @@ func (m *Mefs) GetPkgSize(ctx context.Context, address string) (storage.StorageI
 	ai, err := db.QueryPkgSize(address, uint8(storage.MEFS))
 	if err != nil {
 		if err == db.ErrNotExist {
-			si, err := contract.GetPkgSize(uint8(storage.MEFS), address)
+			si, err := contract.GetPkgSize(storage.MEFS, address)
 			if err != nil {
 				return si, err
 			}
@@ -294,10 +296,6 @@ func (m *Mefs) GetPkgSize(ctx context.Context, address string) (storage.StorageI
 	}
 
 	return storage.StorageInfo{Storage: storage.MEFS.String(), Buysize: ai.Buysize, Used: ai.Used, Free: ai.Free, Files: ai.Files}, nil
-}
-
-func (m *Mefs) PayForSize(context.Context, string, *big.Int, *big.Int) bool {
-	return false
 }
 
 func (m *Mefs) UpdateStorage(ctx context.Context, address, cid string, size *big.Int) bool {

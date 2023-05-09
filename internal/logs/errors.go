@@ -74,6 +74,30 @@ func (e GatewayError) Error() string {
 	return e.Message
 }
 
+type ConfigError struct {
+	Message string
+}
+
+func (e ConfigError) Error() string {
+	return e.Message
+}
+
+type DataBaseError struct {
+	Message string
+}
+
+func (e DataBaseError) Error() string {
+	return e.Message
+}
+
+type ControllerError struct {
+	Message string
+}
+
+func (e ControllerError) Error() string {
+	return e.Message
+}
+
 type APIError struct {
 	Code           string
 	Description    string
@@ -96,6 +120,9 @@ const (
 	ErrEthError
 	ErrServerError
 	ErrGatewayError
+	ErrConfigError
+	ErrDataBaseError
+	ErrControllerError
 )
 
 func (e errorCodeMap) ToAPIErrWithErr(errCode APIErrorCode, err error) APIError {
@@ -163,6 +190,21 @@ var ErrorCodes = errorCodeMap{
 		Code:           "GatewayError",
 		Description:    "Gateway Error",
 		HTTPStatusCode: 522,
+	},
+	ErrConfigError: {
+		Code:           "ConfigError",
+		Description:    "Config Error",
+		HTTPStatusCode: 523,
+	},
+	ErrDataBaseError: {
+		Code:           "DataBaseError",
+		Description:    "DataBase Error",
+		HTTPStatusCode: 524,
+	},
+	ErrControllerError: {
+		Code:           "ControllerError",
+		Description:    "Controller Error",
+		HTTPStatusCode: 525,
 	},
 }
 

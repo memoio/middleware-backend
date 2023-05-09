@@ -4,7 +4,7 @@ import (
 	"errors"
 	"log"
 
-	"github.com/memoio/backend/contract"
+	"github.com/memoio/backend/internal/contract"
 	"github.com/urfave/cli/v2"
 )
 

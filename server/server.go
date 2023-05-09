@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/config"
-	"github.com/memoio/backend/gateway"
+	"github.com/memoio/backend/internal/logs"
 )
 
 type Server struct {
@@ -18,7 +18,7 @@ type Server struct {
 
 type AuthenticationFaileMessage struct {
 	Nonce string
-	Error gateway.APIError
+	Error logs.APIError
 }
 
 func NewServer(endpoint string, checkRegistered bool) *http.Server {
@@ -28,7 +28,6 @@ func NewServer(endpoint string, checkRegistered bool) *http.Server {
 
 	router.Use(Cors())
 	router.GET("/", func(c *gin.Context) {
-		time.Sleep(5 * time.Second)
 		c.String(http.StatusOK, "Welcome Server")
 	})
 
@@ -66,10 +65,12 @@ func NewServer(endpoint string, checkRegistered bool) *http.Server {
 }
 
 func (s Server) registRoute() {
-	mefs := s.Router.Group("/mefs")
-	s.mefsRegistRoutes(mefs)
-	ipfs := s.Router.Group("/ipfs")
-	s.ipfsRegistRoutes(ipfs)
+	// add storage routes
+	for k := range ApiMap {
+		r := s.Router.Group(k)
+		s.StorageRegistRoutes(r)
+	}
+
 	account := s.Router.Group("/account")
 	s.accountRegistRoutes(account)
 	test := s.Router.Group("/test")

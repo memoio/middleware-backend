@@ -33,32 +33,31 @@ type storeInfo struct {
 	State     uint8
 }
 
-func BalanceOf(ctx context.Context, addr string) *big.Int {
+func BalanceOf(ctx context.Context, addr string) (*big.Int, error) {
 	res := new(big.Int)
 	client, err := ethclient.DialContext(ctx, global.Endpoint)
 	if err != nil {
-		return res
+		return res, err
 	}
 	defer client.Close()
 
 	erc20Ins, err := erc.NewERC20(contractVersion, client)
 	if err != nil {
-		return res
+		return res, err
 	}
 
 	bal, err := erc20Ins.BalanceOf(&bind.CallOpts{
 		From: global.GatewayAddr,
 	}, common.HexToAddress(addr))
 	if err != nil {
-		return res
+		return res, err
 	}
-	return res.Set(bal)
+	return res.Set(bal), nil
 }
 
-func GetPkgSize(kind uint8, address string) (storage.StorageInfo, error) {
+func GetPkgSize(st storage.StorageType, address string) (storage.StorageInfo, error) {
 	var out []interface{}
-	log.Println(kind)
-	err := CallContract(&out, "getPkgSize", contractVersion, common.HexToAddress(address), kind)
+	err := CallContract(&out, "getPkgSize", contractVersion, common.HexToAddress(address), uint8(st))
 	if err != nil {
 		log.Println(err)
 		return storage.StorageInfo{}, err
@@ -71,7 +70,7 @@ func GetPkgSize(kind uint8, address string) (storage.StorageInfo, error) {
 
 	log.Println(available, free, used, files)
 	return storage.StorageInfo{
-		Storage: storage.Uint8ToStorageType(kind).String(),
+		Storage: st.String(),
 		Buysize: available.Int64(),
 		Free:    free.Int64(),
 		Used:    used.Int64(),
@@ -93,14 +92,14 @@ func StoreGetPkgInfos() ([]pkgInfo, error) {
 	return out0, nil
 }
 
-func StoreOrderPkg(address, mid string, stype uint8, size *big.Int) bool {
-	log.Println("StoreOrderPkg:", stype, address, mid, size)
-	return sendTransaction("storage", "storeOrderPkg", contractVersion, common.HexToAddress(address), mid, stype, size)
+func StoreOrderPkg(address, mid string, st storage.StorageType, size *big.Int) bool {
+	log.Println("StoreOrderPkg:", st, address, mid, size)
+	return sendTransaction("storage", "storeOrderPkg", contractVersion, common.HexToAddress(address), mid, uint8(st), size)
 }
 
-func StoreOrderPay(address, hash string, amount *big.Int, size *big.Int) bool {
+func StoreOrderPay(address, hash string, st storage.StorageType, amount *big.Int, size *big.Int) bool {
 	log.Println("StoreOrderPay:", address, hash, amount, size)
-	return sendTransaction("pay", "storeOrderpay", contractVersion, common.HexToAddress(address), hash, amount, size)
+	return sendTransaction("pay", "storeOrderpay", contractVersion, common.HexToAddress(address), hash, uint8(st), amount, size)
 }
 
 func StoreBuyPkg(address string, pkgid uint64, amount int64, starttime uint64, chainid string) bool {

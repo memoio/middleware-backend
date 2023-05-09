@@ -8,7 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/memoio/backend/gateway"
+	"github.com/memoio/backend/internal/logs"
 	"github.com/shurcooL/graphql"
 	"github.com/spruceid/siwe-go"
 )
@@ -30,9 +30,9 @@ type DefaultProfileRequest struct {
 }
 
 var (
-	ErrNullToken      = gateway.AuthenticationFailed{Message: "Token is Null, not found in `Authorization: Bearer ` header"}
-	ErrValidToken     = gateway.AuthenticationFailed{Message: "Invalid token"}
-	ErrValidTokenType = gateway.AuthenticationFailed{Message: "InValid token type"}
+	ErrNullToken      = logs.AuthenticationFailed{Message: "Token is Null, not found in `Authorization: Bearer ` header"}
+	ErrValidToken     = logs.AuthenticationFailed{Message: "Invalid token"}
+	ErrValidTokenType = logs.AuthenticationFailed{Message: "InValid token type"}
 
 	ChainID = 985
 	Version = 1
@@ -109,27 +109,27 @@ func LoginWithLens(request EIP4361Request, required bool) (string, string, strin
 	}
 
 	if message.GetDomain() != Domain {
-		return "", "", "", false, gateway.AuthenticationFailed{Message: "Got wrong domain"}
+		return "", "", "", false, logs.AuthenticationFailed{Message: "Got wrong domain"}
 	}
 
 	if message.GetChainID() != 137 {
-		return "", "", "", false, gateway.AuthenticationFailed{Message: "Got wrong chain id"}
+		return "", "", "", false, logs.AuthenticationFailed{Message: "Got wrong chain id"}
 	}
 
 	hash := crypto.Keccak256([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(request.EIP191Message), request.EIP191Message)))
 	sig, err := hexutil.Decode(request.Signature)
 	if err != nil {
-		return "", "", "", false, gateway.AuthenticationFailed{Message: err.Error()}
+		return "", "", "", false, logs.AuthenticationFailed{Message: err.Error()}
 	}
 
 	sig[len(sig)-1] %= 27
 	pubKey, err := crypto.SigToPub(hash, sig)
 	if err != nil {
-		return "", "", "", false, gateway.AuthenticationFailed{Message: err.Error()}
+		return "", "", "", false, logs.AuthenticationFailed{Message: err.Error()}
 	}
 
 	if message.GetAddress().Hex() != crypto.PubkeyToAddress(*pubKey).Hex() {
-		return "", "", "", false, gateway.AuthenticationFailed{Message: "Got wrong address/signature"}
+		return "", "", "", false, logs.AuthenticationFailed{Message: "Got wrong address/signature"}
 	}
 
 	accessToken, err := genAccessTokenWithFlag(message.GetAddress().Hex(), isRegistered)
@@ -149,27 +149,27 @@ func loginWithEth(nonceManager *NonceManager, request EIP4361Request) (string, s
 	}
 
 	if message.GetChainID() != ChainID {
-		return "", "", "", gateway.AuthenticationFailed{Message: "Got wrong chain id"}
+		return "", "", "", logs.AuthenticationFailed{Message: "Got wrong chain id"}
 	}
 
 	if !nonceManager.VerifyNonce(message.GetNonce()) {
-		return "", "", "", gateway.AuthenticationFailed{Message: "Got wrong nonce"}
+		return "", "", "", logs.AuthenticationFailed{Message: "Got wrong nonce"}
 	}
 
 	hash := crypto.Keccak256([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(request.EIP191Message), request.EIP191Message)))
 	sig, err := hexutil.Decode(request.Signature)
 	if err != nil {
-		return "", "", "", gateway.AuthenticationFailed{Message: err.Error()}
+		return "", "", "", logs.AuthenticationFailed{Message: err.Error()}
 	}
 
 	sig[len(sig)-1] %= 27
 	pubKey, err := crypto.SigToPub(hash, sig)
 	if err != nil {
-		return "", "", "", gateway.AuthenticationFailed{Message: err.Error()}
+		return "", "", "", logs.AuthenticationFailed{Message: err.Error()}
 	}
 
 	if message.GetAddress().Hex() != crypto.PubkeyToAddress(*pubKey).Hex() {
-		return "", "", "", gateway.AuthenticationFailed{Message: "Got wrong address/signature"}
+		return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
 	}
 
 	accessToken, err := genAccessToken(message.GetAddress().Hex())
