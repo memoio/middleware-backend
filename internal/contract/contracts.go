@@ -9,14 +9,19 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/memoio/backend/global"
+	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/contractsv2/go_contracts/erc"
 )
 
-var contractVersion = global.ContractAddrV3
+type BuyPackage struct {
+	Pkgid     uint64
+	Amount    int64
+	Starttime uint64
+	Chainid   string
+}
 
-type pkgInfo struct {
+type PackageInfo struct {
 	Time    uint64
 	Kind    uint8
 	Buysize *big.Int
@@ -24,7 +29,7 @@ type pkgInfo struct {
 	State   uint8
 }
 
-type storeInfo struct {
+type UserBuyPackage struct {
 	Starttime uint64
 	Endtime   uint64
 	Kind      uint8
@@ -33,21 +38,37 @@ type storeInfo struct {
 	State     uint8
 }
 
-func BalanceOf(ctx context.Context, addr string) (*big.Int, error) {
+type Contract struct {
+	contractAddr     common.Address
+	endpoint         string
+	gatewayAddr      common.Address
+	gatewaySecretKey string
+}
+
+func NewContract(cfc config.ContractConfig) *Contract {
+	return &Contract{
+		contractAddr:     common.HexToAddress(cfc.ContractAddr),
+		endpoint:         cfc.Endpoint,
+		gatewayAddr:      common.HexToAddress(cfc.GatewayAddr),
+		gatewaySecretKey: cfc.GatewaySecretKey,
+	}
+}
+
+func (c *Contract) BalanceOf(ctx context.Context, addr string) (*big.Int, error) {
 	res := new(big.Int)
-	client, err := ethclient.DialContext(ctx, global.Endpoint)
+	client, err := ethclient.DialContext(ctx, c.endpoint)
 	if err != nil {
 		return res, err
 	}
 	defer client.Close()
 
-	erc20Ins, err := erc.NewERC20(contractVersion, client)
+	erc20Ins, err := erc.NewERC20(c.contractAddr, client)
 	if err != nil {
 		return res, err
 	}
 
 	bal, err := erc20Ins.BalanceOf(&bind.CallOpts{
-		From: global.GatewayAddr,
+		From: c.gatewayAddr,
 	}, common.HexToAddress(addr))
 	if err != nil {
 		return res, err
@@ -55,9 +76,9 @@ func BalanceOf(ctx context.Context, addr string) (*big.Int, error) {
 	return res.Set(bal), nil
 }
 
-func GetPkgSize(st storage.StorageType, address string) (storage.StorageInfo, error) {
+func (c *Contract) GetPkgSize(st storage.StorageType, address string) (storage.StorageInfo, error) {
 	var out []interface{}
-	err := CallContract(&out, "getPkgSize", contractVersion, common.HexToAddress(address), uint8(st))
+	err := c.CallContract(&out, "getPkgSize", common.HexToAddress(address), uint8(st))
 	if err != nil {
 		log.Println(err)
 		return storage.StorageInfo{}, err
@@ -78,67 +99,67 @@ func GetPkgSize(st storage.StorageType, address string) (storage.StorageInfo, er
 	}, nil
 }
 
-func StoreGetPkgInfos() ([]pkgInfo, error) {
+func (c *Contract) StoreGetPkgInfos() ([]PackageInfo, error) {
 	log.Println("StoreGetPkgInfos:")
 	var out []interface{}
-	err := CallContract(&out, "storeGetPkgInfos", contractVersion)
+	err := c.CallContract(&out, "storeGetPkgInfos")
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([]pkgInfo)).(*[]pkgInfo)
+	out0 := *abi.ConvertType(out[0], new([]PackageInfo)).(*[]PackageInfo)
 
 	return out0, nil
 }
 
-func StoreOrderPkg(address, mid string, st storage.StorageType, size *big.Int) bool {
+func (c *Contract) StoreOrderPkg(address, mid string, st storage.StorageType, size *big.Int) bool {
 	log.Println("StoreOrderPkg:", st, address, mid, size)
-	return sendTransaction("storage", "storeOrderPkg", contractVersion, common.HexToAddress(address), mid, uint8(st), size)
+	return c.sendTransaction("storage", "storeOrderPkg", common.HexToAddress(address), mid, uint8(st), size)
 }
 
-func StoreOrderPay(address, hash string, st storage.StorageType, amount *big.Int, size *big.Int) bool {
+func (c *Contract) StoreOrderPay(address, hash string, st storage.StorageType, amount *big.Int, size *big.Int) bool {
 	log.Println("StoreOrderPay:", address, hash, amount, size)
-	return sendTransaction("pay", "storeOrderpay", contractVersion, common.HexToAddress(address), hash, uint8(st), amount, size)
+	return c.sendTransaction("pay", "storeOrderpay", common.HexToAddress(address), hash, uint8(st), amount, size)
 }
 
-func StoreBuyPkg(address string, pkgid uint64, amount int64, starttime uint64, chainid string) bool {
-	log.Println("StoreBuyPkg:", address, pkgid, amount, starttime, chainid)
-	a := big.NewInt(amount)
-	return sendTransaction("buy", "storeBuyPkg", contractVersion, common.HexToAddress(address), pkgid, a, starttime, chainid)
+func (c *Contract) StoreBuyPkg(address string, pkg BuyPackage) bool {
+	log.Println("StoreBuyPkg:", address, pkg.Pkgid, pkg.Amount, pkg.Starttime, pkg.Chainid)
+	a := big.NewInt(pkg.Amount)
+	return c.sendTransaction("buy", "storeBuyPkg", common.HexToAddress(address), pkg.Pkgid, a, pkg.Starttime, pkg.Chainid)
 }
 
-func AdminAddPkgInfo(time string, amount string, kind string, size string) bool {
+func (c *Contract) AdminAddPkgInfo(time string, amount string, kind string, size string) bool {
 	log.Println("AdminAddPkgInfo:", time, amount, kind, size)
 	t, a, s := new(big.Int), new(big.Int), new(big.Int)
 	t.SetString(time, 10)
 	a.SetString(amount, 10)
 	s.SetString(size, 10)
 	k := storage.StringToStorageType(kind)
-	return sendTransaction("setpkg", "adminAddPkgInfo", contractVersion, t.Uint64(), a, uint8(k), s)
+	return c.sendTransaction("setpkg", "adminAddPkgInfo", t.Uint64(), a, uint8(k), s)
 }
 
-func StoreGetBuyPkgs(address string) ([]storeInfo, error) {
+func (c *Contract) StoreGetBuyPkgs(address string) ([]UserBuyPackage, error) {
 	log.Println("StoreGetBuyPkgs:")
 	var out []interface{}
-	err := CallContract(&out, "storeGetBuyPkgs", contractVersion, common.HexToAddress(address))
+	err := c.CallContract(&out, "storeGetBuyPkgs", common.HexToAddress(address))
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([]storeInfo)).(*[]storeInfo)
+	out0 := *abi.ConvertType(out[0], new([]UserBuyPackage)).(*[]UserBuyPackage)
 	return out0, nil
 }
 
-func StoreOrderPkgExpiration(address, mid string, stype uint8, size *big.Int) bool {
+func (c *Contract) StoreOrderPkgExpiration(address, mid string, stype uint8, size *big.Int) bool {
 	log.Println("storeOrderPkgExpiration:", stype, address, mid, size)
-	return sendTransaction("delpkg", "storeOrderPkgExpiration", contractVersion, common.HexToAddress(address), mid, stype, size)
+	return c.sendTransaction("delpkg", "storeOrderPkgExpiration", common.HexToAddress(address), mid, stype, size)
 }
 
-func GetStoreAllSize() *big.Int {
+func (c *Contract) GetStoreAllSize() *big.Int {
 	var out []interface{}
-	err := CallContract(&out, "getStoreAllSize", contractVersion)
+	err := c.CallContract(&out, "getStoreAllSize")
 	if err != nil {
 		log.Println(err)
 		return nil

@@ -67,7 +67,7 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 			return
 		}
 
-		result, err := controller.PutObject(c.Request.Context(), r.BasePath(), address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud})
+		result, err := s.Controller.PutObject(c.Request.Context(), address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud})
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
@@ -84,7 +84,7 @@ func (s Server) GetObjectRoute(r *gin.RouterGroup) {
 		cid := c.Param("cid")
 
 		var w bytes.Buffer
-		result, err := controller.GetObject(c.Request.Context(), r.BasePath(), cid, &w, controller.ObjectOptions{})
+		result, err := s.Controller.GetObject(c.Request.Context(), cid, &w, controller.ObjectOptions{})
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
@@ -109,7 +109,7 @@ func (s Server) ListObjectsRoute(r *gin.RouterGroup) {
 		// }
 		address := c.Query("address")
 
-		result, err := controller.ListObjects(c.Request.Context(), r.BasePath(), address)
+		result, err := s.Controller.ListObjects(c.Request.Context(), address)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)

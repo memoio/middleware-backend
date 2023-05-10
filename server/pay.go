@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/memoio/backend/internal/contract"
+	"github.com/memoio/backend/internal/controller"
 	"github.com/memoio/backend/internal/logs"
 )
 
@@ -45,7 +45,13 @@ func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 				Error: errRes})
 			return
 		}
-		flag := contract.StoreBuyPkg(address, uint64(toInt64(pkgid)), toInt64(amount), uint64(times.Second()), chainId)
+		pkg := controller.Package{
+			Pkgid:     uint64(toInt64(pkgid)),
+			Amount:    toInt64(amount),
+			Starttime: uint64(times.Second()),
+			Chainid:   chainId,
+		}
+		flag := s.Controller.BuyPackage(address, pkg)
 		if !flag {
 			c.JSON(521, "buy pkg failed")
 		}
@@ -56,7 +62,7 @@ func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 func (s Server) addGetPkgListRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/pkginfos", func(c *gin.Context) {
-		result, err := contract.StoreGetPkgInfos()
+		result, err := s.Controller.GetPackageList()
 		if err != nil {
 			c.JSON(522, err.Error())
 		}
@@ -77,7 +83,7 @@ func (s Server) addGetBuyPkgRoutes(r *gin.RouterGroup) {
 			return
 		}
 
-		pi, err := contract.StoreGetBuyPkgs(address)
+		pi, err := s.Controller.GetUserBuyPackages(address)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, err.Error())
 			return

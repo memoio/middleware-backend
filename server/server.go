@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/config"
+	"github.com/memoio/backend/internal/controller"
 	"github.com/memoio/backend/internal/logs"
 )
 
@@ -14,6 +15,12 @@ type Server struct {
 	Router       *gin.Engine
 	Config       *config.Config
 	NonceManager *NonceManager
+	Controller   *controller.Controller
+}
+
+type ServerOption struct {
+	Endpoint        string
+	CheckRegistered bool
 }
 
 type AuthenticationFaileMessage struct {
@@ -21,43 +28,33 @@ type AuthenticationFaileMessage struct {
 	Error logs.APIError
 }
 
-func NewServer(endpoint string, checkRegistered bool) *http.Server {
+func NewServer(opt ServerOption) *http.Server {
 	log.Println("Server Start")
 	gin.SetMode(gin.ReleaseMode)
-	router := gin.Default()
-
-	router.Use(Cors())
-	router.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Welcome Server")
-	})
-
-	nonceManager := NewNonceManager(30*int64(time.Second.Seconds()), 1*int64(time.Minute.Seconds()))
-
-	router.GET("/challenge", ChallengeHandler(nonceManager))
-
-	router.POST("/login", LoginHandler(nonceManager))
-
-	router.POST("/lens/login", LensLoginHandler(nonceManager, checkRegistered))
-
-	router.GET("/refresh", RefreshHandler())
 
 	config, err := config.ReadFile()
 	if err != nil {
 		log.Fatal("config not right")
 		return nil
 	}
+
 	InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
 
+	nonceManager := NewNonceManager(30*int64(time.Second.Seconds()), 1*int64(time.Minute.Seconds()))
+
 	s := &Server{
-		Router:       router,
 		Config:       config,
 		NonceManager: nonceManager,
 	}
 
 	s.registRoute()
 
+	if opt.CheckRegistered {
+		s.registLensLogin()
+	}
+
 	srv := &http.Server{
-		Addr:    endpoint,
+		Addr:    opt.Endpoint,
 		Handler: s.Router,
 	}
 
@@ -66,13 +63,39 @@ func NewServer(endpoint string, checkRegistered bool) *http.Server {
 
 func (s Server) registRoute() {
 	// add storage routes
-	for k := range ApiMap {
-		r := s.Router.Group(k)
-		s.StorageRegistRoutes(r)
-	}
+	router := gin.Default()
 
-	account := s.Router.Group("/account")
-	s.accountRegistRoutes(account)
-	test := s.Router.Group("/test")
-	s.testRegistRoutes(test)
+	router.Use(Cors())
+	router.GET("/", func(c *gin.Context) {
+		c.String(http.StatusOK, "Welcome Server")
+	})
+
+	s.Router = router
+
+	s.registLogin()
+	s.registController()
+}
+
+func (s Server) registLogin() {
+
+	s.Router.GET("/challenge", ChallengeHandler(s.NonceManager))
+
+	s.Router.POST("/login", LoginHandler(s.NonceManager))
+
+	s.Router.GET("/refresh", RefreshHandler())
+}
+
+func (s Server) registLensLogin() {
+	s.Router.POST("/lens/login", LensLoginHandler(s.NonceManager, true))
+}
+
+func (s Server) registController() {
+	for k := range controller.ApiMap {
+		r := s.Router.Group(k)
+		ct := controller.NewController(r.BasePath(), s.Config)
+		s.Controller = ct
+
+		s.StorageRegistRoutes(r)
+		s.accountRegistRoutes(r)
+	}
 }

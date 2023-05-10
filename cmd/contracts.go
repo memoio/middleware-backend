@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/contract"
 	"github.com/urfave/cli/v2"
 )
@@ -46,8 +47,13 @@ var setPkgCmd = &cli.Command{
 		amount := ctx.String("amount")
 		kind := ctx.String("kind")
 		size := ctx.String("size")
+		cf, err := config.ReadFile()
+		if err != nil {
+			return err
+		}
+		ct := contract.NewContract(cf.Contract)
 
-		flag := contract.AdminAddPkgInfo(time, amount, kind, size)
+		flag := ct.AdminAddPkgInfo(time, amount, kind, size)
 		if flag {
 			log.Println("set package success!")
 		} else {

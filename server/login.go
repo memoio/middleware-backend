@@ -5,7 +5,6 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
-	db "github.com/memoio/backend/global/database"
 	"github.com/memoio/backend/internal/logs"
 )
 
@@ -46,7 +45,7 @@ func LoginHandler(nonceManager *NonceManager) gin.HandlerFunc {
 				Error: errRes})
 			return
 		}
-		accessToken, refreshToken, address, err := Login(nonceManager, request)
+		accessToken, refreshToken, _, err := Login(nonceManager, request)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
@@ -54,8 +53,6 @@ func LoginHandler(nonceManager *NonceManager) gin.HandlerFunc {
 				Error: errRes})
 			return
 		}
-
-		db.AddressInfo{Address: address}.Insert()
 
 		// if address is new user in "memo.io" {
 		// 	init usr info
@@ -80,7 +77,7 @@ func LensLoginHandler(nonceManager *NonceManager, checkRegistered bool) gin.Hand
 				Error: errRes})
 			return
 		}
-		accessToken, refreshToken, address, isRegistered, err := LoginWithLens(request, checkRegistered)
+		accessToken, refreshToken, _, isRegistered, err := LoginWithLens(request, checkRegistered)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
@@ -88,8 +85,6 @@ func LensLoginHandler(nonceManager *NonceManager, checkRegistered bool) gin.Hand
 				Error: errRes})
 			return
 		}
-
-		db.AddressInfo{Address: address}.Insert()
 
 		// if address is new user in "memo.io" {
 		// 	init usr info

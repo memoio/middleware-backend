@@ -9,7 +9,7 @@ import (
 	"github.com/memoio/backend/internal/storage"
 )
 
-var ApiMap map[string]Api
+var ApiMap map[string]*Api
 
 type Api struct {
 	G gateway.IGateway
@@ -21,19 +21,19 @@ func init() {
 }
 
 func loadApiMap() {
-	ApiMap = make(map[string]Api)
+	ApiMap = make(map[string]*Api)
 
 	mefs, err := mefs.NewGateway()
 	if err != nil {
 		log.Println("load mefs ap failed")
 		return
 	}
-	ApiMap["/mefs"] = Api{G: mefs, T: storage.MEFS}
+	ApiMap["/mefs"] = &Api{G: mefs, T: storage.MEFS}
 
 	ipfs, err := ipfs.NewGateway()
 	if err != nil {
 		log.Println("load mefs ap failed")
 		return
 	}
-	ApiMap["/ipfs"] = Api{G: ipfs, T: storage.IPFS}
+	ApiMap["/ipfs"] = &Api{G: ipfs, T: storage.IPFS}
 }

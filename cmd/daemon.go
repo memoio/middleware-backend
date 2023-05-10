@@ -42,7 +42,13 @@ var runCmd = &cli.Command{
 	Action: func(ctx *cli.Context) error {
 		endPoint := ctx.String("endpoint")
 		checkRegistered := ctx.Bool("checkRegistered")
-		srv := server.NewServer(endPoint, checkRegistered)
+
+		opts := server.ServerOption{
+			Endpoint:        endPoint,
+			CheckRegistered: checkRegistered,
+		}
+
+		srv := server.NewServer(opts)
 
 		go func() {
 			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

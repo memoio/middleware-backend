@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/memoio/backend/internal/contract"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
 )
@@ -34,7 +33,7 @@ func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
 				Error: errRes})
 			return
 		}
-		balance, err := contract.BalanceOf(c.Request.Context(), address)
+		balance, err := s.Controller.GetBalance(c.Request.Context(), address)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)

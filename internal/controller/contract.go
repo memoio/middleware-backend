@@ -8,8 +8,15 @@ import (
 	"github.com/memoio/backend/internal/storage"
 )
 
-func CanWrite(ctx context.Context, st storage.StorageType, address string, size *big.Int) (bool, error) {
-	cs, err := CheckStorage(ctx, st, address, size)
+type Package contract.BuyPackage
+
+type PackageInfo struct {
+	Pkgid int
+	contract.PackageInfo
+}
+
+func (c *Controller) CanWrite(ctx context.Context, address string, size *big.Int) (bool, error) {
+	cs, err := c.CheckStorage(ctx, address, size)
 	if err != nil {
 		return false, err
 	}
@@ -17,8 +24,8 @@ func CanWrite(ctx context.Context, st storage.StorageType, address string, size 
 }
 
 // storage
-func CheckStorage(ctx context.Context, st storage.StorageType, address string, size *big.Int) (bool, error) {
-	si, err := GetStorageInfo(ctx, st, address)
+func (c *Controller) CheckStorage(ctx context.Context, address string, size *big.Int) (bool, error) {
+	si, err := c.GetStorageInfo(ctx, address)
 	if err != nil {
 		return false, err
 	}
@@ -27,11 +34,40 @@ func CheckStorage(ctx context.Context, st storage.StorageType, address string, s
 	return si.Buysize+si.Free > si.Used+size.Int64(), nil
 }
 
-func GetStorageInfo(ctx context.Context, st storage.StorageType, address string) (storage.StorageInfo, error) {
-	si, err := contract.GetPkgSize(st, address)
+func (c *Controller) GetStorageInfo(ctx context.Context, address string) (storage.StorageInfo, error) {
+	si, err := c.contract.GetPkgSize(c.storageType, address)
 	if err != nil {
 		return storage.StorageInfo{}, err
 	}
 
 	return si, nil
+}
+
+// balance
+func (c *Controller) GetBalance(ctx context.Context, address string) (*big.Int, error) {
+	return c.contract.BalanceOf(ctx, address)
+}
+
+func (c *Controller) BuyPackage(address string, pkg Package) bool {
+	return c.contract.StoreBuyPkg(address, contract.BuyPackage(pkg))
+}
+
+func (c *Controller) GetPackageList() ([]PackageInfo, error) {
+	pi, err := c.contract.StoreGetPkgInfos()
+	if err != nil {
+		return nil, err
+	}
+	var pl []PackageInfo
+	for i, p := range pi {
+		pl = append(pl, PackageInfo{
+			Pkgid:       i + 1,
+			PackageInfo: p,
+		})
+	}
+
+	return pl, nil
+}
+
+func (c *Controller) GetUserBuyPackages(address string) ([]contract.UserBuyPackage, error) {
+	return c.contract.StoreGetBuyPkgs(address)
 }
