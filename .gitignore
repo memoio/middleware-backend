@@ -1,3 +1,5 @@
 backend
 backend.db
+config.json
 .*
+internal/repo/*/

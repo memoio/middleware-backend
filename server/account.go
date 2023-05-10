@@ -4,10 +4,22 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/memoio/backend/contract"
-	"github.com/memoio/backend/gateway"
+	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
 )
+
+type StorageResponse struct {
+	Address     string
+	StorageList []storage.StorageInfo
+}
+
+func (s Server) accountRegistRoutes(r *gin.RouterGroup) {
+	s.addGetBalanceRoutes(r)
+	// s.addGetStorageRoutes(r)
+	s.addBuyPkgRoutes(r)
+	s.addGetPkgListRoutes(r)
+	s.addGetBuyPkgRoutes(r)
+}
 
 func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
@@ -15,38 +27,62 @@ func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
 		tokenString := c.GetHeader("Authorization")
 		address, err := VerifyAccessToken(tokenString)
 		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
 				Nonce: s.NonceManager.GetNonce(),
-				Error: apiErr,
-			})
+				Error: errRes})
 			return
 		}
-		balance := contract.BalanceOf(c.Request.Context(), address)
+		balance, err := s.Controller.GetBalance(c.Request.Context(), address)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
 		c.JSON(http.StatusOK, BalanceResponse{Address: address, Balance: balance.String()})
 	})
 }
 
-func (s Server) addGetStorageRoutes(r *gin.RouterGroup) {
-	p := r.Group("/")
-	p.GET("/getstorage", func(c *gin.Context) {
-		stype := c.Query("stype")
+// func (s Server) addGetStorageRoutes(r *gin.RouterGroup) {
+// 	p := r.Group("/")
+// 	p.GET("/getstorage", func(c *gin.Context) {
+// 		var sr StorageResponse
 
-		tokenString := c.GetHeader("Authorization")
-		address, err := VerifyAccessToken(tokenString)
-		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: s.NonceManager.GetNonce(),
-				Error: apiErr,
-			})
-			return
-		}
-		si, err := s.Gateway.GetPkgSize(c.Request.Context(), storage.ToStorageType(stype), address)
-		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, apiErr)
-		}
-		c.JSON(http.StatusOK, si)
-	})
-}
+// 		tokenString := c.GetHeader("Authorization")
+// 		address, err := VerifyAccessToken(tokenString)
+// 		if err != nil {
+// 			errRes := logs.ToAPIErrorCode(err)
+// 			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
+// 				Nonce: s.NonceManager.GetNonce(),
+// 				Error: errRes})
+// 			return
+// 		}
+// 		sr.Address = address
+
+// 		api, err := mefs.NewGateway()
+// 		if err != nil {
+// 			errRes := logs.ToAPIErrorCode(err)
+// 			c.JSON(errRes.HTTPStatusCode, errRes)
+// 			return
+// 		}
+
+// 		si, err := api.GetPkgSize(c.Request.Context(), address)
+// 		if err != nil {
+// 			errRes := logs.ToAPIErrorCode(err)
+// 			c.JSON(errRes.HTTPStatusCode, errRes)
+// 			return
+// 		}
+// 		sr.StorageList = append(sr.StorageList, si)
+
+// 		api, err = ipfs.NewGateway()
+// 		si, err = api.GetPkgSize(c.Request.Context(), address)
+// 		if err != nil {
+// 			errRes := logs.ToAPIErrorCode(err)
+// 			c.JSON(errRes.HTTPStatusCode, errRes)
+// 			return
+// 		}
+// 		sr.StorageList = append(sr.StorageList, si)
+
+// 		c.JSON(http.StatusOK, sr)
+// 	})
+// }

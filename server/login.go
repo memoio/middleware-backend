@@ -5,8 +5,7 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
-	"github.com/memoio/backend/gateway"
-	db "github.com/memoio/backend/global/database"
+	"github.com/memoio/backend/internal/logs"
 )
 
 func ChallengeHandler(nonceManager *NonceManager) gin.HandlerFunc {
@@ -14,11 +13,10 @@ func ChallengeHandler(nonceManager *NonceManager) gin.HandlerFunc {
 		address := c.Query("address")
 		uri, err := url.Parse(c.GetHeader("Origin"))
 		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
 				Nonce: nonceManager.GetNonce(),
-				Error: apiErr,
-			})
+				Error: errRes})
 			return
 		}
 		domain := uri.Host
@@ -26,11 +24,10 @@ func ChallengeHandler(nonceManager *NonceManager) gin.HandlerFunc {
 
 		challenge, err := Challenge(domain, address, uri.String(), nonce)
 		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
 				Nonce: nonceManager.GetNonce(),
-				Error: apiErr,
-			})
+				Error: errRes})
 			return
 		}
 		c.String(http.StatusOK, challenge)
@@ -42,24 +39,20 @@ func LoginHandler(nonceManager *NonceManager) gin.HandlerFunc {
 		var request EIP4361Request
 		err := c.BindJSON(&request)
 		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
 				Nonce: nonceManager.GetNonce(),
-				Error: apiErr,
-			})
+				Error: errRes})
 			return
 		}
-		accessToken, refreshToken, address, err := Login(nonceManager, request)
+		accessToken, refreshToken, _, err := Login(nonceManager, request)
 		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
 				Nonce: nonceManager.GetNonce(),
-				Error: apiErr,
-			})
+				Error: errRes})
 			return
 		}
-
-		db.AddressInfo{Address: address}.Insert()
 
 		// if address is new user in "memo.io" {
 		// 	init usr info
@@ -78,24 +71,20 @@ func LensLoginHandler(nonceManager *NonceManager, checkRegistered bool) gin.Hand
 		var request EIP4361Request
 		err := c.BindJSON(&request)
 		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
 				Nonce: nonceManager.GetNonce(),
-				Error: apiErr,
-			})
+				Error: errRes})
 			return
 		}
-		accessToken, refreshToken, address, isRegistered, err := LoginWithLens(request, checkRegistered)
+		accessToken, refreshToken, _, isRegistered, err := LoginWithLens(request, checkRegistered)
 		if err != nil {
-			apiErr := gateway.ErrorCodes.ToAPIErrWithErr(gateway.ToAPIErrorCode(c.Request.Context(), err), err)
-			c.JSON(apiErr.HTTPStatusCode, AuthenticationFaileMessage{
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
 				Nonce: nonceManager.GetNonce(),
-				Error: apiErr,
-			})
+				Error: errRes})
 			return
 		}
-
-		db.AddressInfo{Address: address}.Insert()
 
 		// if address is new user in "memo.io" {
 		// 	init usr info

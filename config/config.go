@@ -11,6 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+const CONFIGPATH = "./config.json"
+
 type Config struct {
 	Storage     StorageConfig  `json:"storage"`
 	Contract    ContractConfig `json:"contract"`
@@ -20,13 +22,16 @@ type Config struct {
 }
 
 type StorageConfig struct {
-	Mefs MefsConfig `json:"mefs"`
-	Ipfs IpfsConfig `json:"ipfs"`
+	Mefs   MefsConfig       `json:"mefs"`
+	Ipfs   IpfsConfig       `json:"ipfs"`
+	Prices map[string]int64 `json:"prices"`
 }
 
 type ContractConfig struct {
-	Endpoint     string `json:"endpoint"`
-	ContractAddr string `json:"addr"`
+	Endpoint         string `json:"endpoint"`
+	ContractAddr     string `json:"caddr"`
+	GatewayAddr      string `json:"gaddr"`
+	GatewaySecretKey string `json:"gatewaysk"`
 }
 
 type MefsConfig struct {
@@ -53,8 +58,9 @@ func newDefaultMefsConfig() MefsConfig {
 
 func newDefaultStorageConfig() StorageConfig {
 	return StorageConfig{
-		Mefs: newDefaultMefsConfig(),
-		Ipfs: newDefaultIpfsConfig(),
+		Mefs:   newDefaultMefsConfig(),
+		Ipfs:   newDefaultIpfsConfig(),
+		Prices: map[string]int64{"mefs": 25000, "ipfs": 25000},
 	}
 }
 
@@ -99,7 +105,8 @@ func (cfg *Config) WriteFile(file string) error {
 	return err
 }
 
-func ReadFile(file string) (*Config, error) {
+func ReadFile() (*Config, error) {
+	file := CONFIGPATH
 	cfg := NewDefaultConfig()
 	if file != "" {
 		rawConfig, err := ioutil.ReadFile(file)
@@ -116,4 +123,25 @@ func ReadFile(file string) (*Config, error) {
 		}
 	}
 	return cfg, nil
+}
+
+func init() {
+	cfg := NewDefaultConfig()
+	data, err := json.MarshalIndent(cfg, "", "	")
+	if err != nil {
+		fmt.Println("Config load Failed, ", err)
+		return
+	}
+	// Check if the file exists
+	_, err = os.Stat(CONFIGPATH)
+	if !os.IsNotExist(err) {
+		return
+	}
+
+	err = ioutil.WriteFile(CONFIGPATH, data, 0644)
+	if err != nil {
+		fmt.Println("Config load Failed, ", err)
+		return
+	}
+	fmt.Println("config init success!")
 }

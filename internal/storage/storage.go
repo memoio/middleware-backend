@@ -5,6 +5,7 @@ import (
 )
 
 type StorageInfo struct {
+	Storage string
 	Used    int64
 	Buysize int64
 	Free    int64
@@ -32,8 +33,12 @@ func (s StorageType) String() string {
 	}
 }
 
-func ToStorageType(s string) StorageType {
+func StringToStorageType(s string) StorageType {
 	storage := new(big.Int)
 	storage.SetString(s, 10)
 	return StorageType(storage.Uint64())
+}
+
+func Uint8ToStorageType(s uint8) StorageType {
+	return StorageType(s)
 }
