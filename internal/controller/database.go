@@ -2,8 +2,11 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/memoio/backend/internal/database"
+	"github.com/memoio/backend/internal/logs"
 )
 
 func (c *Controller) ListObjects(ctx context.Context, address string) (ListObjectsResult, error) {
@@ -18,12 +21,26 @@ func (c *Controller) ListObjects(ctx context.Context, address string) (ListObjec
 	result.Storage = c.storageType.String()
 
 	for _, oi := range loi {
+		userdefine := make(map[string]string)
+		err = json.Unmarshal([]byte(oi.UserDefine), &userdefine)
+		if err != nil {
+			lerr := logs.ControllerError{Message: fmt.Sprint("unmarshal userdefine error, ", err)}
+			logger.Error(lerr)
+			return result, lerr
+		}
+
 		result.Objects = append(result.Objects, ObjectInfoResult{
-			Name: oi.Name,
-			Size: oi.Size,
-			Mid:  oi.Mid,
+			Name:    oi.Name,
+			Size:    oi.Size,
+			Mid:     oi.Mid,
+			ModTime: oi.ModTime,
+			// UserDefined: userdefine,
 		})
 	}
 
 	return result, nil
+}
+
+func (c *Controller) GetObjectInfo(ctx context.Context, address, mid string) (database.FileInfo, error) {
+	return database.Get(address, mid, c.storageType)
 }

@@ -9,6 +9,7 @@ import (
 	shapi "github.com/ipfs/go-ipfs-api"
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/gateway"
+	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/utils"
 )
 
@@ -46,11 +47,12 @@ func (i *Ipfs) PutObject(ctx context.Context, address, object string, r io.Reade
 	}
 
 	return gateway.ObjectInfo{
-		Address: address,
-		Name:    object,
-		Size:    int64(opt.Size),
-		Cid:     hash,
-		ModTime: time.Now(),
+		Address:     address,
+		Name:        object,
+		Size:        int64(opt.Size),
+		Cid:         hash,
+		ModTime:     time.Now(),
+		UserDefined: opt.UserDefined,
 	}, nil
 }
 
@@ -77,6 +79,10 @@ func (i *Ipfs) GetObjectInfo(ctx context.Context, cid string) (gateway.ObjectInf
 		Size:  int64(objects[0].Size),
 		CType: ctype,
 	}, nil
+}
+
+func (i *Ipfs) DeleteObject(ctx context.Context, address, mid string) error {
+	return logs.StorageError{Message: "ipfs not support delete option"}
 }
 
 // func (i *Ipfs) ListObjects(ctx context.Context, address string) ([]gateway.ObjectInfo, error) {

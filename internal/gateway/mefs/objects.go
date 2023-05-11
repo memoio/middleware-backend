@@ -136,11 +136,12 @@ func (m *Mefs) PutObject(ctx context.Context, address, object string, r io.Reade
 	etag, _ := metag.ToString(moi.ETag)
 
 	return gateway.ObjectInfo{
-		Address: address,
-		Name:    moi.Name,
-		Size:    int64(moi.Size),
-		Cid:     etag,
-		ModTime: time.Unix(moi.GetTime(), 0),
+		Address:     address,
+		Name:        moi.Name,
+		Size:        int64(moi.Size),
+		Cid:         etag,
+		ModTime:     time.Unix(moi.GetTime(), 0),
+		UserDefined: moi.UserDefined,
 	}, nil
 }
 
@@ -214,32 +215,32 @@ func (m *Mefs) GetObjectInfo(ctx context.Context, cid string) (gateway.ObjectInf
 	}, nil
 }
 
-// func (m *Mefs) ListObjects(ctx context.Context, address string) ([]gateway.ObjectInfo, error) {
-// 	var loi []gateway.ObjectInfo
-// 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
-// 	if err != nil {
-// 		return loi, err
-// 	}
-// 	defer closer()
-// 	mloi, err := napi.ListObjects(ctx, address, mtypes.ListObjectsOptions{MaxKeys: 1000})
-// 	if err != nil {
-// 		return loi, err
-// 	}
+func (m *Mefs) ListObjects(ctx context.Context, address string) ([]gateway.ObjectInfo, error) {
+	var loi []gateway.ObjectInfo
+	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
+	if err != nil {
+		return loi, err
+	}
+	defer closer()
+	mloi, err := napi.ListObjects(ctx, address, mtypes.ListObjectsOptions{MaxKeys: 1000})
+	if err != nil {
+		return loi, err
+	}
 
-// 	for _, oi := range mloi.Objects {
-// 		etag, _ := metag.ToString(oi.ETag)
-// 		loi = append(loi, gateway.ObjectInfo{
-// 			Address:     address,
-// 			Name:        oi.GetName(),
-// 			ModTime:     time.Unix(oi.GetTime(), 0).UTC(),
-// 			Size:        int64(oi.Size),
-// 			Cid:         etag,
-// 			UserDefined: oi.UserDefined,
-// 		})
-// 	}
+	for _, oi := range mloi.Objects {
+		etag, _ := metag.ToString(oi.ETag)
+		loi = append(loi, gateway.ObjectInfo{
+			Address:     address,
+			Name:        oi.GetName(),
+			ModTime:     time.Unix(oi.GetTime(), 0).UTC(),
+			Size:        int64(oi.Size),
+			Cid:         etag,
+			UserDefined: oi.UserDefined,
+		})
+	}
 
-// 	return loi, nil
-// }
+	return loi, nil
+}
 
 func (m *Mefs) DeleteObject(ctx context.Context, address, object string) error {
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)

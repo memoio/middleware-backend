@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"math/big"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/memoio/backend/internal/logs"
@@ -18,13 +19,14 @@ type FileInfoList struct {
 }
 
 type FileInfo struct {
-	Id      int
-	Address string
-	SType   storage.StorageType
-	Name    string
-	Mid     string
-	Size    int64
-	OnChain bool
+	Id         int
+	Address    string
+	SType      storage.StorageType
+	Name       string
+	Mid        string
+	Size       int64
+	ModTime    time.Time
+	UserDefine string
 }
 
 func init() {
@@ -66,8 +68,9 @@ func createTable() error {
 		name TEXT,
 		mid TEXT,
 		size INTEGER,
-		onchain BOOLEAN,
-		UNIQUE (address, stype, mid) ON CONFLICT IGNORE
+		modtime DATETIME,
+		userdefine TEXT,
+		UNIQUE (address, stype, name, mid) ON CONFLICT IGNORE
 	);
 	`
 
@@ -88,11 +91,12 @@ func Put(fi FileInfo) (bool, error) {
 	}
 	defer db.Close()
 
+	logger.Info("put message: ", fi)
 	sqlStmt := `
-        INSERT INTO fileinfo (address, stype, name, mid, size, onchain)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO fileinfo (address, stype, name, mid, size, modtime, userdefine)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     `
-	_, err = db.Exec(sqlStmt, fi.Address, fi.SType, fi.Name, fi.Mid, fi.Size, fi.OnChain)
+	_, err = db.Exec(sqlStmt, fi.Address, fi.SType, fi.Name, fi.Mid, fi.Size, fi.ModTime, fi.UserDefine)
 	if err != nil {
 		return false, err
 	}
@@ -113,11 +117,12 @@ func Get(address, mid string, st storage.StorageType) (FileInfo, error) {
 	WHERE address=? AND mid=? AND stype=?
 `
 	var fi FileInfo
-	err = db.QueryRow(sqlStmt, address, mid, st).Scan(&fi.Id, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.OnChain)
+	err = db.QueryRow(sqlStmt, address, mid, st).Scan(&fi.Id, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			logger.Errorf("no such object: address=%s, mid=%s, stype=%d", address, mid, st)
-			return FileInfo{}, logs.DataBaseError{Message: fmt.Sprintf("no such record: address=%s, mid=%s, stype=%d", address, mid, st)}
+			lerr := logs.DataBaseError{Message: fmt.Sprintf("no such record: mid=%s, stype=%d", mid, st)}
+			logger.Errorf(lerr.Message)
+			return FileInfo{}, lerr
 		}
 		return FileInfo{}, err
 	}
@@ -133,7 +138,7 @@ func List(address string, st storage.StorageType) ([]FileInfo, error) {
 	defer db.Close()
 
 	sqlStmt := `
-        SELECT address, stype, name, mid, size, onchain
+        SELECT address, stype, name, mid, size, modtime, userdefine
         FROM fileinfo
         WHERE address=? AND stype=?
     `
@@ -146,7 +151,7 @@ func List(address string, st storage.StorageType) ([]FileInfo, error) {
 	var fileList []FileInfo
 	for rows.Next() {
 		var fi FileInfo
-		err := rows.Scan(&fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.OnChain)
+		err := rows.Scan(&fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
 		if err != nil {
 			return nil, err
 		}
@@ -156,7 +161,7 @@ func List(address string, st storage.StorageType) ([]FileInfo, error) {
 	return fileList, nil
 }
 
-func Delete(address, mid string, stype storage.StorageType) (bool, error) {
+func Delete(address, name string, stype storage.StorageType) (bool, error) {
 	db, err := OpenDataBase()
 	if err != nil {
 		logger.Error(err)
@@ -166,9 +171,9 @@ func Delete(address, mid string, stype storage.StorageType) (bool, error) {
 
 	sqlStmt := `
 	DELETE FROM fileinfo
-	WHERE address=? AND mid=? AND stype=?
+	WHERE address=? AND name=? AND stype=?
 `
-	res, err := db.Exec(sqlStmt, address, mid, stype)
+	res, err := db.Exec(sqlStmt, address, name, stype)
 	if err != nil {
 		return false, err
 	}
@@ -178,34 +183,4 @@ func Delete(address, mid string, stype storage.StorageType) (bool, error) {
 		return false, err
 	}
 	return rowsAffected > 0, nil
-}
-
-func GetNotOnChain() ([]FileInfo, error) {
-	db, err := OpenDataBase()
-	if err != nil {
-		logger.Error(err)
-		return nil, err
-	}
-	defer db.Close()
-
-	sqlStmt := `
-	SELECT * FROM fileinfo
-	WHERE onchain=0
-`
-	rows, err := db.Query(sqlStmt)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var result []FileInfo
-	for rows.Next() {
-		var fi FileInfo
-		err = rows.Scan(&fi.Id, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.OnChain)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, fi)
-	}
-	return result, nil
 }
