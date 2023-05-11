@@ -41,10 +41,12 @@ func NewServer(opt ServerOption) *http.Server {
 	InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
 
 	nonceManager := NewNonceManager(30*int64(time.Second.Seconds()), 1*int64(time.Minute.Seconds()))
+	router := gin.Default()
 
 	s := &Server{
 		Config:       config,
 		NonceManager: nonceManager,
+		Router:       router,
 	}
 
 	s.registRoute()
@@ -63,14 +65,11 @@ func NewServer(opt ServerOption) *http.Server {
 
 func (s Server) registRoute() {
 	// add storage routes
-	router := gin.Default()
 
-	router.Use(Cors())
-	router.GET("/", func(c *gin.Context) {
+	s.Router.Use(Cors())
+	s.Router.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Welcome Server")
 	})
-
-	s.Router = router
 
 	s.registLogin()
 	s.registController()
