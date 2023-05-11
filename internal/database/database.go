@@ -104,7 +104,7 @@ func Put(fi FileInfo) (bool, error) {
 	return true, nil
 }
 
-func Get(mid string, st storage.StorageType) (FileInfo, error) {
+func Get(address, mid string, st storage.StorageType) (FileInfo, error) {
 	db, err := OpenDataBase()
 	if err != nil {
 		logger.Error(err)
@@ -114,14 +114,15 @@ func Get(mid string, st storage.StorageType) (FileInfo, error) {
 
 	sqlStmt := `
 	SELECT * FROM fileinfo
-	WHERE mid=? AND stype=?
+	WHERE address=? AND mid=? AND stype=?
 `
 	var fi FileInfo
-	err = db.QueryRow(sqlStmt, mid, st).Scan(&fi.Id, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
+	err = db.QueryRow(sqlStmt, address, mid, st).Scan(&fi.Id, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			logger.Errorf("no such object: mid=%s, stype=%d", mid, st)
-			return FileInfo{}, logs.DataBaseError{Message: fmt.Sprintf("no such record: mid=%s, stype=%d", mid, st)}
+			lerr := logs.DataBaseError{Message: fmt.Sprintf("no such record: mid=%s, stype=%d", mid, st)}
+			logger.Errorf(lerr.Message)
+			return FileInfo{}, lerr
 		}
 		return FileInfo{}, err
 	}
@@ -160,7 +161,7 @@ func List(address string, st storage.StorageType) ([]FileInfo, error) {
 	return fileList, nil
 }
 
-func Delete(address, mid string, stype storage.StorageType) (bool, error) {
+func Delete(address, name string, stype storage.StorageType) (bool, error) {
 	db, err := OpenDataBase()
 	if err != nil {
 		logger.Error(err)
@@ -170,9 +171,9 @@ func Delete(address, mid string, stype storage.StorageType) (bool, error) {
 
 	sqlStmt := `
 	DELETE FROM fileinfo
-	WHERE address=? AND mid=? AND stype=?
+	WHERE address=? AND name=? AND stype=?
 `
-	res, err := db.Exec(sqlStmt, address, mid, stype)
+	res, err := db.Exec(sqlStmt, address, name, stype)
 	if err != nil {
 		return false, err
 	}

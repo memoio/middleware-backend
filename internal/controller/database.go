@@ -41,6 +41,6 @@ func (c *Controller) ListObjects(ctx context.Context, address string) (ListObjec
 	return result, nil
 }
 
-func (c *Controller) GetObjectInfo(ctx context.Context, mid string) (database.FileInfo, error) {
-	return database.Get(mid, c.storageType)
+func (c *Controller) GetObjectInfo(ctx context.Context, address, mid string) (database.FileInfo, error) {
+	return database.Get(address, mid, c.storageType)
 }

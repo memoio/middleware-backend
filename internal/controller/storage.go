@@ -60,10 +60,10 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 	return result, nil
 }
 
-func (c *Controller) GetObject(ctx context.Context, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
+func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
 	result := GetObjectResult{}
 
-	obi, err := c.GetObjectInfo(ctx, mid)
+	obi, err := c.GetObjectInfo(ctx, address, mid)
 	if err != nil {
 		return result, err
 	}
@@ -78,4 +78,23 @@ func (c *Controller) GetObject(ctx context.Context, mid string, w io.Writer, opt
 	result.Size = obi.Size
 
 	return result, nil
+}
+
+func (c *Controller) DeleteObject(ctx context.Context, address, name string) error {
+	err := c.storageApi.DeleteObject(ctx, address, name)
+	if err != nil {
+		return err
+	}
+	res, err := database.Delete(address, name, c.storageType)
+	if err != nil {
+		return err
+	}
+
+	if !res {
+		lerr := logs.ConfigError{Message: "delete object failed"}
+		logger.Error(lerr.Error())
+		return lerr
+	}
+
+	return nil
 }
