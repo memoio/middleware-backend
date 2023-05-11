@@ -46,11 +46,12 @@ func (i *Ipfs) PutObject(ctx context.Context, address, object string, r io.Reade
 	}
 
 	return gateway.ObjectInfo{
-		Address: address,
-		Name:    object,
-		Size:    int64(opt.Size),
-		Cid:     hash,
-		ModTime: time.Now(),
+		Address:     address,
+		Name:        object,
+		Size:        int64(opt.Size),
+		Cid:         hash,
+		ModTime:     time.Now(),
+		UserDefined: opt.UserDefined,
 	}, nil
 }
 

@@ -78,7 +78,7 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 		return err
 	}
 	defer client.Close()
-
+	// logger.Info(c.contractAddr, c.endpoint, c.gatewayAddr, c.gatewaySecretKey)
 	logger.Info("CallContract ", name)
 	if results == nil {
 		results = new([]interface{})

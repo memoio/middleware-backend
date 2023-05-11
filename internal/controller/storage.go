@@ -2,11 +2,14 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"math/big"
 
+	"github.com/memoio/backend/internal/database"
 	"github.com/memoio/backend/internal/gateway"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/utils"
 )
 
 var logger = logs.Logger("controller")
@@ -32,6 +35,26 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 	if err != nil {
 		return result, err
 	}
+
+	userdefine, err := json.Marshal(oi.UserDefined)
+	if err != nil {
+		return result, err
+	}
+	fi := database.FileInfo{
+		Address:    address,
+		Name:       object,
+		Mid:        oi.Cid,
+		SType:      c.storageType,
+		Size:       oi.Size,
+		ModTime:    oi.ModTime,
+		UserDefine: string(userdefine),
+	}
+
+	res, err := database.Put(fi)
+	if err != nil || !res {
+		return result, logs.StorageError{Message: "write to database error, err"}
+	}
+
 	result.Mid = oi.Cid
 
 	return result, nil
@@ -40,7 +63,7 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 func (c *Controller) GetObject(ctx context.Context, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
 	result := GetObjectResult{}
 
-	obi, err := c.storageApi.GetObjectInfo(ctx, mid)
+	obi, err := c.GetObjectInfo(ctx, mid)
 	if err != nil {
 		return result, err
 	}
@@ -51,10 +74,8 @@ func (c *Controller) GetObject(ctx context.Context, mid string, w io.Writer, opt
 	}
 
 	result.Name = obi.Name
-	result.CType = obi.CType
+	result.CType = utils.TypeByExtension(obi.Name)
 	result.Size = obi.Size
 
 	return result, nil
 }
-
-
