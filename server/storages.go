@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/controller"
 	"github.com/memoio/backend/internal/logs"
 )
@@ -35,12 +36,8 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 
 	p := r.Group("/")
 
-	p.POST("/", func(c *gin.Context) {
-		// address, err := s.getAddress(c)
-		// if err != nil {
-		// 	return
-		// }
-		address := c.Query("address")
+	p.POST("/", auth.VerifyIdentityHandler, func(c *gin.Context) {
+		address := c.GetString("address")
 
 		file, err := c.FormFile("file")
 		if err != nil {
@@ -102,12 +99,8 @@ func (s Server) GetObjectRoute(r *gin.RouterGroup) {
 
 func (s Server) ListObjectsRoute(r *gin.RouterGroup) {
 	p := r.Group("/")
-	p.GET("/listobjects", func(c *gin.Context) {
-		// address, err := s.getAddress(c)
-		// if err != nil {
-		// 	return
-		// }
-		address := c.Query("address")
+	p.GET("/listobjects", auth.VerifyIdentityHandler, func(c *gin.Context) {
+		address := c.GetString("address")
 
 		result, err := s.Controller.ListObjects(c.Request.Context(), address)
 		if err != nil {
