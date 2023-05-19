@@ -3,19 +3,17 @@ package server
 import (
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/config"
+	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/controller"
-	"github.com/memoio/backend/internal/logs"
 )
 
 type Server struct {
-	Router       *gin.Engine
-	Config       *config.Config
-	NonceManager *NonceManager
-	Controller   *controller.Controller
+	Router     *gin.Engine
+	Config     *config.Config
+	Controller *controller.Controller
 }
 
 type ServerOption struct {
@@ -23,10 +21,10 @@ type ServerOption struct {
 	CheckRegistered bool
 }
 
-type AuthenticationFaileMessage struct {
-	Nonce string
-	Error logs.APIError
-}
+// type AuthenticationFaileMessage struct {
+// 	Nonce string
+// 	Error logs.APIError
+// }
 
 func NewServer(opt ServerOption) *http.Server {
 	log.Println("Server Start")
@@ -38,22 +36,16 @@ func NewServer(opt ServerOption) *http.Server {
 		return nil
 	}
 
-	InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
+	auth.InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
 
-	nonceManager := NewNonceManager(30*int64(time.Second.Seconds()), 1*int64(time.Minute.Seconds()))
 	router := gin.Default()
 
 	s := &Server{
-		Config:       config,
-		NonceManager: nonceManager,
-		Router:       router,
+		Config: config,
+		Router: router,
 	}
 
-	s.registRoute()
-
-	if opt.CheckRegistered {
-		s.registLensLogin()
-	}
+	s.registRoute(opt.CheckRegistered)
 
 	srv := &http.Server{
 		Addr:    opt.Endpoint,
@@ -63,7 +55,7 @@ func NewServer(opt ServerOption) *http.Server {
 	return srv
 }
 
-func (s Server) registRoute() {
+func (s Server) registRoute(checkRegistered bool) {
 	// add storage routes
 
 	s.Router.Use(Cors())
@@ -71,21 +63,12 @@ func (s Server) registRoute() {
 		c.String(http.StatusOK, "Welcome Server")
 	})
 
-	s.registLogin()
+	s.registLogin(checkRegistered)
 	s.registController()
 }
 
-func (s Server) registLogin() {
-
-	s.Router.GET("/challenge", ChallengeHandler(s.NonceManager))
-
-	s.Router.POST("/login", LoginHandler(s.NonceManager))
-
-	s.Router.GET("/refresh", RefreshHandler())
-}
-
-func (s Server) registLensLogin() {
-	s.Router.POST("/lens/login", LensLoginHandler(s.NonceManager, true))
+func (s Server) registLogin(checkRegistered bool) {
+	auth.LoadAuthModule(s.Router.Group("/"), checkRegistered)
 }
 
 func (s Server) registController() {

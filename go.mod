@@ -14,6 +14,7 @@ require (
 	github.com/spruceid/siwe-go v0.2.0
 	github.com/urfave/cli/v2 v2.23.7
 	go.uber.org/zap v1.21.0
+	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
@@ -104,7 +105,6 @@ require (
 	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
-	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
