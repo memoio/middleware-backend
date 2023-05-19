@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"math/big"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -12,11 +11,6 @@ import (
 )
 
 var logger = logs.Logger("database")
-
-type FileInfoList struct {
-	Size *big.Int
-	fi   chan FileInfo
-}
 
 type FileInfo struct {
 	Id         int

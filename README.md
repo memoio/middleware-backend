@@ -2,33 +2,54 @@
 
 middleware backend
 
-分别有以下模块，登录，文件处理，账户相关，套餐
-## 初始化
-backend init
+The middleware has the following modules
+- Login
+- Server
+- Controller
+- Storage
+- Database
+- Contract
 
-## 登录
+## login
 DID
 
-## 文件
-### 上传
-1. 验证Token， 提取address
-2. 获取上传参数信息
-3. 根据对应的url分发到各个存储系统处理
-4. 上传文件
-5. 获取上传结果，更新链上信息
-### 下载文件
+## Server 
+---
+The Server module provides api, and calls the corresponding method of the Controller according to the api
 
 
-### 列出文件
+## Controller 
+---
+The Controller receives the Server request, uses the database, storage, and contract interfaces according to the request, and returns the result
 
 
-## 账户
-### 查看余额
+## Storage
+---
+Storage module provides storage-related interfaces: upload, download, delete
 
-### 查看账户存储信息
 
-## 购买
+## Database
+--- 
+The Database module caches some data and provides services such as storage lists
 
-### 获取套餐信息
-### 购买套餐
 
+## Contract
+---
+The contract module is responsible for all calls to the contract
+
+## Interface
+### Login
+```
+Method: POST
+URL http://xxx.xxx:8000/login
+```
+
+### PutObject
+```
+Method: POST
+URL http://xxx.xxx:8000/$storage/
+
+support storage:
+mefs
+ipfs
+```

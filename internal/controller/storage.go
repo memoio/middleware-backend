@@ -6,6 +6,7 @@ import (
 	"io"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/memoio/backend/internal/database"
 	"github.com/memoio/backend/internal/gateway"
 	"github.com/memoio/backend/internal/logs"
@@ -55,6 +56,11 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 		return result, logs.StorageError{Message: "write to database error, err"}
 	}
 
+	err = c.is.AddStorage(common.HexToAddress(address), c.storageType, big.NewInt(oi.Size), oi.Cid)
+	if err != nil {
+		return result, err
+	}
+
 	result.Mid = oi.Cid
 
 	return result, nil
@@ -97,4 +103,8 @@ func (c *Controller) DeleteObject(ctx context.Context, address, name string) err
 	}
 
 	return nil
+}
+
+func (c *Controller) updataStorage(ctx context.Context, address, hashid string, size *big.Int) error {
+	return c.is.AddStorage(common.HexToAddress(address), c.storageType, size, hashid)
 }

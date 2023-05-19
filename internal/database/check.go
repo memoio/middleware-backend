@@ -3,75 +3,85 @@ package database
 import (
 	"math/big"
 	"sync"
-	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/fxamacker/cbor/v2"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/internal/storage"
+	"github.com/memoio/go-mefs-v2/lib/types/store"
 )
 
-type WriteCheck struct {
-	lw   sync.Mutex
-	pool map[string]*FileInfoList
+type Check struct {
+	Value  *big.Int
+	Hashid string
 }
 
-func NewWriteCheck() *WriteCheck {
-	wc := WriteCheck{
-		pool: map[string]*FileInfoList{},
-	}
-	return &wc
+type StorageCheck struct {
+	Address common.Address
+	SType   storage.StorageType
+	Size    *big.Int
+	lw      sync.Mutex
+	Ch      []Check
 }
 
-func (w *WriteCheck) Write(fi FileInfo) (bool, error) {
-	address := fi.Address
-	w.lw.Lock()
-	defer w.lw.Unlock()
+func (s *StorageCheck) Serialize() ([]byte, error) {
+	return cbor.Marshal(s)
+}
 
-	var ch chan FileInfo
-	p, ok := w.pool[fi.Address]
-	if !ok {
-		flist := &FileInfoList{
-			Size: new(big.Int),
-			fi:   make(chan FileInfo, 1000),
-		}
-		w.pool[address] = flist
-		ch = flist.fi
-	} else {
-		ch = p.fi
-	}
+func (s *StorageCheck) Deserialize(b []byte) error {
+	return cbor.Unmarshal(b, s)
+}
 
-	select {
-	case ch <- fi:
-		logger.Info("fileinfo", fi)
-		return true, nil
-	default:
-		logger.Error("fail to write fileinfo to database")
-		return false, logs.DataBaseError{Message: "fail to write fileinfo to database"}
+func generateCheck(address common.Address, st storage.StorageType) *StorageCheck {
+	return &StorageCheck{
+		Address: address,
+		SType:   st,
+		Size:    big.NewInt(0),
+		Ch:      make([]Check, 0),
 	}
 }
 
-func (w *WriteCheck) Read() error {
-	for _, flist := range w.pool {
-		for {
-			logger.Info("read fi ", flist.fi)
-			select {
-			case fi, ok := <-flist.fi:
-				if !ok {
-					break
-				}
+func (s *StorageCheck) Put(ch Check) {
+	s.lw.Lock()
+	defer s.lw.Unlock()
+	s.Ch = append(s.Ch, ch)
+	s.Size.Add(s.Size, ch.Value)
+}
 
-				res, err := Put(fi)
-				if err != nil {
-					logger.Errorf("failed to write file info to database: %v", err)
-					return err
-				}
-				if !res {
-					return logs.DataBaseError{Message: "write to database error"}
-				}
-				flist.Size.Add(flist.Size, big.NewInt(fi.Size))
-
-			case <-time.After(1 * time.Second):
-				break
-			}
-		}
+func (s *StorageCheck) Get() Check {
+	s.lw.Lock()
+	defer s.lw.Unlock()
+	if s.Len() == 0 {
+		return Check{}
 	}
+	ch := s.Ch[0]
+	s.Ch = s.Ch[1:]
+	s.Size.Sub(s.Size, ch.Value)
+	return ch
+}
+
+func (s *StorageCheck) Len() int {
+	return len(s.Ch)
+}
+
+func (s *StorageCheck) Save(ds store.KVStore) error {
+	key := store.NewKey(s.Address.String(), s.SType.String())
+
+	data, err := s.Serialize()
+	if err != nil {
+		return logs.DataBaseError{Message: err.Error()}
+	}
+
+	err = ds.Put(key, data)
+	if err != nil {
+		return logs.DataBaseError{Message: err.Error()}
+	}
+
 	return nil
+}
+
+type DeleteCheck struct {
+	Address     common.Address
+	StorageType storage.StorageType
+	Ch          []Check
 }

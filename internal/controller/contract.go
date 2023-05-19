@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/memoio/backend/internal/contract"
 	"github.com/memoio/backend/internal/storage"
 )
@@ -30,8 +31,13 @@ func (c *Controller) CheckStorage(ctx context.Context, address string, size *big
 		return false, err
 	}
 
-	logger.Debug("Avi", si.Buysize+si.Free, "Used", si.Used+size.Int64())
-	return si.Buysize+si.Free > si.Used+size.Int64(), nil
+	cachesize, err := c.is.GetStorage(common.HexToAddress(address), c.storageType)
+	if err != nil {
+		return false, err
+	}
+
+	logger.Debug("Avi", si.Buysize+si.Free, "Used", si.Used+size.Int64()+cachesize.Int64())
+	return si.Buysize+si.Free > si.Used+size.Int64()+cachesize.Int64(), nil
 }
 
 func (c *Controller) GetStorageInfo(ctx context.Context, address string) (storage.StorageInfo, error) {
