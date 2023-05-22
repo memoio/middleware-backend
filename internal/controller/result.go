@@ -19,9 +19,9 @@ type ListObjectsResult struct {
 }
 
 type ObjectInfoResult struct {
-	Name        string
-	Size        int64
-	Mid         string
-	ModTime     time.Time
-	UserDefined map[string]string
+	Name    string
+	Size    int64
+	Mid     string
+	ModTime time.Time
+	// UserDefined map[string]string
 }

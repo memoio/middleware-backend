@@ -89,7 +89,6 @@ func (c *Contract) GetPkgSize(st storage.StorageType, address string) (storage.S
 	used := *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
 	files := *abi.ConvertType(out[3], new(uint64)).(*uint64)
 
-	log.Println(available, free, used, files)
 	return storage.StorageInfo{
 		Storage: st.String(),
 		Buysize: available.Int64(),

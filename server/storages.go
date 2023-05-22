@@ -29,6 +29,7 @@ func (s Server) StorageRegistRoutes(r *gin.RouterGroup) {
 	s.PutobjectRoute(r)
 	s.GetObjectRoute(r)
 	s.ListObjectsRoute(r)
+	s.DeleteObejectRoute(r)
 }
 
 func (s Server) PutobjectRoute(r *gin.RouterGroup) {
@@ -79,9 +80,9 @@ func (s Server) GetObjectRoute(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/:cid", func(c *gin.Context) {
 		cid := c.Param("cid")
-
+		address := c.Query("address")
 		var w bytes.Buffer
-		result, err := s.Controller.GetObject(c.Request.Context(), cid, &w, controller.ObjectOptions{})
+		result, err := s.Controller.GetObject(c.Request.Context(), address, cid, &w, controller.ObjectOptions{})
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
@@ -110,5 +111,26 @@ func (s Server) ListObjectsRoute(r *gin.RouterGroup) {
 		}
 
 		c.JSON(http.StatusOK, result)
+	})
+}
+
+func (s Server) DeleteObejectRoute(r *gin.RouterGroup) {
+	p := r.Group("/")
+	p.GET("/delete", func(c *gin.Context) {
+		// address, err := s.getAddress(c)
+		// if err != nil {
+		// 	return
+		// }
+		address := c.Query("address")
+		mid := c.Query("name")
+
+		err := s.Controller.DeleteObject(c.Request.Context(), address, mid)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"state": "success"})
 	})
 }
