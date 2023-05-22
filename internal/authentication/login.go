@@ -17,6 +17,10 @@ func LoadAuthModule(g *gin.RouterGroup, checkRegistered bool) {
 	g.POST("/lens/login", LensLoginHandler(checkRegistered))
 
 	g.GET("/refresh", RefreshHandler())
+
+	g.GET("/identity", VerifyIdentityHandler, func(c *gin.Context) {
+		c.JSON(200, "address:"+c.GetString("address"))
+	})
 }
 
 func ChallengeHandler() gin.HandlerFunc {
