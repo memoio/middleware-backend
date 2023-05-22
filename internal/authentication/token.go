@@ -11,17 +11,18 @@ import (
 type Claims struct {
 	Type         int  `json:"type,omitempty"`
 	IsRegistered bool `json:"isRegistered,omitempty"`
+	ChainID      int  `josn:"chainid,omitempty"`
 	// Nonce string `json:"nonce,omitempty"`
 	jwt.StandardClaims
 }
 
-func VerifyAccessToken(tokenString string) (string, error) {
+func VerifyAccessToken(tokenString string) (string, int, error) {
 	claims, err := verifyJsonWebToken(tokenString, AccessToken)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
-	return claims.Subject, nil
+	return claims.Subject, claims.ChainID, nil
 }
 
 func VerifyRefreshToken(tokenString string) (string, error) {
@@ -30,23 +31,23 @@ func VerifyRefreshToken(tokenString string) (string, error) {
 		return "", err
 	}
 
-	return genAccessTokenWithFlag(claims.Subject, claims.IsRegistered)
+	return genAccessTokenWithFlag(claims.Subject, claims.ChainID, claims.IsRegistered)
 }
 
-func genAccessToken(subject string) (string, error) {
-	return genJsonWebTokenWithFlag(subject, AccessToken, false)
+func genAccessToken(subject string, chainID int) (string, error) {
+	return genJsonWebTokenWithFlag(subject, chainID, AccessToken, false)
 }
 
-func genAccessTokenWithFlag(subject string, isRegistered bool) (string, error) {
-	return genJsonWebTokenWithFlag(subject, AccessToken, isRegistered)
+func genAccessTokenWithFlag(subject string, chainID int, isRegistered bool) (string, error) {
+	return genJsonWebTokenWithFlag(subject, chainID, AccessToken, isRegistered)
 }
 
-func genRefreshToken(subject string) (string, error) {
-	return genJsonWebTokenWithFlag(subject, RefreshToken, false)
+func genRefreshToken(subject string, chainID int) (string, error) {
+	return genJsonWebTokenWithFlag(subject, chainID, RefreshToken, false)
 }
 
-func genRefreshTokenWithFlag(subject string, isRegistered bool) (string, error) {
-	return genJsonWebTokenWithFlag(subject, RefreshToken, isRegistered)
+func genRefreshTokenWithFlag(subject string, chainID int, isRegistered bool) (string, error) {
+	return genJsonWebTokenWithFlag(subject, chainID, RefreshToken, isRegistered)
 }
 
 func verifyJsonWebToken(tokenString string, jwtType int) (*Claims, error) {
@@ -80,7 +81,7 @@ func verifyJsonWebToken(tokenString string, jwtType int) (*Claims, error) {
 	return claims, nil
 }
 
-func genJsonWebTokenWithFlag(subject string, jwtType int, isRegistered bool) (string, error) {
+func genJsonWebTokenWithFlag(subject string, chainID int, jwtType int, isRegistered bool) (string, error) {
 	var expireTime int64
 	if jwtType == AccessToken {
 		expireTime = time.Now().Add(15 * time.Minute).Unix()
@@ -93,6 +94,7 @@ func genJsonWebTokenWithFlag(subject string, jwtType int, isRegistered bool) (st
 	claims := &Claims{
 		Type:         jwtType,
 		IsRegistered: isRegistered,
+		ChainID:      chainID,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expireTime,
 			IssuedAt:  time.Now().Unix(),

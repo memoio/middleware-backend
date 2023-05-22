@@ -19,7 +19,10 @@ func LoadAuthModule(g *gin.RouterGroup, checkRegistered bool) {
 	g.GET("/refresh", RefreshHandler())
 
 	g.GET("/identity", VerifyIdentityHandler, func(c *gin.Context) {
-		c.JSON(200, "address:"+c.GetString("address"))
+		c.JSON(200, gin.H{
+			"address": c.GetString("address"),
+			"chainid": c.GetInt("chainid"),
+		})
 	})
 }
 
@@ -76,7 +79,7 @@ func LoginHandler() gin.HandlerFunc {
 		// if address is new user in "memo.io" {
 		// 	init usr info
 		// }
-		// fmt.Println(request.Address)
+		// fmt.Println(address)
 
 		c.JSON(http.StatusOK, map[string]string{
 			"accessToken":  accessToken,
@@ -132,7 +135,7 @@ func RefreshHandler() gin.HandlerFunc {
 
 func VerifyIdentityHandler(c *gin.Context) {
 	tokenString := c.GetHeader("Authorization")
-	address, err := VerifyAccessToken(tokenString)
+	address, chainid, err := VerifyAccessToken(tokenString)
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.AbortWithStatusJSON(errRes.HTTPStatusCode, errRes)
@@ -140,4 +143,5 @@ func VerifyIdentityHandler(c *gin.Context) {
 	}
 
 	c.Set("address", address)
+	c.Set("chainid", chainid)
 }

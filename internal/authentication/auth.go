@@ -132,12 +132,12 @@ func LoginWithLens(request EIP4361Request, required bool) (string, string, strin
 		return "", "", "", false, logs.AuthenticationFailed{Message: "Got wrong address/signature"}
 	}
 
-	accessToken, err := genAccessTokenWithFlag(message.GetAddress().Hex(), isRegistered)
+	accessToken, err := genAccessTokenWithFlag(message.GetAddress().Hex(), message.GetChainID(), isRegistered)
 	if err != nil {
 		return "", "", "", false, err
 	}
 
-	refreshToken, err := genRefreshTokenWithFlag(message.GetAddress().Hex(), isRegistered)
+	refreshToken, err := genRefreshTokenWithFlag(message.GetAddress().Hex(), message.GetChainID(), isRegistered)
 
 	return accessToken, refreshToken, message.GetAddress().Hex(), isRegistered, err
 }
@@ -172,12 +172,12 @@ func loginWithEth(nonceManager *NonceManager, request EIP4361Request) (string, s
 		return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
 	}
 
-	accessToken, err := genAccessToken(message.GetAddress().Hex())
+	accessToken, err := genAccessToken(message.GetAddress().Hex(), message.GetChainID())
 	if err != nil {
 		return "", "", "", err
 	}
 
-	refreshToken, err := genRefreshToken(message.GetAddress().Hex())
+	refreshToken, err := genRefreshToken(message.GetAddress().Hex(), message.GetChainID())
 
 	return accessToken, refreshToken, message.GetAddress().Hex(), err
 }
