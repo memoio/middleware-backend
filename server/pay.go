@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/controller"
-	"github.com/memoio/backend/internal/logs"
 )
 
 func toInt64(s string) int64 {
@@ -31,20 +31,21 @@ func toResponse(f bool) response {
 
 func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
-	p.GET("/buypkg", func(c *gin.Context) {
+	p.GET("/buypkg", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		amount := c.Query("amount")
 		pkgid := c.Query("pkgid")
 		chainId := c.Query("chainid")
 		times := time.Now()
-		tokenString := c.GetHeader("Authorization")
-		address, err := VerifyAccessToken(tokenString)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: s.NonceManager.GetNonce(),
-				Error: errRes})
-			return
-		}
+		address := c.GetString("address")
+		// tokenString := c.GetHeader("Authorization")
+		// address, err := VerifyAccessToken(tokenString)
+		// if err != nil {
+		// 	errRes := logs.ToAPIErrorCode(err)
+		// 	c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
+		// 		Nonce: s.NonceManager.GetNonce(),
+		// 		Error: errRes})
+		// 	return
+		// }
 		pkg := controller.Package{
 			Pkgid:     uint64(toInt64(pkgid)),
 			Amount:    toInt64(amount),
@@ -72,16 +73,17 @@ func (s Server) addGetPkgListRoutes(r *gin.RouterGroup) {
 
 func (s Server) addGetBuyPkgRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
-	p.GET("/getbuypkgs", func(c *gin.Context) {
-		tokenString := c.GetHeader("Authorization")
-		address, err := VerifyAccessToken(tokenString)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: s.NonceManager.GetNonce(),
-				Error: errRes})
-			return
-		}
+	p.GET("/getbuypkgs", auth.VerifyIdentityHandler, func(c *gin.Context) {
+		// tokenString := c.GetHeader("Authorization")
+		// address, err := VerifyAccessToken(tokenString)
+		// if err != nil {
+		// 	errRes := logs.ToAPIErrorCode(err)
+		// 	c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
+		// 		Nonce: s.NonceManager.GetNonce(),
+		// 		Error: errRes})
+		// 	return
+		// }
+		address := c.GetString("address")
 
 		pi, err := s.Controller.GetUserBuyPackages(address)
 		if err != nil {
