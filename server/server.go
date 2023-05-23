@@ -3,19 +3,18 @@ package server
 import (
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/config"
+	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/controller"
 	"github.com/memoio/backend/internal/logs"
 )
 
 type Server struct {
-	Router       *gin.Engine
-	Config       *config.Config
-	NonceManager *NonceManager
-	Controller   *controller.Controller
+	Router     *gin.Engine
+	Config     *config.Config
+	Controller *controller.Controller
 }
 
 type ServerOption struct {
@@ -38,24 +37,14 @@ func NewServer(opt ServerOption) *http.Server {
 		return nil
 	}
 
-	InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
-
-	nonceManager := NewNonceManager(30*int64(time.Second.Seconds()), 1*int64(time.Minute.Seconds()))
 	router := gin.Default()
 
 	s := &Server{
-		Config:       config,
-		NonceManager: nonceManager,
-		Router:       router,
+		Config: config,
+		Router: router,
 	}
 
 	s.registRoute()
-
-	if opt.CheckRegistered {
-		s.registLensLogin()
-	}
-
-	// go s.Controller.UploadToContract(context.TODO())
 
 	srv := &http.Server{
 		Addr:    opt.Endpoint,
@@ -78,16 +67,7 @@ func (s Server) registRoute() {
 }
 
 func (s Server) registLogin() {
-
-	s.Router.GET("/challenge", ChallengeHandler(s.NonceManager))
-
-	s.Router.POST("/login", LoginHandler(s.NonceManager))
-
-	s.Router.GET("/refresh", RefreshHandler())
-}
-
-func (s Server) registLensLogin() {
-	s.Router.POST("/lens/login", LensLoginHandler(s.NonceManager, true))
+	auth.LoadAuthRouter(s.Router.Group("/"))
 }
 
 func (s Server) registController() {

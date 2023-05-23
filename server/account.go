@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
 )
@@ -23,17 +24,8 @@ func (s Server) accountRegistRoutes(r *gin.RouterGroup) {
 
 func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
-	p.GET("/balance", func(c *gin.Context) {
-		tokenString := c.GetHeader("Authorization")
-		address, err := VerifyAccessToken(tokenString)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
-				Nonce: s.NonceManager.GetNonce(),
-				Error: errRes})
-			return
-		}
-		// address := c.Query("address")
+	p.GET("/balance", auth.VerifyIdentityHandler, func(c *gin.Context) {
+		address := c.GetString("address")
 		balance, err := s.Controller.GetBalance(c.Request.Context(), address)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
@@ -47,16 +39,7 @@ func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
 func (s Server) addGetStorageRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/storageinfo", func(c *gin.Context) {
-		// tokenString := c.GetHeader("Authorization")
-		// address, err := VerifyAccessToken(tokenString)
-		// if err != nil {
-		// 	errRes := logs.ToAPIErrorCode(err)
-		// 	c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
-		// 		Nonce: s.NonceManager.GetNonce(),
-		// 		Error: errRes})
-		// 	return
-		// }
-		address := c.Query("address")
+		address := c.GetString("address")
 
 		si, err := s.Controller.GetStorageInfo(c.Request.Context(), address)
 		if err != nil {
