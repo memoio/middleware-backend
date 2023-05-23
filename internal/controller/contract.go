@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/memoio/backend/internal/contract"
 	"github.com/memoio/backend/internal/storage"
 )
@@ -31,13 +30,8 @@ func (c *Controller) CheckStorage(ctx context.Context, address string, size *big
 		return false, err
 	}
 
-	cachesize, err := c.is.GetStorage(common.HexToAddress(address), c.storageType)
-	if err != nil {
-		return false, err
-	}
-
-	logger.Debug("Avi", si.Buysize+si.Free, "Used", si.Used+size.Int64()+cachesize.Int64())
-	return si.Buysize+si.Free > si.Used+size.Int64()+cachesize.Int64(), nil
+	logger.Debug("Avi", si.Buysize+si.Free, "Used", si.Used+size.Int64())
+	return si.Buysize+si.Free > si.Used+size.Int64(), nil
 }
 
 func (c *Controller) GetStorageInfo(ctx context.Context, address string) (storage.StorageInfo, error) {
@@ -45,6 +39,13 @@ func (c *Controller) GetStorageInfo(ctx context.Context, address string) (storag
 	if err != nil {
 		return storage.StorageInfo{}, err
 	}
+
+	cachesize, err := c.is.GetStorage(address, c.storageType)
+	if err != nil {
+		return storage.StorageInfo{}, err
+	}
+
+	si.Used += cachesize.Int64()
 
 	return si, nil
 }
@@ -76,4 +77,9 @@ func (c *Controller) GetPackageList() ([]PackageInfo, error) {
 
 func (c *Controller) GetUserBuyPackages(address string) ([]contract.UserBuyPackage, error) {
 	return c.contract.StoreGetBuyPkgs(address)
+}
+
+func (c *Controller) StoreOrderPkg(address string) error {
+	// c.contract.StoreOrderPkg(address)
+	return nil
 }

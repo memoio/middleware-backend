@@ -15,7 +15,7 @@ type StorageResponse struct {
 
 func (s Server) accountRegistRoutes(r *gin.RouterGroup) {
 	s.addGetBalanceRoutes(r)
-	// s.addGetStorageRoutes(r)
+	s.addGetStorageRoutes(r)
 	s.addBuyPkgRoutes(r)
 	s.addGetPkgListRoutes(r)
 	s.addGetBuyPkgRoutes(r)
@@ -33,6 +33,7 @@ func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
 				Error: errRes})
 			return
 		}
+		// address := c.Query("address")
 		balance, err := s.Controller.GetBalance(c.Request.Context(), address)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
@@ -43,46 +44,27 @@ func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
 	})
 }
 
-// func (s Server) addGetStorageRoutes(r *gin.RouterGroup) {
-// 	p := r.Group("/")
-// 	p.GET("/getstorage", func(c *gin.Context) {
-// 		var sr StorageResponse
+func (s Server) addGetStorageRoutes(r *gin.RouterGroup) {
+	p := r.Group("/")
+	p.GET("/storageinfo", func(c *gin.Context) {
+		// tokenString := c.GetHeader("Authorization")
+		// address, err := VerifyAccessToken(tokenString)
+		// if err != nil {
+		// 	errRes := logs.ToAPIErrorCode(err)
+		// 	c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
+		// 		Nonce: s.NonceManager.GetNonce(),
+		// 		Error: errRes})
+		// 	return
+		// }
+		address := c.Query("address")
 
-// 		tokenString := c.GetHeader("Authorization")
-// 		address, err := VerifyAccessToken(tokenString)
-// 		if err != nil {
-// 			errRes := logs.ToAPIErrorCode(err)
-// 			c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
-// 				Nonce: s.NonceManager.GetNonce(),
-// 				Error: errRes})
-// 			return
-// 		}
-// 		sr.Address = address
+		si, err := s.Controller.GetStorageInfo(c.Request.Context(), address)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
 
-// 		api, err := mefs.NewGateway()
-// 		if err != nil {
-// 			errRes := logs.ToAPIErrorCode(err)
-// 			c.JSON(errRes.HTTPStatusCode, errRes)
-// 			return
-// 		}
-
-// 		si, err := api.GetPkgSize(c.Request.Context(), address)
-// 		if err != nil {
-// 			errRes := logs.ToAPIErrorCode(err)
-// 			c.JSON(errRes.HTTPStatusCode, errRes)
-// 			return
-// 		}
-// 		sr.StorageList = append(sr.StorageList, si)
-
-// 		api, err = ipfs.NewGateway()
-// 		si, err = api.GetPkgSize(c.Request.Context(), address)
-// 		if err != nil {
-// 			errRes := logs.ToAPIErrorCode(err)
-// 			c.JSON(errRes.HTTPStatusCode, errRes)
-// 			return
-// 		}
-// 		sr.StorageList = append(sr.StorageList, si)
-
-// 		c.JSON(http.StatusOK, sr)
-// 	})
-// }
+		c.JSON(http.StatusOK, si)
+	})
+}

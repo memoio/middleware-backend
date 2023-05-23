@@ -151,9 +151,9 @@ func (c *Contract) StoreGetBuyPkgs(address string) ([]UserBuyPackage, error) {
 	return out0, nil
 }
 
-func (c *Contract) StoreOrderPkgExpiration(address, mid string, stype uint8, size *big.Int) bool {
-	log.Println("storeOrderPkgExpiration:", stype, address, mid, size)
-	return c.sendTransaction("delpkg", "storeOrderPkgExpiration", common.HexToAddress(address), mid, stype, size)
+func (c *Contract) StoreOrderPkgExpiration(address, mid string, st storage.StorageType, size *big.Int) bool {
+	log.Println("storeOrderPkgExpiration:", st, address, mid, size)
+	return c.sendTransaction("delpkg", "storeOrderPkgExpiration", common.HexToAddress(address), mid, uint8(st), size)
 }
 
 func (c *Contract) GetStoreAllSize() *big.Int {

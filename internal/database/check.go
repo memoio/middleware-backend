@@ -11,17 +11,14 @@ import (
 	"github.com/memoio/go-mefs-v2/lib/types/store"
 )
 
-type Check struct {
-	Value  *big.Int
-	Hashid string
-}
-
 type StorageCheck struct {
 	Address common.Address
 	SType   storage.StorageType
-	Size    *big.Int
+	AddSize *big.Int
+	addhash []string
+	DelSize *big.Int
+	delhash []string
 	lw      sync.Mutex
-	Ch      []Check
 }
 
 func (s *StorageCheck) Serialize() ([]byte, error) {
@@ -32,36 +29,14 @@ func (s *StorageCheck) Deserialize(b []byte) error {
 	return cbor.Unmarshal(b, s)
 }
 
-func generateCheck(address common.Address, st storage.StorageType) *StorageCheck {
+// func (s *SendStorage) GetHash()
+func generateCheck(address string, st storage.StorageType) *StorageCheck {
 	return &StorageCheck{
-		Address: address,
+		Address: common.HexToAddress(address),
 		SType:   st,
-		Size:    big.NewInt(0),
-		Ch:      make([]Check, 0),
+		AddSize: big.NewInt(0),
+		DelSize: big.NewInt(0),
 	}
-}
-
-func (s *StorageCheck) Put(ch Check) {
-	s.lw.Lock()
-	defer s.lw.Unlock()
-	s.Ch = append(s.Ch, ch)
-	s.Size.Add(s.Size, ch.Value)
-}
-
-func (s *StorageCheck) Get() Check {
-	s.lw.Lock()
-	defer s.lw.Unlock()
-	if s.Len() == 0 {
-		return Check{}
-	}
-	ch := s.Ch[0]
-	s.Ch = s.Ch[1:]
-	s.Size.Sub(s.Size, ch.Value)
-	return ch
-}
-
-func (s *StorageCheck) Len() int {
-	return len(s.Ch)
 }
 
 func (s *StorageCheck) Save(ds store.KVStore) error {
@@ -80,8 +55,43 @@ func (s *StorageCheck) Save(ds store.KVStore) error {
 	return nil
 }
 
-type DeleteCheck struct {
-	Address     common.Address
-	StorageType storage.StorageType
-	Ch          []Check
+func (s *StorageCheck) Add(hash string, size *big.Int) error {
+	s.lw.Lock()
+	defer s.lw.Unlock()
+
+	s.AddSize.Add(s.AddSize, size)
+	s.addhash = append(s.addhash, hash)
+	return nil
+}
+
+func (s *StorageCheck) Del(hash string, size *big.Int) error {
+	s.lw.Lock()
+	defer s.lw.Unlock()
+
+	s.DelSize.Add(s.DelSize, size)
+	s.delhash = append(s.delhash, hash)
+	return nil
+}
+
+func (s *StorageCheck) Size() *big.Int {
+	result := new(big.Int).Set(s.AddSize)
+	return result.Sub(result, s.DelSize)
+}
+
+func (s *StorageCheck) AddHash() string {
+	var res string
+	for _, hash := range s.addhash {
+		res += hash
+	}
+
+	return res
+}
+
+func (s *StorageCheck) DelHash() string {
+	var res string
+	for _, hash := range s.delhash {
+		res += hash
+	}
+
+	return res
 }

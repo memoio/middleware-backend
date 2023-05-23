@@ -64,7 +64,7 @@ func createTable() error {
 		size INTEGER,
 		modtime DATETIME,
 		userdefine TEXT,
-		UNIQUE (address, stype, name, mid) ON CONFLICT IGNORE
+		UNIQUE (address, stype, mid) ON CONFLICT IGNORE
 	);
 	`
 
@@ -155,7 +155,7 @@ func List(address string, st storage.StorageType) ([]FileInfo, error) {
 	return fileList, nil
 }
 
-func Delete(address, name string, stype storage.StorageType) (bool, error) {
+func Delete(address, mid string, stype storage.StorageType) (bool, error) {
 	db, err := OpenDataBase()
 	if err != nil {
 		logger.Error(err)
@@ -165,9 +165,9 @@ func Delete(address, name string, stype storage.StorageType) (bool, error) {
 
 	sqlStmt := `
 	DELETE FROM fileinfo
-	WHERE address=? AND name=? AND stype=?
+	WHERE address=? AND mid=? AND stype=?
 `
-	res, err := db.Exec(sqlStmt, address, name, stype)
+	res, err := db.Exec(sqlStmt, address, mid, stype)
 	if err != nil {
 		return false, err
 	}

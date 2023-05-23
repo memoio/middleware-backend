@@ -6,7 +6,6 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/memoio/backend/internal/database"
 	"github.com/memoio/backend/internal/gateway"
 	"github.com/memoio/backend/internal/logs"
@@ -56,7 +55,7 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 		return result, logs.StorageError{Message: "write to database error, err"}
 	}
 
-	err = c.is.AddStorage(common.HexToAddress(address), c.storageType, big.NewInt(oi.Size), oi.Cid)
+	err = c.is.AddStorage(address, c.storageType, big.NewInt(oi.Size), oi.Cid)
 	if err != nil {
 		return result, err
 	}
@@ -86,12 +85,18 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 	return result, nil
 }
 
-func (c *Controller) DeleteObject(ctx context.Context, address, name string) error {
-	err := c.storageApi.DeleteObject(ctx, address, name)
+func (c *Controller) DeleteObject(ctx context.Context, address, mid string) error {
+	err := c.storageApi.DeleteObject(ctx, address, mid)
 	if err != nil {
 		return err
 	}
-	res, err := database.Delete(address, name, c.storageType)
+
+	fi, err := c.GetObjectInfo(ctx, address, mid)
+	if err != nil {
+		return err
+	}
+
+	res, err := database.Delete(address, mid, c.storageType)
 	if err != nil {
 		return err
 	}
@@ -102,9 +107,5 @@ func (c *Controller) DeleteObject(ctx context.Context, address, name string) err
 		return lerr
 	}
 
-	return nil
-}
-
-func (c *Controller) updataStorage(ctx context.Context, address, hashid string, size *big.Int) error {
-	return c.is.AddStorage(common.HexToAddress(address), c.storageType, size, hashid)
+	return c.is.DelStorage(address, c.storageType, big.NewInt(fi.Size), fi.Mid)
 }

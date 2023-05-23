@@ -55,6 +55,8 @@ func NewServer(opt ServerOption) *http.Server {
 		s.registLensLogin()
 	}
 
+	// go s.Controller.UploadToContract(context.TODO())
+
 	srv := &http.Server{
 		Addr:    opt.Endpoint,
 		Handler: s.Router,
@@ -94,6 +96,7 @@ func (s Server) registController() {
 		ct := controller.NewController(r.BasePath(), s.Config)
 		s.Controller = ct
 
+		go s.Controller.UploadToContract()
 		s.StorageRegistRoutes(r)
 		s.accountRegistRoutes(r)
 	}

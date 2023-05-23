@@ -2,6 +2,7 @@ package controller
 
 import (
 	"os"
+	"time"
 
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/contract"
@@ -20,10 +21,11 @@ type Controller struct {
 	storageApi  gateway.IGateway
 	contract    *contract.Contract
 	storageType storage.StorageType
+	cfg         *config.Config
 	is          *database.SendStorage
 }
 
-func NewController(path string, cf *config.Config) *Controller {
+func NewController(path string, cfg *config.Config) *Controller {
 	logger.Info("new controller")
 	api, ok := ApiMap[path]
 	if !ok {
@@ -31,7 +33,7 @@ func NewController(path string, cf *config.Config) *Controller {
 		return nil
 	}
 
-	ct := contract.NewContract(cf.Contract)
+	ct := contract.NewContract(cfg.Contract)
 
 	opt := kv.DefaultOptions
 	bpath := "./datastore/" + api.T.String()
@@ -54,5 +56,33 @@ func NewController(path string, cf *config.Config) *Controller {
 		storageType: api.T,
 		contract:    ct,
 		is:          is,
+		cfg:         cfg,
 	}
+}
+
+func (c *Controller) UploadToContract() error {
+	ticker := time.NewTicker(1 * time.Minute)
+
+	for range ticker.C {
+		logger.Info("Upload To Contract")
+
+		scl := c.is.GetAllStorage()
+		for _, sc := range scl {
+
+			add := c.contract.StoreOrderPkg(sc.Address.Hex(), sc.AddHash(), sc.SType, sc.AddSize)
+
+			del := c.contract.StoreOrderPkgExpiration(sc.Address.Hex(), sc.DelHash(), sc.SType, sc.AddSize)
+
+			if add && del {
+				err := c.is.ResetStorage(sc.Address.Hex(), sc.SType)
+				if err != nil {
+					logger.Error(err)
+					return err
+				}
+			}
+		}
+
+	}
+
+	return nil
 }

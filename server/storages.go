@@ -129,7 +129,7 @@ func (s Server) DeleteObejectRoute(r *gin.RouterGroup) {
 		// 	return
 		// }
 		address := c.Query("address")
-		mid := c.Query("name")
+		mid := c.Query("mid")
 
 		err := s.Controller.DeleteObject(c.Request.Context(), address, mid)
 		if err != nil {
