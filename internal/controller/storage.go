@@ -55,6 +55,11 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 		return result, logs.StorageError{Message: "write to database error, err"}
 	}
 
+	err = c.is.AddStorage(address, c.storageType, big.NewInt(oi.Size), oi.Cid)
+	if err != nil {
+		return result, err
+	}
+
 	result.Mid = oi.Cid
 
 	return result, nil
@@ -80,12 +85,18 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 	return result, nil
 }
 
-func (c *Controller) DeleteObject(ctx context.Context, address, name string) error {
-	err := c.storageApi.DeleteObject(ctx, address, name)
+func (c *Controller) DeleteObject(ctx context.Context, address, mid string) error {
+	err := c.storageApi.DeleteObject(ctx, address, mid)
 	if err != nil {
 		return err
 	}
-	res, err := database.Delete(address, name, c.storageType)
+
+	fi, err := c.GetObjectInfo(ctx, address, mid)
+	if err != nil {
+		return err
+	}
+
+	res, err := database.Delete(address, mid, c.storageType)
 	if err != nil {
 		return err
 	}
@@ -96,5 +107,5 @@ func (c *Controller) DeleteObject(ctx context.Context, address, name string) err
 		return lerr
 	}
 
-	return nil
+	return c.is.DelStorage(address, c.storageType, big.NewInt(fi.Size), fi.Mid)
 }

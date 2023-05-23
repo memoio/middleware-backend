@@ -32,7 +32,7 @@ func loadApiMap() {
 
 	ipfs, err := ipfs.NewGateway()
 	if err != nil {
-		log.Println("load mefs ap failed")
+		log.Println("load ipfs ap failed")
 		return
 	}
 	ApiMap["/ipfs"] = &Api{G: ipfs, T: storage.IPFS}

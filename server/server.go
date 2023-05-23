@@ -77,6 +77,7 @@ func (s Server) registController() {
 		ct := controller.NewController(r.BasePath(), s.Config)
 		s.Controller = ct
 
+		go s.Controller.UploadToContract()
 		s.StorageRegistRoutes(r)
 		s.accountRegistRoutes(r)
 	}
