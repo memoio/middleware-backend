@@ -3,75 +3,95 @@ package database
 import (
 	"math/big"
 	"sync"
-	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/fxamacker/cbor/v2"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/internal/storage"
+	"github.com/memoio/go-mefs-v2/lib/types/store"
 )
 
-type WriteCheck struct {
-	lw   sync.Mutex
-	pool map[string]*FileInfoList
+type StorageCheck struct {
+	Address common.Address
+	SType   storage.StorageType
+	AddSize *big.Int
+	addhash []string
+	DelSize *big.Int
+	delhash []string
+	lw      sync.Mutex
 }
 
-func NewWriteCheck() *WriteCheck {
-	wc := WriteCheck{
-		pool: map[string]*FileInfoList{},
-	}
-	return &wc
+func (s *StorageCheck) Serialize() ([]byte, error) {
+	return cbor.Marshal(s)
 }
 
-func (w *WriteCheck) Write(fi FileInfo) (bool, error) {
-	address := fi.Address
-	w.lw.Lock()
-	defer w.lw.Unlock()
+func (s *StorageCheck) Deserialize(b []byte) error {
+	return cbor.Unmarshal(b, s)
+}
 
-	var ch chan FileInfo
-	p, ok := w.pool[fi.Address]
-	if !ok {
-		flist := &FileInfoList{
-			Size: new(big.Int),
-			fi:   make(chan FileInfo, 1000),
-		}
-		w.pool[address] = flist
-		ch = flist.fi
-	} else {
-		ch = p.fi
-	}
-
-	select {
-	case ch <- fi:
-		logger.Info("fileinfo", fi)
-		return true, nil
-	default:
-		logger.Error("fail to write fileinfo to database")
-		return false, logs.DataBaseError{Message: "fail to write fileinfo to database"}
+// func (s *SendStorage) GetHash()
+func generateCheck(address string, st storage.StorageType) *StorageCheck {
+	return &StorageCheck{
+		Address: common.HexToAddress(address),
+		SType:   st,
+		AddSize: big.NewInt(0),
+		DelSize: big.NewInt(0),
 	}
 }
 
-func (w *WriteCheck) Read() error {
-	for _, flist := range w.pool {
-		for {
-			logger.Info("read fi ", flist.fi)
-			select {
-			case fi, ok := <-flist.fi:
-				if !ok {
-					break
-				}
+func (s *StorageCheck) Save(ds store.KVStore) error {
+	key := store.NewKey(s.Address.String(), s.SType.String())
 
-				res, err := Put(fi)
-				if err != nil {
-					logger.Errorf("failed to write file info to database: %v", err)
-					return err
-				}
-				if !res {
-					return logs.DataBaseError{Message: "write to database error"}
-				}
-				flist.Size.Add(flist.Size, big.NewInt(fi.Size))
-
-			case <-time.After(1 * time.Second):
-				break
-			}
-		}
+	data, err := s.Serialize()
+	if err != nil {
+		return logs.DataBaseError{Message: err.Error()}
 	}
+
+	err = ds.Put(key, data)
+	if err != nil {
+		return logs.DataBaseError{Message: err.Error()}
+	}
+
 	return nil
+}
+
+func (s *StorageCheck) Add(hash string, size *big.Int) error {
+	s.lw.Lock()
+	defer s.lw.Unlock()
+
+	s.AddSize.Add(s.AddSize, size)
+	s.addhash = append(s.addhash, hash)
+	return nil
+}
+
+func (s *StorageCheck) Del(hash string, size *big.Int) error {
+	s.lw.Lock()
+	defer s.lw.Unlock()
+
+	s.DelSize.Add(s.DelSize, size)
+	s.delhash = append(s.delhash, hash)
+	return nil
+}
+
+func (s *StorageCheck) Size() *big.Int {
+	result := new(big.Int).Set(s.AddSize)
+	return result.Sub(result, s.DelSize)
+}
+
+func (s *StorageCheck) AddHash() string {
+	var res string
+	for _, hash := range s.addhash {
+		res += hash
+	}
+
+	return res
+}
+
+func (s *StorageCheck) DelHash() string {
+	var res string
+	for _, hash := range s.delhash {
+		res += hash
+	}
+
+	return res
 }

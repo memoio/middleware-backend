@@ -40,6 +40,13 @@ func (c *Controller) GetStorageInfo(ctx context.Context, address string) (storag
 		return storage.StorageInfo{}, err
 	}
 
+	cachesize, err := c.is.GetStorage(address, c.storageType)
+	if err != nil {
+		return storage.StorageInfo{}, err
+	}
+
+	si.Used += cachesize.Int64()
+
 	return si, nil
 }
 
@@ -70,4 +77,9 @@ func (c *Controller) GetPackageList() ([]PackageInfo, error) {
 
 func (c *Controller) GetUserBuyPackages(address string) ([]contract.UserBuyPackage, error) {
 	return c.contract.StoreGetBuyPkgs(address)
+}
+
+func (c *Controller) StoreOrderPkg(address string) error {
+	// c.contract.StoreOrderPkg(address)
+	return nil
 }

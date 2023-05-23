@@ -80,7 +80,7 @@ func (s Server) GetObjectRoute(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/:cid", func(c *gin.Context) {
 		cid := c.Param("cid")
-		address := c.Query("address")
+		address := c.GetString("address")
 		var w bytes.Buffer
 		result, err := s.Controller.GetObject(c.Request.Context(), address, cid, &w, controller.ObjectOptions{})
 		if err != nil {
@@ -122,7 +122,7 @@ func (s Server) DeleteObejectRoute(r *gin.RouterGroup) {
 		// 	return
 		// }
 		address := c.Query("address")
-		mid := c.Query("name")
+		mid := c.Query("mid")
 
 		err := s.Controller.DeleteObject(c.Request.Context(), address, mid)
 		if err != nil {
