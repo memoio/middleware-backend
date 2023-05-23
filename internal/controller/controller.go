@@ -61,7 +61,7 @@ func NewController(path string, cfg *config.Config) *Controller {
 }
 
 func (c *Controller) UploadToContract() error {
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(24 * time.Hour)
 
 	for range ticker.C {
 		logger.Info("Upload To Contract")
