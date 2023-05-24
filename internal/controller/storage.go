@@ -82,6 +82,14 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 	result.CType = utils.TypeByExtension(obi.Name)
 	result.Size = obi.Size
 
+	value := c.getPrice(result.Size)
+	err = c.sp.AddPay(address, c.storageType, big.NewInt(result.Size), value, obi.Mid)
+
+	if err != nil {
+		logger.Error(err)
+		return result, err
+	}
+
 	return result, nil
 }
 
@@ -108,4 +116,13 @@ func (c *Controller) DeleteObject(ctx context.Context, address, mid string) erro
 	}
 
 	return c.is.DelStorage(address, c.storageType, big.NewInt(fi.Size), fi.Mid)
+}
+
+func (c *Controller) getPrice(size int64) *big.Int {
+	price := c.cfg.Storage.TrafficCost
+	p := big.NewInt(price)
+
+	p.Mul(p, big.NewInt(size))
+
+	return p
 }
