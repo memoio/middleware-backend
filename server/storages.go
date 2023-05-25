@@ -78,7 +78,7 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 
 func (s Server) GetObjectRoute(r *gin.RouterGroup) {
 	p := r.Group("/")
-	p.GET("/:cid", func(c *gin.Context) {
+	p.GET("/:cid", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		cid := c.Param("cid")
 		address := c.GetString("address")
 		var w bytes.Buffer
@@ -116,12 +116,12 @@ func (s Server) ListObjectsRoute(r *gin.RouterGroup) {
 
 func (s Server) DeleteObejectRoute(r *gin.RouterGroup) {
 	p := r.Group("/")
-	p.GET("/delete", func(c *gin.Context) {
+	p.GET("/delete", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		// address, err := s.getAddress(c)
 		// if err != nil {
 		// 	return
 		// }
-		address := c.Query("address")
+		address := c.GetString("address")
 		mid := c.Query("mid")
 
 		err := s.Controller.DeleteObject(c.Request.Context(), address, mid)

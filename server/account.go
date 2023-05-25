@@ -38,7 +38,7 @@ func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
 
 func (s Server) addGetStorageRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
-	p.GET("/storageinfo", func(c *gin.Context) {
+	p.GET("/storageinfo", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		address := c.GetString("address")
 
 		si, err := s.Controller.GetStorageInfo(c.Request.Context(), address)
