@@ -52,7 +52,17 @@ func (c *Controller) GetStorageInfo(ctx context.Context, address string) (storag
 
 // balance
 func (c *Controller) GetBalance(ctx context.Context, address string) (*big.Int, error) {
-	return c.contract.BalanceOf(ctx, address)
+	balance, err := c.contract.BalanceOf(ctx, address)
+	if err != nil {
+		return balance, err
+	}
+
+	value, err := c.sp.Size(address, c.storageType)
+	if err != nil {
+		return balance, err
+	}
+
+	return balance.Sub(balance, value), nil
 }
 
 func (c *Controller) BuyPackage(address string, pkg Package) bool {

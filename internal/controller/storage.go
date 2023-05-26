@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math/big"
 
@@ -73,6 +74,20 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 		return result, err
 	}
 
+	balance, err := c.GetBalance(ctx, address)
+	if err != nil {
+		return result, err
+	}
+
+	trafficCost := c.cfg.Storage.TrafficCost
+
+	needpay := big.NewInt(trafficCost)
+	needpay.Mul(needpay, big.NewInt(obi.Size))
+
+	if balance.Cmp(needpay) < 0 {
+		return result, logs.ControllerError{Message: fmt.Sprintf("balance not enough, balance=%d needpay=%d", balance, needpay)}
+	}
+
 	err = c.storageApi.GetObject(ctx, mid, w, gateway.ObjectOptions(opts))
 	if err != nil {
 		return result, err
@@ -81,6 +96,14 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 	result.Name = obi.Name
 	result.CType = utils.TypeByExtension(obi.Name)
 	result.Size = obi.Size
+
+	value := c.getPrice(result.Size)
+	err = c.sp.AddPay(address, c.storageType, big.NewInt(result.Size), value, obi.Mid)
+
+	if err != nil {
+		logger.Error(err)
+		return result, err
+	}
 
 	return result, nil
 }
@@ -108,4 +131,13 @@ func (c *Controller) DeleteObject(ctx context.Context, address, mid string) erro
 	}
 
 	return c.is.DelStorage(address, c.storageType, big.NewInt(fi.Size), fi.Mid)
+}
+
+func (c *Controller) getPrice(size int64) *big.Int {
+	price := c.cfg.Storage.TrafficCost
+	p := big.NewInt(price)
+
+	p.Mul(p, big.NewInt(size))
+
+	return p
 }

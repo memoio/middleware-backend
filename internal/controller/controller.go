@@ -23,6 +23,7 @@ type Controller struct {
 	storageType storage.StorageType
 	cfg         *config.Config
 	is          *database.SendStorage
+	sp          *database.SendPay
 }
 
 func NewController(path string, cfg *config.Config) *Controller {
@@ -51,17 +52,19 @@ func NewController(path string, cfg *config.Config) *Controller {
 	dss := wrap.NewKVStore(metaStorePrefix, ds)
 
 	is := database.NewSender(dss)
+	sp := database.NewSenderPay(dss)
 	return &Controller{
 		storageApi:  api.G,
 		storageType: api.T,
 		contract:    ct,
 		is:          is,
+		sp:          sp,
 		cfg:         cfg,
 	}
 }
 
 func (c *Controller) UploadToContract() error {
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(24 * time.Hour)
 
 	for range ticker.C {
 		logger.Info("Upload To Contract")
@@ -75,6 +78,19 @@ func (c *Controller) UploadToContract() error {
 
 			if add && del {
 				err := c.is.ResetStorage(sc.Address.Hex(), sc.SType)
+				if err != nil {
+					logger.Error(err)
+					return err
+				}
+			}
+		}
+
+		pcl := c.sp.GetAllStorage()
+		for _, pc := range pcl {
+			res := c.contract.StoreOrderPay(pc.Address.Hex(), pc.Hash(), pc.SType, pc.Value, pc.Size)
+
+			if res {
+				err := c.sp.ResetPay(pc.Address.Hex(), pc.SType)
 				if err != nil {
 					logger.Error(err)
 					return err
