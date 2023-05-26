@@ -106,3 +106,19 @@ func (s *SendPay) ResetPay(address string, st storage.StorageType) error {
 	s.pool[address] = pchk
 	return nil
 }
+
+func (s *SendPay) Size(address string, st storage.StorageType) (*big.Int, error) {
+	pkey := address + st.String()
+	p, ok := s.pool[pkey]
+	if !ok {
+		schk, err := s.loadPay(address, st)
+		if err != nil {
+			return nil, err
+		}
+
+		s.pool[pkey] = schk
+		return schk.Value, nil
+	}
+
+	return p.Value, nil
+}

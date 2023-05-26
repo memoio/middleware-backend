@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math/big"
 
@@ -71,6 +72,20 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 	obi, err := c.GetObjectInfo(ctx, address, mid)
 	if err != nil {
 		return result, err
+	}
+
+	balance, err := c.GetBalance(ctx, address)
+	if err != nil {
+		return result, err
+	}
+
+	trafficCost := c.cfg.Storage.TrafficCost
+
+	needpay := big.NewInt(trafficCost)
+	needpay.Mul(needpay, big.NewInt(obi.Size))
+
+	if balance.Cmp(needpay) < 0 {
+		return result, logs.ControllerError{Message: fmt.Sprintf("balance not enough, balance=%d needpay=%d", balance, needpay)}
 	}
 
 	err = c.storageApi.GetObject(ctx, mid, w, gateway.ObjectOptions(opts))
