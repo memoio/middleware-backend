@@ -74,7 +74,6 @@ func getContractABI(name string) abi.ABI {
 func (c *Contract) CallContract(results *[]interface{}, name string, args ...interface{}) error {
 	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
 	if err != nil {
-		logger.Error(err)
 		return err
 	}
 	defer client.Close()
@@ -88,7 +87,6 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 
 	encodeData, err := contractABI.Pack(name, args...)
 	if err != nil {
-		logger.Error(err)
 		return err
 	}
 
@@ -100,14 +98,12 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 
 	result, err := client.CallContract(context.TODO(), msg, nil)
 	if err != nil {
-		logger.Error(err)
 		return err
 	}
 
 	if len(*results) == 0 {
 		res, err := contractABI.Unpack(name, result)
 		*results = res
-		logger.Error(err)
 		return err
 	}
 	res := *results
