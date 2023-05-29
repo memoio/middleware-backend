@@ -52,10 +52,12 @@ func (e EthError) Error() string {
 	return e.Message
 }
 
-type BalanceNotEnough struct{}
+type ContractError struct {
+	Message string
+}
 
-func (e BalanceNotEnough) Error() string {
-	return "balance not enough"
+func (e ContractError) Error() string {
+	return e.Message
 }
 
 type ServerError struct {
@@ -116,7 +118,7 @@ const (
 	ErrAddressError
 	ErrStorageNotSupport
 	ErrAuthenticationFailed
-	ErrBalanceNotEnough
+	ErrContractError
 	ErrEthError
 	ErrServerError
 	ErrGatewayError
@@ -129,7 +131,6 @@ func (e errorCodeMap) ToAPIErrWithErr(errCode APIErrorCode, err error) APIError 
 	apiErr, ok := e[errCode]
 	if !ok {
 		apiErr = e[ErrAddressError]
-		apiErr.Description = fmt.Sprintf("%s (%s)", apiErr.Description, err.Error())
 	}
 	if err != nil {
 		apiErr.Description = fmt.Sprintf("%s (%s)", apiErr.Description, err.Error())
@@ -172,9 +173,9 @@ var ErrorCodes = errorCodeMap{
 		Description:    "Authentication Failed",
 		HTTPStatusCode: 401,
 	},
-	ErrBalanceNotEnough: {
-		Code:           "Balance",
-		Description:    "Balance Error",
+	ErrContractError: {
+		Code:           "contract",
+		Description:    "contract Error",
 		HTTPStatusCode: 519,
 	},
 	ErrEthError: {
@@ -226,8 +227,8 @@ func ToAPIErrorCode(err error) APIError {
 		apiErr = ErrStorageNotSupport
 	case AuthenticationFailed:
 		apiErr = ErrAuthenticationFailed
-	case BalanceNotEnough:
-		apiErr = ErrBalanceNotEnough
+	case ContractError:
+		apiErr = ErrContractError
 	case EthError:
 		apiErr = ErrEthError
 	default:

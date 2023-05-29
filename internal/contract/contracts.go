@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/config"
+	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/contractsv2/go_contracts/erc"
 )
@@ -81,7 +82,7 @@ func (c *Contract) GetPkgSize(st storage.StorageType, address string) (storage.S
 	err := c.CallContract(&out, "getPkgSize", common.HexToAddress(address), uint8(st))
 	if err != nil {
 		log.Println(err)
-		return storage.StorageInfo{}, err
+		return storage.StorageInfo{}, logs.ContractError{Message: err.Error()}
 	}
 
 	available := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
@@ -104,7 +105,7 @@ func (c *Contract) StoreGetPkgInfos() ([]PackageInfo, error) {
 	err := c.CallContract(&out, "storeGetPkgInfos")
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, logs.ContractError{Message: err.Error()}
 	}
 
 	out0 := *abi.ConvertType(out[0], new([]PackageInfo)).(*[]PackageInfo)
