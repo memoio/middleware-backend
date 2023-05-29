@@ -1,147 +1,260 @@
 package auth
 
 import (
-	"net/http"
-	"net/url"
-	"strconv"
+	"context"
+	"encoding/hex"
+	"fmt"
+	"strings"
 
-	"github.com/gin-gonic/gin"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/shurcooL/graphql"
+	"github.com/spruceid/siwe-go"
 )
 
-func LoadAuthModule(g *gin.RouterGroup, checkRegistered bool) {
-	g.GET("/challenge", ChallengeHandler())
-
-	g.POST("/login", LoginHandler())
-
-	g.POST("/lens/login", LensLoginHandler(checkRegistered))
-
-	g.GET("/refresh", RefreshHandler())
-
-	g.GET("/identity", VerifyIdentityHandler, func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"address": c.GetString("address"),
-			"chainid": c.GetInt("chainid"),
-		})
-	})
+type EIP4361Request struct {
+	EIP191Message string `json:"message,omitempty"`
+	Signature     string `json:"signature,omitempty"`
 }
 
-func ChallengeHandler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		address := c.Query("address")
-		uri, err := url.Parse(c.GetHeader("Origin"))
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
-		domain := uri.Host
-		nonce := nonceManager.GetNonce()
-
-		var chainID int
-		if c.Query("chainid") != "" {
-			chainID, err = strconv.Atoi(c.Query("chainid"))
-			if err != nil {
-				errRes := logs.ToAPIErrorCode(err)
-				c.JSON(errRes.HTTPStatusCode, errRes)
-				return
-			}
-		} else {
-			chainID = 985
-		}
-
-		challenge, err := Challenge(domain, address, uri.String(), nonce, chainID)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
-		c.String(http.StatusOK, challenge)
-	}
+type profile struct {
+	DefaultProfile struct {
+		ID   string
+		Name string
+	} `graphql:"defaultProfile(request: $request)"`
 }
 
-func LoginHandler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var request EIP4361Request
-		err := c.BindJSON(&request)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
-		accessToken, refreshToken, _, err := Login(nonceManager, request)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
-
-		// if address is new user in "memo.io" {
-		// 	init usr info
-		// }
-		// fmt.Println(address)
-
-		c.JSON(http.StatusOK, map[string]string{
-			"accessToken":  accessToken,
-			"refreshToken": refreshToken,
-		})
-	}
+type DefaultProfileRequest struct {
+	EthereumAddress string `json:"ethereumAddress"`
 }
 
-func LensLoginHandler(checkRegistered bool) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var request EIP4361Request
-		err := c.BindJSON(&request)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
-		accessToken, refreshToken, _, isRegistered, err := LoginWithLens(request, checkRegistered)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
+var (
+	ErrNullToken      = logs.AuthenticationFailed{Message: "Token is Null, not found in `Authorization: Bearer ` header"}
+	ErrValidToken     = logs.AuthenticationFailed{Message: "Invalid token"}
+	ErrValidTokenType = logs.AuthenticationFailed{Message: "InValid token type"}
 
-		// if address is new user in "memo.io" {
-		// 	init usr info
-		// }
-		// fmt.Println(request.Address)
+	// ChainID = 985
+	Version = 1
 
-		c.JSON(http.StatusOK, map[string]interface{}{
-			"accessToken":  accessToken,
-			"refreshToken": refreshToken,
-			"isRegistered": isRegistered,
-		})
+	JWTKey  []byte
+	Domain  string
+	LensAPI string
 
-	}
-}
+	DidToken     = 0
+	AccessToken  = 1
+	RefreshToken = 2
 
-func RefreshHandler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		tokenString := c.GetHeader("Authorization")
-		accessToken, err := VerifyRefreshToken(tokenString)
-		if err != nil {
-			c.String(http.StatusUnauthorized, "Illegal refresh token")
-			return
-		}
+	LensMod = 0x10
+	EthMod  = 0x11
+)
 
-		c.JSON(http.StatusOK, map[string]string{
-			"accessToken": accessToken,
-		})
-	}
-}
-
-func VerifyIdentityHandler(c *gin.Context) {
-	tokenString := c.GetHeader("Authorization")
-	address, chainid, err := VerifyAccessToken(tokenString)
+func InitAuthConfig(jwtKey string, domain string, url string) {
+	var err error
+	JWTKey, err = hex.DecodeString(jwtKey)
 	if err != nil {
-		errRes := logs.ToAPIErrorCode(err)
-		c.AbortWithStatusJSON(errRes.HTTPStatusCode, errRes)
-		return
+		JWTKey = []byte("memo.io")
 	}
 
-	c.Set("address", address)
-	c.Set("chainid", chainid)
+	Domain = domain
+	LensAPI = url
 }
+
+func Challenge(domain, address, uri, nonce string, chainID int) (string, error) {
+	var opt = map[string]interface{}{
+		"chainId": chainID,
+	}
+	msg, err := siwe.InitMessage(domain, address, uri, nonce, opt)
+	if err != nil {
+		return "", err
+	}
+	return msg.String(), nil
+}
+
+func Login(nonceManager *NonceManager, request interface{}) (string, string, string, error) {
+	req, ok := request.(EIP4361Request)
+	if !ok {
+		return "", "", "", fmt.Errorf("")
+	}
+	return loginWithEth(nonceManager, req)
+}
+
+// func LoginWithMethod(nonceManager *NonceManager, request interface{}, method int, checkRegistered bool) (string, string, error) {
+// 	switch method {
+// 	case LensMod:
+// 		req, ok := request.(EIP4361Request)
+// 		if !ok {
+// 			return "", "", xerrors.Errorf("")
+// 		}
+// 		return loginWithLens(req, checkRegistered)
+// 	case EthMod:
+// 		req, ok := request.(LoginRequest)
+// 		if !ok {
+// 			return "", "", xerrors.Errorf("")
+// 		}
+// 		return loginWithEth(nonceManager, req)
+// 	}
+// 	return "", "", gateway.NotImplemented{Message: ""}
+// }
+
+func LoginWithLens(request EIP4361Request, required bool) (string, string, string, bool, error) {
+	message, err := parseLensMessage(request.EIP191Message)
+	if err != nil {
+		return "", "", "", false, err
+	}
+
+	isRegistered, err := isLensAccount(message.GetAddress().Hex(), required)
+	if err != nil {
+		return "", "", "", false, err
+	}
+
+	if message.GetDomain() != Domain {
+		return "", "", "", false, logs.AuthenticationFailed{Message: "Got wrong domain"}
+	}
+
+	if message.GetChainID() != 137 {
+		return "", "", "", false, logs.AuthenticationFailed{Message: "Got wrong chain id"}
+	}
+
+	hash := crypto.Keccak256([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(request.EIP191Message), request.EIP191Message)))
+	sig, err := hexutil.Decode(request.Signature)
+	if err != nil {
+		return "", "", "", false, logs.AuthenticationFailed{Message: err.Error()}
+	}
+
+	sig[len(sig)-1] %= 27
+	pubKey, err := crypto.SigToPub(hash, sig)
+	if err != nil {
+		return "", "", "", false, logs.AuthenticationFailed{Message: err.Error()}
+	}
+
+	if message.GetAddress().Hex() != crypto.PubkeyToAddress(*pubKey).Hex() {
+		return "", "", "", false, logs.AuthenticationFailed{Message: "Got wrong address/signature"}
+	}
+
+	accessToken, err := genAccessTokenWithFlag(message.GetAddress().Hex(), message.GetChainID(), isRegistered)
+	if err != nil {
+		return "", "", "", false, err
+	}
+
+	refreshToken, err := genRefreshTokenWithFlag(message.GetAddress().Hex(), message.GetChainID(), isRegistered)
+
+	return accessToken, refreshToken, message.GetAddress().Hex(), isRegistered, err
+}
+
+func loginWithEth(nonceManager *NonceManager, request EIP4361Request) (string, string, string, error) {
+	message, err := parseLensMessage(request.EIP191Message)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	// if message.GetChainID() != ChainID {
+	// 	return "", "", "", logs.AuthenticationFailed{Message: "Got wrong chain id"}
+	// }
+
+	if !nonceManager.VerifyNonce(message.GetNonce()) {
+		return "", "", "", logs.AuthenticationFailed{Message: "Got wrong nonce"}
+	}
+
+	hash := crypto.Keccak256([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(request.EIP191Message), request.EIP191Message)))
+	sig, err := hexutil.Decode(request.Signature)
+	if err != nil {
+		return "", "", "", logs.AuthenticationFailed{Message: err.Error()}
+	}
+
+	sig[len(sig)-1] %= 27
+	pubKey, err := crypto.SigToPub(hash, sig)
+	if err != nil {
+		return "", "", "", logs.AuthenticationFailed{Message: err.Error()}
+	}
+
+	if message.GetAddress().Hex() != crypto.PubkeyToAddress(*pubKey).Hex() {
+		return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
+	}
+
+	accessToken, err := genAccessToken(message.GetAddress().Hex(), message.GetChainID())
+	if err != nil {
+		return "", "", "", err
+	}
+
+	refreshToken, err := genRefreshToken(message.GetAddress().Hex(), message.GetChainID())
+
+	return accessToken, refreshToken, message.GetAddress().Hex(), err
+}
+
+func parseLensMessage(message string) (*siwe.Message, error) {
+	message = strings.TrimPrefix(message, "\n")
+	message = strings.TrimPrefix(message, "https://")
+	message = strings.TrimPrefix(message, "http://")
+	message = strings.TrimSuffix(message, "\n ")
+
+	return siwe.ParseMessage(message)
+}
+
+func isLensAccount(address string, required bool) (bool, error) {
+	if required {
+		var query profile
+		var client = graphql.NewClient(LensAPI, nil)
+		var variables = map[string]interface{}{
+			"request": DefaultProfileRequest{
+				EthereumAddress: address,
+			},
+		}
+
+		err := client.Query(context.Background(), &query, variables)
+		if err != nil {
+			return false, err
+		}
+		if query.DefaultProfile.ID == "" {
+			return false, nil
+			// return false, gateway.AddressError{Message: "The address{" + address + "} is not registered on lens"}
+		}
+	}
+
+	return true, nil
+}
+
+// Verify token's type, audience, nonce, expires time and signatrue
+// Then, return access token, refresh token and usr id
+// The format of usr id is did:eth:{usr's publickey key || usr's address}
+// func VerifyDidToken(nonceManager *NonceManager, tokenString string) (string, string, string, error) {
+// 	if tokenString == "" {
+// 		return "", "", "", ErrNullToken
+// 	}
+
+// 	claims := &Claims{}
+// 	_, _, err := new(jwt.Parser).ParseUnverified(tokenString, claims)
+// 	if err != nil {
+// 		return "", "", "", ErrValidToken
+// 	}
+
+// 	// check Audience
+// 	if claims.Audience != Domain {
+// 		return "", "", "", ErrValidToken
+// 	}
+
+// 	// check token type
+// 	if claims.Type != DidToken {
+// 		return "", "", "", ErrValidType
+// 	}
+
+// 	// check token nonce
+// 	if nonceManager.VerifyNonce(claims.Nonce) == false {
+// 		return "", "", "", ErrValidToken
+// 	}
+
+// 	// check signature, expires time and issued time
+// 	token, err := ParseDidToken(tokenString, claims.Subject)
+// 	if err != nil || !token.Valid {
+// 		return "", "", "", ErrValidToken
+// 	}
+
+// 	accessToken, err := GenAccessToken(claims.Subject)
+// 	if err != nil {
+// 		return "", "", "", err
+// 	}
+
+// 	refreshToken, err := GenRefreshToken(claims.Subject)
+
+// 	return accessToken, refreshToken, claims.Subject, err
+// }
