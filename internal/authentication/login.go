@@ -13,7 +13,7 @@ type Request struct {
 	Signature   string `json:"signature"`
 }
 
-func Login(address, token string, chainID, timestamp int64, signature string) (bool, error) {
+func Login(address, token string, chainID int, timestamp int64, signature string) (bool, error) {
 	hash := crypto.Keccak256([]byte(address), []byte(token), int64ToBytes(timestamp))
 	sig, err := hexutil.Decode(signature)
 	if err != nil {
@@ -37,7 +37,7 @@ func Login(address, token string, chainID, timestamp int64, signature string) (b
 	return true, nil
 }
 
-func VerifyIdentity(token string, chainID, requestID int64, signature string) (string, error) {
+func VerifyIdentity(token string, chainID int, requestID int64, signature string) (string, error) {
 	hash := crypto.Keccak256([]byte(token), int64ToBytes(requestID))
 	sig, err := hexutil.Decode(signature)
 	if err != nil {

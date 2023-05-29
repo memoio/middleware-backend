@@ -9,7 +9,7 @@ import (
 
 type Identity struct {
 	address string
-	chainID int64
+	chainID int
 }
 
 type Session struct {
@@ -27,7 +27,7 @@ var sessionStore = SessionStore{
 	sessions: make(map[Identity]Session),
 }
 
-func (s *SessionStore) AddSession(address, token string, chainID, timestamp int64) error {
+func (s *SessionStore) AddSession(address, token string, chainID int, timestamp int64) error {
 	identity := Identity{
 		address: address,
 		chainID: chainID,
@@ -54,7 +54,7 @@ func (s *SessionStore) AddSession(address, token string, chainID, timestamp int6
 	return nil
 }
 
-func (s *SessionStore) VerifySession(address, token string, chainID, requestID int64) error {
+func (s *SessionStore) VerifySession(address, token string, chainID int, requestID int64) error {
 	identity := Identity{
 		address: address,
 		chainID: chainID,
