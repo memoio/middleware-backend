@@ -7,6 +7,11 @@ import (
 	"golang.org/x/xerrors"
 )
 
+type Identity struct {
+	address string
+	chainID int
+}
+
 type Session struct {
 	randomToken string
 	lastLogin   int64
@@ -14,20 +19,25 @@ type Session struct {
 }
 
 type SessionStore struct {
-	sessions map[string]Session
+	sessions map[Identity]Session
 	mutex    sync.Mutex
 }
 
 var sessionStore = SessionStore{
-	sessions: make(map[string]Session),
+	sessions: make(map[Identity]Session),
 }
 
-func (s *SessionStore) AddSession(address, token string, timestamp int64) error {
+func (s *SessionStore) AddSession(address, token string, chainID int, timestamp int64) error {
+	identity := Identity{
+		address: address,
+		chainID: chainID,
+	}
+
 	if timestamp <= time.Now().Add(-1*time.Minute).Unix() {
 		return xerrors.Errorf("the request has timed out, please log in within one minute")
 	}
 
-	session, ok := s.sessions[address]
+	session, ok := s.sessions[identity]
 	if ok {
 		if timestamp <= session.lastLogin {
 			return xerrors.Errorf("the current request is later than the latest request")
@@ -36,7 +46,7 @@ func (s *SessionStore) AddSession(address, token string, timestamp int64) error 
 
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	s.sessions[address] = Session{
+	s.sessions[identity] = Session{
 		randomToken: token,
 		lastLogin:   timestamp,
 		requestID:   0,
@@ -44,8 +54,12 @@ func (s *SessionStore) AddSession(address, token string, timestamp int64) error 
 	return nil
 }
 
-func (s *SessionStore) VerifySession(address, token string, requestID int64) error {
-	session, ok := s.sessions[address]
+func (s *SessionStore) VerifySession(address, token string, chainID int, requestID int64) error {
+	identity := Identity{
+		address: address,
+		chainID: chainID,
+	}
+	session, ok := s.sessions[identity]
 	if !ok {
 		return xerrors.Errorf("cannot find session, please log in first")
 	}
@@ -59,7 +73,7 @@ func (s *SessionStore) VerifySession(address, token string, requestID int64) err
 
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	s.sessions[address] = Session{
+	s.sessions[identity] = Session{
 		randomToken: session.randomToken,
 		lastLogin:   session.lastLogin,
 		requestID:   session.requestID + 1,
