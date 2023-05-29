@@ -1,13 +1,15 @@
 package auth
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
 func LoadAuthRouter(r *gin.RouterGroup) {
 	r.POST("/login", LoginHandler)
 	r.GET("/identity", VerifyIdentityHandler, func(c *gin.Context) {
-		c.JSON(200, "address:"+c.GetString("address"))
+		c.JSON(200, fmt.Sprintf("address:%s  chainid:%d\n", c.GetString("address"), c.GetInt64("chainid")))
 	})
 }
 
@@ -25,7 +27,12 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	_, err := Login(address, token, int64(timestamp), signature)
+	chainID, ok := body["chainid"].(float64)
+	if !ok {
+		chainID = 985
+	}
+
+	_, err := Login(address, token, int64(chainID), int64(timestamp), signature)
 	if err != nil {
 		c.JSON(401, gin.H{"error": err.Error()})
 		return
@@ -46,11 +53,17 @@ func VerifyIdentityHandler(c *gin.Context) {
 		return
 	}
 
-	address, err := VerifyIdentity(token, int64(requestID), signature)
+	chainID, ok := body["chainid"].(float64)
+	if !ok {
+		chainID = 985
+	}
+
+	address, err := VerifyIdentity(token, int64(chainID), int64(requestID), signature)
 	if err != nil {
 		c.AbortWithStatusJSON(401, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.Set("address", address)
+	c.Set("chainid", int64(chainID))
 }

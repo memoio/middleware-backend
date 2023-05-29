@@ -13,7 +13,7 @@ type Request struct {
 	Signature   string `json:"signature"`
 }
 
-func Login(address, token string, timestamp int64, signature string) (bool, error) {
+func Login(address, token string, chainID, timestamp int64, signature string) (bool, error) {
 	hash := crypto.Keccak256([]byte(address), []byte(token), int64ToBytes(timestamp))
 	sig, err := hexutil.Decode(signature)
 	if err != nil {
@@ -29,7 +29,7 @@ func Login(address, token string, timestamp int64, signature string) (bool, erro
 		return false, xerrors.Errorf("The signature cannot match address")
 	}
 
-	err = sessionStore.AddSession(address, token, timestamp)
+	err = sessionStore.AddSession(address, token, chainID, timestamp)
 	if err != nil {
 		return false, err
 	}
@@ -37,7 +37,7 @@ func Login(address, token string, timestamp int64, signature string) (bool, erro
 	return true, nil
 }
 
-func VerifyIdentity(token string, requestID int64, signature string) (string, error) {
+func VerifyIdentity(token string, chainID, requestID int64, signature string) (string, error) {
 	hash := crypto.Keccak256([]byte(token), int64ToBytes(requestID))
 	sig, err := hexutil.Decode(signature)
 	if err != nil {
@@ -50,7 +50,7 @@ func VerifyIdentity(token string, requestID int64, signature string) (string, er
 
 	address := crypto.PubkeyToAddress(*publicKey).Hex()
 
-	err = sessionStore.VerifySession(address, token, requestID)
+	err = sessionStore.VerifySession(address, token, chainID, requestID)
 	if err != nil {
 		return "", err
 	}
