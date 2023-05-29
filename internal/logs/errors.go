@@ -128,7 +128,8 @@ const (
 func (e errorCodeMap) ToAPIErrWithErr(errCode APIErrorCode, err error) APIError {
 	apiErr, ok := e[errCode]
 	if !ok {
-		apiErr = e[ErrInternalError]
+		apiErr = e[ErrAddressError]
+		apiErr.Description = fmt.Sprintf("%s (%s)", apiErr.Description, err.Error())
 	}
 	if err != nil {
 		apiErr.Description = fmt.Sprintf("%s (%s)", apiErr.Description, err.Error())
