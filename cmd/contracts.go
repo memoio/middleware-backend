@@ -7,6 +7,7 @@ import (
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/contract"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/xerrors"
 )
 
 var ContractCmd = &cli.Command{
@@ -45,14 +46,19 @@ var setPkgCmd = &cli.Command{
 	Action: func(ctx *cli.Context) error {
 		time := ctx.String("time")
 		amount := ctx.String("amount")
+		chainid := ctx.Int("chainid")
 		kind := ctx.String("kind")
 		size := ctx.String("size")
 		cf, err := config.ReadFile()
 		if err != nil {
 			return err
 		}
-		ct := contract.NewContract(cf.Contract)
 
+		contracts := contract.NewContract(cf.Contract)
+		ct, ok := contracts[chainid]
+		if !ok {
+			return xerrors.Errorf("%s is not set", chainid)
+		}
 		flag := ct.AdminAddPkgInfo(time, amount, kind, size)
 		if flag {
 			log.Println("set package success!")

@@ -17,11 +17,11 @@ var logger = logs.Logger("controller")
 
 type ObjectOptions gateway.ObjectOptions
 
-func (c *Controller) PutObject(ctx context.Context, address, object string, r io.Reader, opts ObjectOptions) (PutObjectResult, error) {
+func (c *Controller) PutObject(ctx context.Context, chain int, address, object string, r io.Reader, opts ObjectOptions) (PutObjectResult, error) {
 	result := PutObjectResult{}
 
 	// Check if it is possible to write
-	cw, err := c.CanWrite(ctx, address, big.NewInt(opts.Size))
+	cw, err := c.CanWrite(ctx, chain, address, big.NewInt(opts.Size))
 	if err != nil {
 		return result, err
 	}
@@ -66,15 +66,15 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 	return result, nil
 }
 
-func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
+func (c *Controller) GetObject(ctx context.Context, chain int, address, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
 	result := GetObjectResult{}
 
-	obi, err := c.GetObjectInfo(ctx, address, mid)
+	obi, err := c.GetObjectInfo(ctx, chain, address, mid)
 	if err != nil {
 		return result, err
 	}
 
-	balance, err := c.GetBalance(ctx, address)
+	balance, err := c.GetBalance(ctx, chain, address)
 	if err != nil {
 		return result, err
 	}
@@ -98,7 +98,7 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 	result.Size = obi.Size
 
 	value := c.getPrice(result.Size)
-	err = c.sp.AddPay(address, c.storageType, big.NewInt(result.Size), value, obi.Mid)
+	err = c.sp.AddPay(chain, address, c.storageType, big.NewInt(result.Size), value, obi.Mid)
 
 	if err != nil {
 		logger.Error(err)
@@ -108,13 +108,13 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 	return result, nil
 }
 
-func (c *Controller) DeleteObject(ctx context.Context, address, mid string) error {
+func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid string) error {
 	err := c.storageApi.DeleteObject(ctx, address, mid)
 	if err != nil {
 		return err
 	}
 
-	fi, err := c.GetObjectInfo(ctx, address, mid)
+	fi, err := c.GetObjectInfo(ctx, chain, address, mid)
 	if err != nil {
 		return err
 	}

@@ -14,11 +14,11 @@ import (
 const CONFIGPATH = "./config.json"
 
 type Config struct {
-	Storage     StorageConfig  `json:"storage"`
-	Contract    ContractConfig `json:"contract"`
-	SecurityKey string         `json:"securityKey"`
-	Domain      string         `json:"domain"`
-	LensAPIUrl  string         `json:"lensAPIUrl"`
+	Storage     StorageConfig          `json:"storage"`
+	Contract    map[int]ContractConfig `json:"contract"`
+	SecurityKey string                 `json:"securityKey"`
+	Domain      string                 `json:"domain"`
+	LensAPIUrl  string                 `json:"lensAPIUrl"`
 }
 
 type StorageConfig struct {
@@ -26,13 +26,6 @@ type StorageConfig struct {
 	Ipfs        IpfsConfig       `json:"ipfs"`
 	Prices      map[string]int64 `json:"prices"`
 	TrafficCost int64            `json:"traffic_cost"`
-}
-
-type ContractConfig struct {
-	Endpoint         string `json:"endpoint"`
-	ContractAddr     string `json:"caddr"`
-	GatewayAddr      string `json:"gaddr"`
-	GatewaySecretKey string `json:"gatewaysk"`
 }
 
 type MefsConfig struct {
@@ -66,12 +59,15 @@ func newDefaultStorageConfig() StorageConfig {
 	}
 }
 
-func newDefaultContractConfig() ContractConfig {
-	return ContractConfig{
-		Endpoint:     "https://chain.metamemo.one:8501",
-		ContractAddr: "0xA78b166947487d93EA0e87e68132FC4609B00fA1",
-		GatewayAddr:  "0x31e7829Ea2054fDF4BCB921eDD3a98a825242267",
+func newDefaultContractConfig() map[int]ContractConfig {
+	cfg := map[int]ContractConfig{
+		985: {
+			Endpoint:     "https://chain.metamemo.one:8501",
+			ContractAddr: "0xA78b166947487d93EA0e87e68132FC4609B00fA1",
+			GatewayAddr:  "0x31e7829Ea2054fDF4BCB921eDD3a98a825242267",
+		},
 	}
+	return cfg
 }
 
 func newDefaultSecurityKeyConfig() string {
