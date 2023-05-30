@@ -22,7 +22,7 @@ func NewSenderPay(ds store.KVStore) *SendPay {
 	}
 }
 
-func (s *SendPay) AddPay(address string, st storage.StorageType, size, value *big.Int, hashid string) error {
+func (s *SendPay) AddPay(chain int, address string, st storage.StorageType, size, value *big.Int, hashid string) error {
 	if size.Sign() <= 0 || value.Sign() <= 0 {
 		err := logs.DataBaseError{Message: "size or amount should be larger than zero"}
 		logger.Error(err)
@@ -36,7 +36,7 @@ func (s *SendPay) AddPay(address string, st storage.StorageType, size, value *bi
 
 	p, ok := s.pool[pkey]
 	if !ok {
-		schk, err := s.loadPay(address, st)
+		schk, err := s.loadPay(chain, address, st)
 		if err != nil {
 			return err
 		}
@@ -57,8 +57,8 @@ func (s *SendPay) AddPay(address string, st storage.StorageType, size, value *bi
 	return nil
 }
 
-func (s *SendPay) loadPay(address string, st storage.StorageType) (*PayCheck, error) {
-	key := getKey(payPrefix, address, st)
+func (s *SendPay) loadPay(chain int, address string, st storage.StorageType) (*PayCheck, error) {
+	key := getKey(payPrefix, address, st, chain)
 	data, err := s.ds.Get(key)
 	if err != nil {
 		schk, err := s.create(address, st)
@@ -107,11 +107,11 @@ func (s *SendPay) ResetPay(address string, st storage.StorageType) error {
 	return nil
 }
 
-func (s *SendPay) Size(address string, st storage.StorageType) (*big.Int, error) {
+func (s *SendPay) Size(chain int, address string, st storage.StorageType) (*big.Int, error) {
 	pkey := address + st.String()
 	p, ok := s.pool[pkey]
 	if !ok {
-		schk, err := s.loadPay(address, st)
+		schk, err := s.loadPay(chain, address, st)
 		if err != nil {
 			return nil, err
 		}

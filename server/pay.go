@@ -34,16 +34,16 @@ func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 	p.GET("/buypkg", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		amount := c.Query("amount")
 		pkgid := c.Query("pkgid")
-		chainId := c.Query("chainid")
+		chainId := c.GetInt("chainid")
 		times := time.Now()
 		address := c.GetString("address")
 		pkg := controller.Package{
 			Pkgid:     uint64(toInt64(pkgid)),
 			Amount:    toInt64(amount),
 			Starttime: uint64(times.Second()),
-			Chainid:   chainId,
+			Chainid:   big.NewInt(int64(chainId)).String(),
 		}
-		flag := s.Controller.BuyPackage(address, pkg)
+		flag := s.Controller.BuyPackage(chainId, address, pkg)
 		if !flag {
 			c.JSON(521, "buy pkg failed")
 		}
@@ -54,7 +54,8 @@ func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 func (s Server) addGetPkgListRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/pkginfos", func(c *gin.Context) {
-		result, err := s.Controller.GetPackageList()
+		chain := c.GetInt("chainid")
+		result, err := s.Controller.GetPackageList(chain)
 		if err != nil {
 			c.JSON(522, err.Error())
 		}
@@ -66,8 +67,8 @@ func (s Server) addGetBuyPkgRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/getbuypkgs", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		address := c.GetString("address")
-
-		pi, err := s.Controller.GetUserBuyPackages(address)
+		chain := c.GetInt("chain")
+		pi, err := s.Controller.GetUserBuyPackages(chain, address)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, err.Error())
 			return

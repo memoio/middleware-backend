@@ -14,6 +14,7 @@ var logger = logs.Logger("database")
 
 type FileInfo struct {
 	Id         int
+	ChainID    int
 	Address    string
 	SType      storage.StorageType
 	Name       string
@@ -57,6 +58,7 @@ func createTable() error {
 	sqlMessage := `
 	CREATE TABLE IF NOT EXISTS fileinfo (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		chainid INTEGER,
 		address TEXT,
 		stype INTEGER,
 		name TEXT,
@@ -64,7 +66,7 @@ func createTable() error {
 		size INTEGER,
 		modtime DATETIME,
 		userdefine TEXT,
-		UNIQUE (address, stype, mid) ON CONFLICT IGNORE
+		UNIQUE (chainid, address, stype, mid) ON CONFLICT IGNORE
 	);
 	`
 
@@ -87,10 +89,10 @@ func Put(fi FileInfo) (bool, error) {
 
 	logger.Info("put message: ", fi)
 	sqlStmt := `
-        INSERT INTO fileinfo (address, stype, name, mid, size, modtime, userdefine)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO fileinfo (chainid, address, stype, name, mid, size, modtime, userdefine)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `
-	_, err = db.Exec(sqlStmt, fi.Address, fi.SType, fi.Name, fi.Mid, fi.Size, fi.ModTime, fi.UserDefine)
+	_, err = db.Exec(sqlStmt, fi.ChainID, fi.Address, fi.SType, fi.Name, fi.Mid, fi.Size, fi.ModTime, fi.UserDefine)
 	if err != nil {
 		return false, err
 	}
@@ -98,7 +100,7 @@ func Put(fi FileInfo) (bool, error) {
 	return true, nil
 }
 
-func Get(address, mid string, st storage.StorageType) (FileInfo, error) {
+func Get(chain int, address, mid string, st storage.StorageType) (FileInfo, error) {
 	db, err := OpenDataBase()
 	if err != nil {
 		logger.Error(err)
@@ -108,10 +110,10 @@ func Get(address, mid string, st storage.StorageType) (FileInfo, error) {
 
 	sqlStmt := `
 	SELECT * FROM fileinfo
-	WHERE address=? AND mid=? AND stype=?
+	WHERE chainid=? AND address=? AND mid=? AND stype=?
 `
 	var fi FileInfo
-	err = db.QueryRow(sqlStmt, address, mid, st).Scan(&fi.Id, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
+	err = db.QueryRow(sqlStmt, chain, address, mid, st).Scan(&fi.Id, &fi.ChainID, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			lerr := logs.DataBaseError{Message: fmt.Sprintf("no such record: mid=%s, stype=%d", mid, st)}
@@ -123,7 +125,7 @@ func Get(address, mid string, st storage.StorageType) (FileInfo, error) {
 	return fi, nil
 }
 
-func List(address string, st storage.StorageType) ([]FileInfo, error) {
+func List(chain int, address string, st storage.StorageType) ([]FileInfo, error) {
 	db, err := OpenDataBase()
 	if err != nil {
 		logger.Error(err)
@@ -134,9 +136,9 @@ func List(address string, st storage.StorageType) ([]FileInfo, error) {
 	sqlStmt := `
         SELECT address, stype, name, mid, size, modtime, userdefine
         FROM fileinfo
-        WHERE address=? AND stype=?
+        WHERE chainid=? AND address=? AND stype=?
     `
-	rows, err := db.Query(sqlStmt, address, st)
+	rows, err := db.Query(sqlStmt, chain, address, st)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +147,7 @@ func List(address string, st storage.StorageType) ([]FileInfo, error) {
 	var fileList []FileInfo
 	for rows.Next() {
 		var fi FileInfo
-		err := rows.Scan(&fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
+		err := rows.Scan(&fi.ChainID, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
 		if err != nil {
 			return nil, err
 		}
@@ -165,7 +167,7 @@ func Delete(address, mid string, stype storage.StorageType) (bool, error) {
 
 	sqlStmt := `
 	DELETE FROM fileinfo
-	WHERE address=? AND mid=? AND stype=?
+	WHERE chainid=? AND address=? AND mid=? AND stype=?
 `
 	res, err := db.Exec(sqlStmt, address, mid, stype)
 	if err != nil {

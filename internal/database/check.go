@@ -17,6 +17,7 @@ const (
 )
 
 type PayCheck struct {
+	ChainID int
 	Address common.Address
 	SType   storage.StorageType
 	Size    *big.Int
@@ -43,7 +44,7 @@ func newPayCheck(address string, st storage.StorageType) *PayCheck {
 }
 
 func (s *PayCheck) Save(ds store.KVStore) error {
-	key := getKey(payPrefix, s.Address.Hex(), s.SType)
+	key := getKey(payPrefix, s.Address.Hex(), s.SType, s.ChainID)
 
 	data, err := s.Serialize()
 	if err != nil {
@@ -79,6 +80,7 @@ func (s *PayCheck) Hash() string {
 
 type StorageCheck struct {
 	Address common.Address
+	ChainID int
 	SType   storage.StorageType
 	AddSize *big.Int
 	addhash []string
@@ -106,7 +108,7 @@ func generateCheck(address string, st storage.StorageType) *StorageCheck {
 }
 
 func (s *StorageCheck) Save(ds store.KVStore) error {
-	key := getKey(storagePrefix, s.Address.Hex(), s.SType)
+	key := getKey(storagePrefix, s.Address.Hex(), s.SType, s.ChainID)
 
 	data, err := s.Serialize()
 	if err != nil {
@@ -162,6 +164,6 @@ func (s *StorageCheck) DelHash() string {
 	return res
 }
 
-func getKey(prefix, address string, st storage.StorageType) []byte {
-	return store.NewKey(prefix, address, st.String())
+func getKey(prefix, address string, st storage.StorageType, chain int) []byte {
+	return store.NewKey(prefix, address, st.String(), chain)
 }

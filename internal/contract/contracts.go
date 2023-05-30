@@ -46,13 +46,19 @@ type Contract struct {
 	gatewaySecretKey string
 }
 
-func NewContract(cfc config.ContractConfig) *Contract {
-	return &Contract{
-		contractAddr:     common.HexToAddress(cfc.ContractAddr),
-		endpoint:         cfc.Endpoint,
-		gatewayAddr:      common.HexToAddress(cfc.GatewayAddr),
-		gatewaySecretKey: cfc.GatewaySecretKey,
+func NewContract(cfc map[int]config.ContractConfig) map[int]*Contract {
+	res := make(map[int]*Contract)
+
+	for chainid, cfg := range cfc {
+		res[chainid] = &Contract{
+			contractAddr:     common.HexToAddress(cfg.ContractAddr),
+			endpoint:         cfg.Endpoint,
+			gatewayAddr:      common.HexToAddress(cfg.GatewayAddr),
+			gatewaySecretKey: cfg.GatewaySecretKey,
+		}
 	}
+
+	return res
 }
 
 func (c *Contract) BalanceOf(ctx context.Context, addr string) (*big.Int, error) {
