@@ -26,7 +26,8 @@ func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/balance", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		address := c.GetString("address")
-		balance, err := s.Controller.GetBalance(c.Request.Context(), address)
+		chain := c.GetInt("chainid")
+		balance, err := s.Controller.GetBalance(c.Request.Context(), chain, address)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
@@ -40,8 +41,9 @@ func (s Server) addGetStorageRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/storageinfo", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		address := c.GetString("address")
+		chain := c.GetInt("chainid")
 
-		si, err := s.Controller.GetStorageInfo(c.Request.Context(), address)
+		si, err := s.Controller.GetStorageInfo(c.Request.Context(), chain, address)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)

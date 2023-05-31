@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/config"
+	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/contractsv2/go_contracts/erc"
 )
@@ -45,13 +46,19 @@ type Contract struct {
 	gatewaySecretKey string
 }
 
-func NewContract(cfc config.ContractConfig) *Contract {
-	return &Contract{
-		contractAddr:     common.HexToAddress(cfc.ContractAddr),
-		endpoint:         cfc.Endpoint,
-		gatewayAddr:      common.HexToAddress(cfc.GatewayAddr),
-		gatewaySecretKey: cfc.GatewaySecretKey,
+func NewContract(cfc map[int]config.ContractConfig) map[int]*Contract {
+	res := make(map[int]*Contract)
+
+	for chainid, cfg := range cfc {
+		res[chainid] = &Contract{
+			contractAddr:     common.HexToAddress(cfg.ContractAddr),
+			endpoint:         cfg.Endpoint,
+			gatewayAddr:      common.HexToAddress(cfg.GatewayAddr),
+			gatewaySecretKey: cfg.GatewaySecretKey,
+		}
 	}
+
+	return res
 }
 
 func (c *Contract) BalanceOf(ctx context.Context, addr string) (*big.Int, error) {
@@ -81,7 +88,7 @@ func (c *Contract) GetPkgSize(st storage.StorageType, address string) (storage.S
 	err := c.CallContract(&out, "getPkgSize", common.HexToAddress(address), uint8(st))
 	if err != nil {
 		log.Println(err)
-		return storage.StorageInfo{}, err
+		return storage.StorageInfo{}, logs.ContractError{Message: err.Error()}
 	}
 
 	available := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
@@ -104,7 +111,7 @@ func (c *Contract) StoreGetPkgInfos() ([]PackageInfo, error) {
 	err := c.CallContract(&out, "storeGetPkgInfos")
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, logs.ContractError{Message: err.Error()}
 	}
 
 	out0 := *abi.ConvertType(out[0], new([]PackageInfo)).(*[]PackageInfo)

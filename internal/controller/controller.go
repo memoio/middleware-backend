@@ -19,10 +19,11 @@ const (
 
 type Controller struct {
 	storageApi  gateway.IGateway
-	contract    *contract.Contract
+	contracts   map[int]*contract.Contract
 	storageType storage.StorageType
 	cfg         *config.Config
 	is          *database.SendStorage
+	sp          *database.SendPay
 }
 
 func NewController(path string, cfg *config.Config) *Controller {
@@ -51,17 +52,19 @@ func NewController(path string, cfg *config.Config) *Controller {
 	dss := wrap.NewKVStore(metaStorePrefix, ds)
 
 	is := database.NewSender(dss)
+	sp := database.NewSenderPay(dss)
 	return &Controller{
 		storageApi:  api.G,
 		storageType: api.T,
-		contract:    ct,
+		contracts:   ct,
 		is:          is,
+		sp:          sp,
 		cfg:         cfg,
 	}
 }
 
 func (c *Controller) UploadToContract() error {
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(24 * time.Hour)
 
 	for range ticker.C {
 		logger.Info("Upload To Contract")
@@ -69,12 +72,25 @@ func (c *Controller) UploadToContract() error {
 		scl := c.is.GetAllStorage()
 		for _, sc := range scl {
 
-			add := c.contract.StoreOrderPkg(sc.Address.Hex(), sc.AddHash(), sc.SType, sc.AddSize)
+			add := c.contracts[sc.ChainID].StoreOrderPkg(sc.Address.Hex(), sc.AddHash(), sc.SType, sc.AddSize)
 
-			del := c.contract.StoreOrderPkgExpiration(sc.Address.Hex(), sc.DelHash(), sc.SType, sc.AddSize)
+			del := c.contracts[sc.ChainID].StoreOrderPkgExpiration(sc.Address.Hex(), sc.DelHash(), sc.SType, sc.AddSize)
 
 			if add && del {
 				err := c.is.ResetStorage(sc.Address.Hex(), sc.SType)
+				if err != nil {
+					logger.Error(err)
+					return err
+				}
+			}
+		}
+
+		pcl := c.sp.GetAllStorage()
+		for _, pc := range pcl {
+			res := c.contracts[pc.ChainID].StoreOrderPay(pc.Address.Hex(), pc.Hash(), pc.SType, pc.Value, pc.Size)
+
+			if res {
+				err := c.sp.ResetPay(pc.Address.Hex(), pc.SType)
 				if err != nil {
 					logger.Error(err)
 					return err

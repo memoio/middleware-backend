@@ -3,7 +3,6 @@ module github.com/memoio/backend
 go 1.18
 
 require (
-	github.com/cbergoon/merkletree v0.2.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.11.5
 	github.com/fxamacker/cbor/v2 v2.3.0

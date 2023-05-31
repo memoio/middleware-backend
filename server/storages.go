@@ -11,20 +11,6 @@ import (
 	"github.com/memoio/backend/internal/logs"
 )
 
-// func (s Server) getAddress(c *gin.Context) (string, error) {
-// 	tokenString := c.GetHeader("Authorization")
-// 	address, err := VerifyAccessToken(tokenString)
-// 	if err != nil {
-// 		errRes := logs.ToAPIErrorCode(err)
-// 		c.JSON(errRes.HTTPStatusCode, AuthenticationFaileMessage{
-// 			Nonce: s.NonceManager.GetNonce(),
-// 			Error: errRes})
-// 		return "", err
-// 	}
-
-// 	return address, nil
-// }
-
 func (s Server) StorageRegistRoutes(r *gin.RouterGroup) {
 	s.PutobjectRoute(r)
 	s.GetObjectRoute(r)
@@ -39,7 +25,7 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 
 	p.POST("/", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		address := c.GetString("address")
-
+		chain := c.GetInt("chainid")
 		file, err := c.FormFile("file")
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(logs.ServerError{Message: err.Error()})
@@ -65,7 +51,7 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 			return
 		}
 
-		result, err := s.Controller.PutObject(c.Request.Context(), address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud})
+		result, err := s.Controller.PutObject(c.Request.Context(), chain, address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud})
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
@@ -81,8 +67,9 @@ func (s Server) GetObjectRoute(r *gin.RouterGroup) {
 	p.GET("/:cid", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		cid := c.Param("cid")
 		address := c.GetString("address")
+		chain := c.GetInt("chainid")
 		var w bytes.Buffer
-		result, err := s.Controller.GetObject(c.Request.Context(), address, cid, &w, controller.ObjectOptions{})
+		result, err := s.Controller.GetObject(c.Request.Context(), chain, address, cid, &w, controller.ObjectOptions{})
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
@@ -102,8 +89,8 @@ func (s Server) ListObjectsRoute(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/listobjects", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		address := c.GetString("address")
-
-		result, err := s.Controller.ListObjects(c.Request.Context(), address)
+		chain := c.GetInt("chainid")
+		result, err := s.Controller.ListObjects(c.Request.Context(), chain, address)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
@@ -119,8 +106,9 @@ func (s Server) DeleteObejectRoute(r *gin.RouterGroup) {
 	p.GET("/delete", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		address := c.GetString("address")
 		mid := c.Query("mid")
+		chain := c.GetInt("chainid")
 
-		err := s.Controller.DeleteObject(c.Request.Context(), address, mid)
+		err := s.Controller.DeleteObject(c.Request.Context(), chain, address, mid)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)

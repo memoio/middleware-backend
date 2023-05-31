@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math/big"
 
@@ -16,11 +17,11 @@ var logger = logs.Logger("controller")
 
 type ObjectOptions gateway.ObjectOptions
 
-func (c *Controller) PutObject(ctx context.Context, address, object string, r io.Reader, opts ObjectOptions) (PutObjectResult, error) {
+func (c *Controller) PutObject(ctx context.Context, chain int, address, object string, r io.Reader, opts ObjectOptions) (PutObjectResult, error) {
 	result := PutObjectResult{}
 
 	// Check if it is possible to write
-	cw, err := c.CanWrite(ctx, address, big.NewInt(opts.Size))
+	cw, err := c.CanWrite(ctx, chain, address, big.NewInt(opts.Size))
 	if err != nil {
 		return result, err
 	}
@@ -41,6 +42,7 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 		return result, err
 	}
 	fi := database.FileInfo{
+		ChainID:    chain,
 		Address:    address,
 		Name:       object,
 		Mid:        oi.Cid,
@@ -65,12 +67,26 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 	return result, nil
 }
 
-func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
+func (c *Controller) GetObject(ctx context.Context, chain int, address, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
 	result := GetObjectResult{}
 
-	obi, err := c.GetObjectInfo(ctx, address, mid)
+	obi, err := c.GetObjectInfo(ctx, chain, address, mid)
 	if err != nil {
 		return result, err
+	}
+
+	balance, err := c.GetBalance(ctx, chain, address)
+	if err != nil {
+		return result, err
+	}
+
+	trafficCost := c.cfg.Storage.TrafficCost
+
+	needpay := big.NewInt(trafficCost)
+	needpay.Mul(needpay, big.NewInt(obi.Size))
+
+	if balance.Cmp(needpay) < 0 {
+		return result, logs.ControllerError{Message: fmt.Sprintf("balance not enough, balance=%d needpay=%d", balance, needpay)}
 	}
 
 	err = c.storageApi.GetObject(ctx, mid, w, gateway.ObjectOptions(opts))
@@ -82,16 +98,24 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 	result.CType = utils.TypeByExtension(obi.Name)
 	result.Size = obi.Size
 
+	value := c.getPrice(result.Size)
+	err = c.sp.AddPay(chain, address, c.storageType, big.NewInt(result.Size), value, obi.Mid)
+
+	if err != nil {
+		logger.Error(err)
+		return result, err
+	}
+
 	return result, nil
 }
 
-func (c *Controller) DeleteObject(ctx context.Context, address, mid string) error {
+func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid string) error {
 	err := c.storageApi.DeleteObject(ctx, address, mid)
 	if err != nil {
 		return err
 	}
 
-	fi, err := c.GetObjectInfo(ctx, address, mid)
+	fi, err := c.GetObjectInfo(ctx, chain, address, mid)
 	if err != nil {
 		return err
 	}
@@ -108,4 +132,13 @@ func (c *Controller) DeleteObject(ctx context.Context, address, mid string) erro
 	}
 
 	return c.is.DelStorage(address, c.storageType, big.NewInt(fi.Size), fi.Mid)
+}
+
+func (c *Controller) getPrice(size int64) *big.Int {
+	price := c.cfg.Storage.TrafficCost
+	p := big.NewInt(price)
+
+	p.Mul(p, big.NewInt(size))
+
+	return p
 }

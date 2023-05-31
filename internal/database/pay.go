@@ -1,0 +1,124 @@
+package database
+
+import (
+	"math/big"
+	"sync"
+
+	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/internal/storage"
+	"github.com/memoio/go-mefs-v2/lib/types/store"
+)
+
+type SendPay struct {
+	lw   sync.Mutex
+	ds   store.KVStore
+	pool map[string]*PayCheck
+}
+
+func NewSenderPay(ds store.KVStore) *SendPay {
+	return &SendPay{
+		ds:   ds,
+		pool: make(map[string]*PayCheck),
+	}
+}
+
+func (s *SendPay) AddPay(chain int, address string, st storage.StorageType, size, value *big.Int, hashid string) error {
+	if size.Sign() <= 0 || value.Sign() <= 0 {
+		err := logs.DataBaseError{Message: "size or amount should be larger than zero"}
+		logger.Error(err)
+		return err
+	}
+
+	pkey := address + st.String()
+
+	s.lw.Lock()
+	defer s.lw.Unlock()
+
+	p, ok := s.pool[pkey]
+	if !ok {
+		schk, err := s.loadPay(chain, address, st)
+		if err != nil {
+			return err
+		}
+		p = schk
+		s.pool[pkey] = p
+	}
+
+	p.Add(hashid, size, value)
+
+	data, err := p.Serialize()
+	if err != nil {
+		return logs.DataBaseError{Message: err.Error()}
+	}
+
+	key := store.NewKey(address, st)
+	s.ds.Put(key, data)
+
+	return nil
+}
+
+func (s *SendPay) loadPay(chain int, address string, st storage.StorageType) (*PayCheck, error) {
+	key := getKey(payPrefix, address, st, chain)
+	data, err := s.ds.Get(key)
+	if err != nil {
+		schk, err := s.create(address, st)
+		if err != nil {
+			logger.Error(err)
+			return nil, err
+		}
+
+		return schk, nil
+	}
+
+	schk := new(PayCheck)
+	err = schk.Deserialize(data)
+	if err != nil {
+		return nil, logs.DataBaseError{Message: err.Error()}
+	}
+
+	s.pool[address] = schk
+	return schk, nil
+}
+
+func (s *SendPay) create(address string, st storage.StorageType) (*PayCheck, error) {
+	sc := newPayCheck(address, st)
+
+	return sc, sc.Save(s.ds)
+}
+
+func (s *SendPay) GetAllStorage() []*PayCheck {
+	var res []*PayCheck
+
+	for _, sc := range s.pool {
+		res = append(res, sc)
+	}
+
+	return res
+}
+
+func (s *SendPay) ResetPay(address string, st storage.StorageType) error {
+	pchk, err := s.create(address, st)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	s.pool[address] = pchk
+	return nil
+}
+
+func (s *SendPay) Size(chain int, address string, st storage.StorageType) (*big.Int, error) {
+	pkey := address + st.String()
+	p, ok := s.pool[pkey]
+	if !ok {
+		schk, err := s.loadPay(chain, address, st)
+		if err != nil {
+			return nil, err
+		}
+
+		s.pool[pkey] = schk
+		return schk.Value, nil
+	}
+
+	return p.Value, nil
+}
