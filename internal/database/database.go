@@ -116,7 +116,7 @@ func Get(chain int, address, mid string, st storage.StorageType) (FileInfo, erro
 	err = db.QueryRow(sqlStmt, chain, address, mid, st).Scan(&fi.Id, &fi.ChainID, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			lerr := logs.DataBaseError{Message: fmt.Sprintf("no such record: mid=%s, stype=%d", mid, st)}
+			lerr := logs.DataBaseError{Message: fmt.Sprintf("no such record:chainid=%d mid=%s, stype=%d", chain, mid, st)}
 			logger.Errorf(lerr.Message)
 			return FileInfo{}, lerr
 		}
