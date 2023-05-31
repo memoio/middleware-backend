@@ -42,6 +42,7 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 		return result, err
 	}
 	fi := database.FileInfo{
+		ChainID:    chain,
 		Address:    address,
 		Name:       object,
 		Mid:        oi.Cid,
