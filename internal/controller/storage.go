@@ -120,7 +120,7 @@ func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid s
 		return err
 	}
 
-	res, err := database.Delete(address, mid, c.storageType)
+	res, err := database.Delete(chain, address, mid, c.storageType)
 	if err != nil {
 		return err
 	}
