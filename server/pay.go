@@ -53,7 +53,7 @@ func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 
 func (s Server) addGetPkgListRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
-	p.GET("/pkginfos", func(c *gin.Context) {
+	p.GET("/pkginfos", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		chain := c.GetInt("chainid")
 		result, err := s.Controller.GetPackageList(chain)
 		if err != nil {
