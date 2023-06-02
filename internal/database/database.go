@@ -134,7 +134,7 @@ func List(chain int, address string, st storage.StorageType) ([]FileInfo, error)
 	defer db.Close()
 
 	sqlStmt := `
-        SELECT address, stype, name, mid, size, modtime, userdefine
+        SELECT chainid, address, stype, name, mid, size, modtime, userdefine
         FROM fileinfo
         WHERE chainid=? AND address=? AND stype=?
     `
