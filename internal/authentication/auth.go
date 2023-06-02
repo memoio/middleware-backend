@@ -1,69 +1,147 @@
 package auth
 
 import (
-	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/memoio/backend/internal/logs"
 )
 
-func LoadAuthRouter(r *gin.RouterGroup) {
-	r.POST("/login", LoginHandler)
-	r.GET("/identity", VerifyIdentityHandler, func(c *gin.Context) {
-		c.JSON(200, fmt.Sprintf("address:%s  chainid:%d\n", c.GetString("address"), c.GetInt("chainid")))
+func LoadAuthModule(g *gin.RouterGroup, checkRegistered bool) {
+	g.GET("/challenge", ChallengeHandler())
+
+	g.POST("/login", LoginHandler())
+
+	g.POST("/lens/login", LensLoginHandler(checkRegistered))
+
+	g.GET("/refresh", RefreshHandler())
+
+	g.GET("/identity", VerifyIdentityHandler, func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"address": c.GetString("address"),
+			"chainid": c.GetInt("chainid"),
+		})
 	})
 }
 
-func LoginHandler(c *gin.Context) {
-	// var request Request
-	body := make(map[string]interface{})
-	c.BindJSON(&body)
+func ChallengeHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		address := c.Query("address")
+		uri, err := url.Parse(c.GetHeader("Origin"))
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+		domain := uri.Host
+		nonce := nonceManager.GetNonce()
 
-	address, ok1 := body["address"].(string)
-	token, ok2 := body["token"].(string)
-	timestamp, ok3 := body["timestamp"].(float64)
-	signature, ok4 := body["signature"].(string)
-	if !ok1 || !ok2 || !ok3 || !ok4 {
-		c.JSON(401, gin.H{"error": "Missing parameters, please refer to the API documentation for details"})
-		return
+		var chainID int
+		if c.Query("chainid") != "" {
+			chainID, err = strconv.Atoi(c.Query("chainid"))
+			if err != nil {
+				errRes := logs.ToAPIErrorCode(err)
+				c.JSON(errRes.HTTPStatusCode, errRes)
+				return
+			}
+		} else {
+			chainID = 985
+		}
+
+		challenge, err := Challenge(domain, address, uri.String(), nonce, chainID)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+		c.String(http.StatusOK, challenge)
 	}
+}
 
-	chainID, ok := body["chainid"].(float64)
-	if !ok {
-		chainID = 985
+func LoginHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var request EIP4361Request
+		err := c.BindJSON(&request)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+		accessToken, refreshToken, _, err := Login(nonceManager, request)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		// if address is new user in "memo.io" {
+		// 	init usr info
+		// }
+		// fmt.Println(address)
+
+		c.JSON(http.StatusOK, map[string]string{
+			"accessToken":  accessToken,
+			"refreshToken": refreshToken,
+		})
 	}
+}
 
-	_, err := Login(address, token, int(chainID), int64(timestamp), signature)
-	if err != nil {
-		c.JSON(401, gin.H{"error": err.Error()})
-		return
+func LensLoginHandler(checkRegistered bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var request EIP4361Request
+		err := c.BindJSON(&request)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+		accessToken, refreshToken, _, isRegistered, err := LoginWithLens(request, checkRegistered)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		// if address is new user in "memo.io" {
+		// 	init usr info
+		// }
+		// fmt.Println(request.Address)
+
+		c.JSON(http.StatusOK, map[string]interface{}{
+			"accessToken":  accessToken,
+			"refreshToken": refreshToken,
+			"isRegistered": isRegistered,
+		})
+
 	}
+}
 
-	c.String(200, "Login success!")
+func RefreshHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenString := c.GetHeader("Authorization")
+		accessToken, err := VerifyRefreshToken(tokenString)
+		if err != nil {
+			c.String(http.StatusUnauthorized, "Illegal refresh token")
+			return
+		}
+
+		c.JSON(http.StatusOK, map[string]string{
+			"accessToken": accessToken,
+		})
+	}
 }
 
 func VerifyIdentityHandler(c *gin.Context) {
-	body := make(map[string]interface{})
-	c.BindJSON(&body)
-
-	token, ok1 := body["token"].(string)
-	requestID, ok2 := body["requestID"].(float64)
-	signature, ok3 := body["signature"].(string)
-	if !ok1 || !ok2 || !ok3 {
-		c.AbortWithStatusJSON(401, gin.H{"error": "Missing parameters, please refer to the API documentation for details"})
-		return
-	}
-
-	chainID, ok := body["chainid"].(float64)
-	if !ok {
-		chainID = 985
-	}
-
-	address, err := VerifyIdentity(token, int(chainID), int64(requestID), signature)
+	tokenString := c.GetHeader("Authorization")
+	address, chainid, err := VerifyAccessToken(tokenString)
 	if err != nil {
-		c.AbortWithStatusJSON(401, gin.H{"error": err.Error()})
+		errRes := logs.ToAPIErrorCode(err)
+		c.AbortWithStatusJSON(errRes.HTTPStatusCode, errRes)
 		return
 	}
 
 	c.Set("address", address)
-	c.Set("chainid", int(chainID))
+	c.Set("chainid", chainid)
 }
