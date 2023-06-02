@@ -242,13 +242,19 @@ func (m *Mefs) ListObjects(ctx context.Context, address string) ([]gateway.Objec
 	return loi, nil
 }
 
-func (m *Mefs) DeleteObject(ctx context.Context, address, object string) error {
+func (m *Mefs) DeleteObject(ctx context.Context, address, mid string) error {
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
 		return err
 	}
 	defer closer()
-	err = napi.DeleteObject(ctx, address, object)
+
+	object, err := m.GetObjectInfo(ctx, mid)
+	if err != nil {
+		return err
+	}
+
+	err = napi.DeleteObject(ctx, address, object.Name)
 	if err != nil {
 		return err
 	}
