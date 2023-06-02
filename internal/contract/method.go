@@ -73,7 +73,7 @@ func getContractABI(name string) abi.ABI {
 
 func (c *Contract) CallContract(results *[]interface{}, name string, args ...interface{}) error {
 	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
-	if err != nil {
+	if err != nil { 
 		return err
 	}
 	defer client.Close()

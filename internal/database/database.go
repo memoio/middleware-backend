@@ -157,7 +157,7 @@ func List(chain int, address string, st storage.StorageType) ([]FileInfo, error)
 	return fileList, nil
 }
 
-func Delete(address, mid string, stype storage.StorageType) (bool, error) {
+func Delete(chain int, address, mid string, stype storage.StorageType) (bool, error) {
 	db, err := OpenDataBase()
 	if err != nil {
 		logger.Error(err)
@@ -169,7 +169,7 @@ func Delete(address, mid string, stype storage.StorageType) (bool, error) {
 	DELETE FROM fileinfo
 	WHERE chainid=? AND address=? AND mid=? AND stype=?
 `
-	res, err := db.Exec(sqlStmt, address, mid, stype)
+	res, err := db.Exec(sqlStmt, chain, address, mid, stype)
 	if err != nil {
 		return false, err
 	}
