@@ -8,7 +8,6 @@ import (
 	"github.com/memoio/backend/config"
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/controller"
-	"github.com/memoio/backend/internal/logs"
 )
 
 type Server struct {
@@ -22,10 +21,10 @@ type ServerOption struct {
 	CheckRegistered bool
 }
 
-type AuthenticationFaileMessage struct {
-	Nonce string
-	Error logs.APIError
-}
+// type AuthenticationFaileMessage struct {
+// 	Nonce string
+// 	Error logs.APIError
+// }
 
 func NewServer(opt ServerOption) *http.Server {
 	log.Println("Server Start")
@@ -37,6 +36,8 @@ func NewServer(opt ServerOption) *http.Server {
 		return nil
 	}
 
+	auth.InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
+
 	router := gin.Default()
 
 	s := &Server{
@@ -44,7 +45,7 @@ func NewServer(opt ServerOption) *http.Server {
 		Router: router,
 	}
 
-	s.registRoute()
+	s.registRoute(opt.CheckRegistered)
 
 	srv := &http.Server{
 		Addr:    opt.Endpoint,
@@ -54,7 +55,7 @@ func NewServer(opt ServerOption) *http.Server {
 	return srv
 }
 
-func (s Server) registRoute() {
+func (s Server) registRoute(checkRegistered bool) {
 	// add storage routes
 
 	s.Router.Use(Cors())
@@ -62,12 +63,12 @@ func (s Server) registRoute() {
 		c.String(http.StatusOK, "Welcome Server")
 	})
 
-	s.registLogin()
+	s.registLogin(checkRegistered)
 	s.registController()
 }
 
-func (s Server) registLogin() {
-	auth.LoadAuthRouter(s.Router.Group("/"))
+func (s Server) registLogin(checkRegistered bool) {
+	auth.LoadAuthModule(s.Router.Group("/"), checkRegistered)
 }
 
 func (s Server) registController() {

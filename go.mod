@@ -3,6 +3,7 @@ module github.com/memoio/backend
 go 1.18
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.11.5
 	github.com/fxamacker/cbor/v2 v2.3.0
 	github.com/gin-gonic/gin v1.8.2
@@ -10,6 +11,8 @@ require (
 	github.com/mattn/go-sqlite3 v1.11.0
 	github.com/memoio/contractsv2 v0.0.0-00010101000000-000000000000
 	github.com/memoio/go-mefs-v2 v0.0.0-00010101000000-000000000000
+	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29
+	github.com/spruceid/siwe-go v0.2.0
 	github.com/urfave/cli/v2 v2.23.7
 	go.uber.org/zap v1.21.0
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df
@@ -24,6 +27,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
+	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5 // indirect
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.4 // indirect
@@ -89,6 +93,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20220216144756-c35f1ee13d7c // indirect
 	github.com/prometheus/client_golang v1.15.0 // indirect
+	github.com/relvacode/iso8601 v1.1.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/shirou/gopsutil/v3 v3.22.2 // indirect
