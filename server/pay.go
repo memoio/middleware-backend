@@ -67,7 +67,7 @@ func (s Server) addGetBuyPkgRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/getbuypkgs", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		address := c.GetString("address")
-		chain := c.GetInt("chain")
+		chain := c.GetInt("chainid")
 		pi, err := s.Controller.GetUserBuyPackages(chain, address)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, err.Error())
