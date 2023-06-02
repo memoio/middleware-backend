@@ -110,12 +110,12 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 }
 
 func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid string) error {
-	err := c.storageApi.DeleteObject(ctx, address, mid)
+	fi, err := c.GetObjectInfo(ctx, chain, address, mid)
 	if err != nil {
 		return err
 	}
 
-	fi, err := c.GetObjectInfo(ctx, chain, address, mid)
+	err = c.storageApi.DeleteObject(ctx, address, mid)
 	if err != nil {
 		return err
 	}
