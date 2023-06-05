@@ -17,19 +17,6 @@ func toInt64(s string) int64 {
 	return b.Int64()
 }
 
-type response struct {
-	Status string
-}
-
-func toResponse(f bool) response {
-	if f {
-		return response{Status: "Success!"}
-	} else {
-		return response{Status: "Failed!"}
-	}
-
-}
-
 func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/buypkg", auth.VerifyIdentityHandler, func(c *gin.Context) {
