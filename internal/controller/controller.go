@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"math/big"
 	"os"
 	"time"
 
@@ -24,6 +25,7 @@ type Controller struct {
 	cfg         *config.Config
 	is          *database.SendStorage
 	sp          *database.SendPay
+	download    map[string]*big.Int
 }
 
 func NewController(path string, cfg *config.Config) *Controller {
@@ -53,6 +55,8 @@ func NewController(path string, cfg *config.Config) *Controller {
 
 	is := database.NewSender(dss)
 	sp := database.NewSenderPay(dss)
+
+	dw := make(map[string]*big.Int)
 	return &Controller{
 		storageApi:  api.G,
 		storageType: api.T,
@@ -60,6 +64,7 @@ func NewController(path string, cfg *config.Config) *Controller {
 		is:          is,
 		sp:          sp,
 		cfg:         cfg,
+		download:    dw,
 	}
 }
 
