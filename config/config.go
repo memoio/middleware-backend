@@ -26,7 +26,7 @@ type StorageConfig struct {
 	Ipfs             IpfsConfig       `json:"ipfs"`
 	Prices           map[string]int64 `json:"prices"`
 	TrafficCost      int64            `json:"traffic_cost"`
-	FreeDownloadSize int64            `json:"free_download_size`
+	FreeDownloadSize int64            `json:"free_download_size"`
 }
 
 type MefsConfig struct {
