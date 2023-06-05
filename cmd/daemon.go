@@ -2,14 +2,21 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
+	"path"
+	"runtime"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/memoio/backend/server"
+	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
 )
 
@@ -56,6 +63,18 @@ var runCmd = &cli.Command{
 			}
 		}()
 
+		pidpath, err := homedir.Expand("./")
+		if err != nil {
+			return nil
+		}
+
+		pid := os.Getpid()
+		pids := []byte(strconv.Itoa(pid))
+		err = os.WriteFile(path.Join(pidpath, "pid"), pids, 0644)
+		if err != nil {
+			return err
+		}
+
 		quit := make(chan os.Signal, 1)
 
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -77,6 +96,30 @@ var stopCmd = &cli.Command{
 	Name:  "stop",
 	Usage: "stop server",
 	Action: func(ctx *cli.Context) error {
+		pidpath, err := homedir.Expand("./")
+		if err != nil {
+			return nil
+		}
+
+		pd, _ := ioutil.ReadFile(path.Join(pidpath, "pid"))
+
+		err = kill(string(pd))
+		if err != nil {
+			return err
+		}
+		log.Println("gateway gracefully exit...")
+
 		return nil
 	},
+}
+
+func kill(pid string) error {
+	switch runtime.GOOS {
+	case "linux":
+		return exec.Command("kill", "-15", pid).Run()
+	case "windows":
+		return exec.Command("taskkill", "/F", "/T", "/PID", pid).Run()
+	default:
+		return fmt.Errorf("unsupported platform %s", runtime.GOOS)
+	}
 }
