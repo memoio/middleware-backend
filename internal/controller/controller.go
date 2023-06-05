@@ -77,7 +77,7 @@ func (c *Controller) UploadToContract() error {
 			del := c.contracts[sc.ChainID].StoreOrderPkgExpiration(sc.Address.Hex(), sc.DelHash(), sc.SType, sc.AddSize)
 
 			if add && del {
-				err := c.is.ResetStorage(sc.Address.Hex(), sc.SType)
+				err := c.is.ResetStorage(sc.ChainID, sc.Address.Hex(), sc.SType)
 				if err != nil {
 					logger.Error(err)
 					return err
@@ -90,7 +90,7 @@ func (c *Controller) UploadToContract() error {
 			res := c.contracts[pc.ChainID].StoreOrderPay(pc.Address.Hex(), pc.Hash(), pc.SType, pc.Value, pc.Size)
 
 			if res {
-				err := c.sp.ResetPay(pc.Address.Hex(), pc.SType)
+				err := c.sp.ResetPay(pc.ChainID, pc.Address.Hex(), pc.SType)
 				if err != nil {
 					logger.Error(err)
 					return err

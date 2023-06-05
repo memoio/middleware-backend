@@ -29,7 +29,7 @@ func (s *SendPay) AddPay(chain int, address string, st storage.StorageType, size
 		return err
 	}
 
-	pkey := address + st.String()
+	pkey := string(getKey(payPrefix, address, st, chain))
 
 	s.lw.Lock()
 	defer s.lw.Unlock()
@@ -61,7 +61,7 @@ func (s *SendPay) loadPay(chain int, address string, st storage.StorageType) (*P
 	key := getKey(payPrefix, address, st, chain)
 	data, err := s.ds.Get(key)
 	if err != nil {
-		schk, err := s.create(address, st)
+		schk, err := s.create(chain, address, st)
 		if err != nil {
 			logger.Error(err)
 			return nil, err
@@ -80,8 +80,8 @@ func (s *SendPay) loadPay(chain int, address string, st storage.StorageType) (*P
 	return schk, nil
 }
 
-func (s *SendPay) create(address string, st storage.StorageType) (*PayCheck, error) {
-	sc := newPayCheck(address, st)
+func (s *SendPay) create(chain int, address string, st storage.StorageType) (*PayCheck, error) {
+	sc := newPayCheck(chain, address, st)
 
 	return sc, sc.Save(s.ds)
 }
@@ -96,8 +96,8 @@ func (s *SendPay) GetAllStorage() []*PayCheck {
 	return res
 }
 
-func (s *SendPay) ResetPay(address string, st storage.StorageType) error {
-	pchk, err := s.create(address, st)
+func (s *SendPay) ResetPay(chain int, address string, st storage.StorageType) error {
+	pchk, err := s.create(chain, address, st)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -108,7 +108,7 @@ func (s *SendPay) ResetPay(address string, st storage.StorageType) error {
 }
 
 func (s *SendPay) Size(chain int, address string, st storage.StorageType) (*big.Int, error) {
-	pkey := address + st.String()
+	pkey := string(getKey(payPrefix, address, st, chain))
 	p, ok := s.pool[pkey]
 	if !ok {
 		schk, err := s.loadPay(chain, address, st)

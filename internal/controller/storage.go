@@ -57,7 +57,7 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 		return result, logs.StorageError{Message: "write to database error, err"}
 	}
 
-	err = c.is.AddStorage(address, c.storageType, big.NewInt(oi.Size), oi.Cid)
+	err = c.is.AddStorage(chain, address, c.storageType, big.NewInt(oi.Size), oi.Cid)
 	if err != nil {
 		return result, err
 	}
@@ -131,7 +131,7 @@ func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid s
 		return lerr
 	}
 
-	return c.is.DelStorage(address, c.storageType, big.NewInt(fi.Size), fi.Mid)
+	return c.is.DelStorage(chain, address, c.storageType, big.NewInt(fi.Size), fi.Mid)
 }
 
 func (c *Controller) getPrice(size int64) *big.Int {
