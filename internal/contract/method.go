@@ -4,10 +4,10 @@ import (
 	"context"
 	"math/big"
 	"strings"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -73,7 +73,7 @@ func getContractABI(name string) abi.ABI {
 
 func (c *Contract) CallContract(results *[]interface{}, name string, args ...interface{}) error {
 	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
-	if err != nil { 
+	if err != nil {
 		return err
 	}
 	defer client.Close()
@@ -111,26 +111,26 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 
 }
 
-func (c *Contract) sendTransaction(trtype, name string, args ...interface{}) bool {
+func (c *Contract) sendTransaction(trtype, name string, args ...interface{}) (string, error) {
 	logger.Info("sendTransaction")
 	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
 	if err != nil {
 		logger.Error(err)
-		return false
+		return "", err
 	}
 	defer client.Close()
 
 	nonce, err := client.PendingNonceAt(context.TODO(), c.gatewayAddr)
 	if err != nil {
 		logger.Error(err)
-		return false
+		return "", err
 	}
 	logger.Debug("nonce: ", nonce)
 
 	chainID, err := client.NetworkID(context.TODO())
 	if err != nil {
 		logger.Error(err)
-		return false
+		return "", err
 	}
 	logger.Debug("chainID: ", chainID)
 
@@ -139,13 +139,13 @@ func (c *Contract) sendTransaction(trtype, name string, args ...interface{}) boo
 	data, err := contractABI.Pack(name, args...)
 	if err != nil {
 		logger.Error("pack error: ", err)
-		return false
+		return "", err
 	}
 
 	privateKey, err := crypto.HexToECDSA(c.gatewaySecretKey)
 	if err != nil {
 		logger.Error("Failed to decode private key: %v\n", err)
-		return false
+		return "", err
 	}
 
 	gasLimit := uint64(300000)
@@ -154,39 +154,37 @@ func (c *Contract) sendTransaction(trtype, name string, args ...interface{}) boo
 
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
 	if err != nil {
-		return false
+		return "", err
 	}
 	err = client.SendTransaction(context.TODO(), signedTx)
 	if err != nil {
 		logger.Errorf("Failed to send transaction: %v\n", err)
-		return false
+		return "", err
 	}
 
-	logger.Info("waiting tx complete...")
-	time.Sleep(30 * time.Second)
-
-	receipt, err := client.TransactionReceipt(context.TODO(), signedTx.Hash())
-	if err != nil {
-		logger.Error("receipt:", err)
-		return false
-	}
-
-	return checkResult(trtype, receipt)
+	return signedTx.Hash().String(), nil
 }
 
-func checkResult(trtype string, receipt *types.Receipt) bool {
-	var topic string
-	switch trtype {
-	case "pay":
-		topic = payTopic
-	case "storage":
-		topic = storageTopic
-	case "buy":
-		topic = buyTopic
-	case "delpkg":
-		topic = delTopic
+func (c *Contract) CheckTrsaction(ctx context.Context, hash string) (bool, error) {
+	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
+	if err != nil {
+		logger.Error(err)
+		return false, err
+	}
+	defer client.Close()
+
+	signedTx := common.HexToHash(hash)
+
+	receipt, err := client.TransactionReceipt(context.TODO(), signedTx)
+	if err != nil {
+		logger.Error("receipt:", err)
+		return false, err
 	}
 
+	return checkResult(receipt), nil
+}
+
+func checkResult(receipt *types.Receipt) bool {
 	if receipt.Status != 1 {
 		logger.Error("Status not right")
 		logger.Error(receipt.Logs)
@@ -194,18 +192,10 @@ func checkResult(trtype string, receipt *types.Receipt) bool {
 		return false
 	}
 
-	if len(receipt.Logs) == 0 {
-		logger.Error("no logs")
-		return trtype == "setpkg"
-	}
+	logger.Debug("RECEIPT: ", receipt)
 
 	if len(receipt.Logs[0].Topics) == 0 {
 		logger.Error("no topics")
-		return false
-	}
-
-	if receipt.Logs[0].Topics[0].String() != topic {
-		logger.Error("topic not right: ", receipt.Logs[0].Topics[0].String())
 		return false
 	}
 
