@@ -32,7 +32,8 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 	}
 
 	// put obejct
-	oi, err := c.storageApi.PutObject(ctx, address, object, r, gateway.ObjectOptions(opts))
+	bucket := address + fmt.Sprint(chain)
+	oi, err := c.storageApi.PutObject(ctx, bucket, object, r, gateway.ObjectOptions(opts))
 	if err != nil {
 		return result, err
 	}
@@ -57,7 +58,7 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 		return result, logs.StorageError{Message: "write to database error, err"}
 	}
 
-	err = c.is.AddStorage(address, c.storageType, big.NewInt(oi.Size), oi.Cid)
+	err = c.is.AddStorage(chain, address, c.storageType, big.NewInt(oi.Size), oi.Cid)
 	if err != nil {
 		return result, err
 	}
@@ -75,18 +76,30 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 		return result, err
 	}
 
-	balance, err := c.GetBalance(ctx, chain, address)
-	if err != nil {
-		return result, err
+	key := address + fmt.Sprint(chain)
+	dw := c.download[key]
+	if dw == nil {
+		dw = big.NewInt(0)
 	}
 
-	trafficCost := c.cfg.Storage.TrafficCost
+	dw.Add(dw, big.NewInt(obi.Size))
 
-	needpay := big.NewInt(trafficCost)
-	needpay.Mul(needpay, big.NewInt(obi.Size))
+	payflag := dw.Int64() > c.cfg.Storage.FreeDownloadSize
 
-	if balance.Cmp(needpay) < 0 {
-		return result, logs.ControllerError{Message: fmt.Sprintf("balance not enough, balance=%d needpay=%d", balance, needpay)}
+	if payflag {
+		balance, err := c.GetBalance(ctx, chain, address)
+		if err != nil {
+			return result, err
+		}
+
+		trafficCost := c.cfg.Storage.TrafficCost
+
+		needpay := big.NewInt(trafficCost)
+		needpay.Mul(needpay, big.NewInt(obi.Size))
+
+		if balance.Cmp(needpay) < 0 {
+			return result, logs.ControllerError{Message: fmt.Sprintf("balance not enough, balance=%d needpay=%d", balance, needpay)}
+		}
 	}
 
 	err = c.storageApi.GetObject(ctx, mid, w, gateway.ObjectOptions(opts))
@@ -97,14 +110,16 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 	result.Name = obi.Name
 	result.CType = utils.TypeByExtension(obi.Name)
 	result.Size = obi.Size
-
-	value := c.getPrice(result.Size)
-	err = c.sp.AddPay(chain, address, c.storageType, big.NewInt(result.Size), value, obi.Mid)
-
-	if err != nil {
-		logger.Error(err)
-		return result, err
+	if payflag {
+		value := c.getPrice(result.Size)
+		err = c.sp.AddPay(chain, address, c.storageType, big.NewInt(result.Size), value, obi.Mid)
+		if err != nil {
+			logger.Error(err)
+			return result, err
+		}
 	}
+
+	c.download[key] = dw
 
 	return result, nil
 }
@@ -115,7 +130,8 @@ func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid s
 		return err
 	}
 
-	err = c.storageApi.DeleteObject(ctx, address, mid)
+	bucket := address + fmt.Sprint(chain)
+	err = c.storageApi.DeleteObject(ctx, bucket, fi.Name)
 	if err != nil {
 		return err
 	}
@@ -131,7 +147,7 @@ func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid s
 		return lerr
 	}
 
-	return c.is.DelStorage(address, c.storageType, big.NewInt(fi.Size), fi.Mid)
+	return c.is.DelStorage(chain, address, c.storageType, big.NewInt(fi.Size), fi.Mid)
 }
 
 func (c *Controller) getPrice(size int64) *big.Int {

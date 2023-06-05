@@ -41,7 +41,6 @@ func (c *Controller) CheckStorage(ctx context.Context, chain int, address string
 }
 
 func (c *Controller) GetStorageInfo(ctx context.Context, chain int, address string) (storage.StorageInfo, error) {
-
 	ct, ok := c.contracts[chain]
 	if !ok {
 		return storage.StorageInfo{}, chainIdNotSet(chain)
@@ -52,7 +51,7 @@ func (c *Controller) GetStorageInfo(ctx context.Context, chain int, address stri
 		return storage.StorageInfo{}, err
 	}
 
-	cachesize, err := c.is.GetStorage(address, c.storageType)
+	cachesize, err := c.is.GetStorage(chain, address, c.storageType)
 	if err != nil {
 		return storage.StorageInfo{}, err
 	}

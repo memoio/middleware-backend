@@ -22,10 +22,11 @@ type Config struct {
 }
 
 type StorageConfig struct {
-	Mefs        MefsConfig       `json:"mefs"`
-	Ipfs        IpfsConfig       `json:"ipfs"`
-	Prices      map[string]int64 `json:"prices"`
-	TrafficCost int64            `json:"traffic_cost"`
+	Mefs             MefsConfig       `json:"mefs"`
+	Ipfs             IpfsConfig       `json:"ipfs"`
+	Prices           map[string]int64 `json:"prices"`
+	TrafficCost      int64            `json:"traffic_cost"`
+	FreeDownloadSize int64            `json:"free_download_size`
 }
 
 type MefsConfig struct {
@@ -52,10 +53,11 @@ func newDefaultMefsConfig() MefsConfig {
 
 func newDefaultStorageConfig() StorageConfig {
 	return StorageConfig{
-		Mefs:        newDefaultMefsConfig(),
-		Ipfs:        newDefaultIpfsConfig(),
-		Prices:      map[string]int64{"mefs": 25000, "ipfs": 25000},
-		TrafficCost: 25000,
+		Mefs:             newDefaultMefsConfig(),
+		Ipfs:             newDefaultIpfsConfig(),
+		Prices:           map[string]int64{"mefs": 25000, "ipfs": 25000},
+		TrafficCost:      25000,
+		FreeDownloadSize: 1024 * 1024 * 1024,
 	}
 }
 

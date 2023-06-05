@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"math/big"
 	"os"
 	"time"
 
@@ -24,6 +25,7 @@ type Controller struct {
 	cfg         *config.Config
 	is          *database.SendStorage
 	sp          *database.SendPay
+	download    map[string]*big.Int
 }
 
 func NewController(path string, cfg *config.Config) *Controller {
@@ -53,6 +55,8 @@ func NewController(path string, cfg *config.Config) *Controller {
 
 	is := database.NewSender(dss)
 	sp := database.NewSenderPay(dss)
+
+	dw := make(map[string]*big.Int)
 	return &Controller{
 		storageApi:  api.G,
 		storageType: api.T,
@@ -60,6 +64,7 @@ func NewController(path string, cfg *config.Config) *Controller {
 		is:          is,
 		sp:          sp,
 		cfg:         cfg,
+		download:    dw,
 	}
 }
 
@@ -77,7 +82,7 @@ func (c *Controller) UploadToContract() error {
 			del := c.contracts[sc.ChainID].StoreOrderPkgExpiration(sc.Address.Hex(), sc.DelHash(), sc.SType, sc.AddSize)
 
 			if add && del {
-				err := c.is.ResetStorage(sc.Address.Hex(), sc.SType)
+				err := c.is.ResetStorage(sc.ChainID, sc.Address.Hex(), sc.SType)
 				if err != nil {
 					logger.Error(err)
 					return err
@@ -90,7 +95,7 @@ func (c *Controller) UploadToContract() error {
 			res := c.contracts[pc.ChainID].StoreOrderPay(pc.Address.Hex(), pc.Hash(), pc.SType, pc.Value, pc.Size)
 
 			if res {
-				err := c.sp.ResetPay(pc.Address.Hex(), pc.SType)
+				err := c.sp.ResetPay(pc.ChainID, pc.Address.Hex(), pc.SType)
 				if err != nil {
 					logger.Error(err)
 					return err

@@ -37,7 +37,7 @@ func NewGateway() (gateway.IGateway, error) {
 	}, nil
 }
 
-func (i *Ipfs) PutObject(ctx context.Context, address, object string, r io.Reader, opt gateway.ObjectOptions) (objInfo gateway.ObjectInfo, err error) {
+func (i *Ipfs) PutObject(ctx context.Context, bucket, object string, r io.Reader, opt gateway.ObjectOptions) (objInfo gateway.ObjectInfo, err error) {
 	sh := shapi.NewShell(i.host)
 	cidvereion := shapi.CidVersion(1)
 	chunkersize := ChunkerSize("size-253952")
@@ -47,7 +47,7 @@ func (i *Ipfs) PutObject(ctx context.Context, address, object string, r io.Reade
 	}
 
 	return gateway.ObjectInfo{
-		Address:     address,
+		Bucket:      bucket,
 		Name:        object,
 		Size:        int64(opt.Size),
 		Cid:         hash,
