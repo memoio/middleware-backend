@@ -7,7 +7,7 @@ import (
 )
 
 type ObjectInfo struct {
-	Address     string
+	Bucket      string
 	Name        string
 	Size        int64
 	Cid         string

@@ -32,7 +32,8 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 	}
 
 	// put obejct
-	oi, err := c.storageApi.PutObject(ctx, address, object, r, gateway.ObjectOptions(opts))
+	bucket := address + fmt.Sprint(chain)
+	oi, err := c.storageApi.PutObject(ctx, bucket, object, r, gateway.ObjectOptions(opts))
 	if err != nil {
 		return result, err
 	}
@@ -115,7 +116,8 @@ func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid s
 		return err
 	}
 
-	err = c.storageApi.DeleteObject(ctx, address, mid)
+	bucket := address + fmt.Sprint(chain)
+	err = c.storageApi.DeleteObject(ctx, bucket, fi.Name)
 	if err != nil {
 		return err
 	}
