@@ -118,23 +118,23 @@ func (c *Contract) StoreGetPkgInfos() ([]PackageInfo, error) {
 	return out0, nil
 }
 
-func (c *Contract) StoreOrderPkg(address, mid string, st storage.StorageType, size *big.Int) bool {
+func (c *Contract) StoreOrderPkg(address, mid string, st storage.StorageType, size *big.Int) (string, error) {
 	logger.Info("StoreOrderPkg:", st, address, mid, size)
 	return c.sendTransaction("storage", "storeOrderPkg", common.HexToAddress(address), mid, uint8(st), size)
 }
 
-func (c *Contract) StoreOrderPay(address, hash string, st storage.StorageType, amount *big.Int, size *big.Int) bool {
+func (c *Contract) StoreOrderPay(address, hash string, st storage.StorageType, amount *big.Int, size *big.Int) (string, error) {
 	logger.Info("StoreOrderPay:", address, hash, amount, size)
 	return c.sendTransaction("pay", "storeOrderpay", common.HexToAddress(address), hash, uint8(st), amount, size)
 }
 
-func (c *Contract) StoreBuyPkg(address string, pkg BuyPackage) bool {
+func (c *Contract) StoreBuyPkg(address string, pkg BuyPackage) (string, error) {
 	logger.Info("StoreBuyPkg:", address, pkg.Pkgid, pkg.Amount, pkg.Starttime, pkg.Chainid)
 	a := big.NewInt(pkg.Amount)
 	return c.sendTransaction("buy", "storeBuyPkg", common.HexToAddress(address), pkg.Pkgid, a, pkg.Starttime, pkg.Chainid)
 }
 
-func (c *Contract) AdminAddPkgInfo(time string, amount string, kind string, size string) bool {
+func (c *Contract) AdminAddPkgInfo(time string, amount string, kind string, size string) (string, error) {
 	logger.Info("AdminAddPkgInfo:", time, amount, kind, size)
 	t, a, s := new(big.Int), new(big.Int), new(big.Int)
 	t.SetString(time, 10)
@@ -157,7 +157,7 @@ func (c *Contract) StoreGetBuyPkgs(address string) ([]UserBuyPackage, error) {
 	return out0, nil
 }
 
-func (c *Contract) StoreOrderPkgExpiration(address, mid string, st storage.StorageType, size *big.Int) bool {
+func (c *Contract) StoreOrderPkgExpiration(address, mid string, st storage.StorageType, size *big.Int) (string, error) {
 	logger.Info("storeOrderPkgExpiration:", st, address, mid, size)
 	return c.sendTransaction("delpkg", "storeOrderPkgExpiration", common.HexToAddress(address), mid, uint8(st), size)
 }

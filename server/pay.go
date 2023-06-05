@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/controller"
+	"github.com/memoio/backend/internal/logs"
 )
 
 func toInt64(s string) int64 {
@@ -40,14 +41,15 @@ func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 		pkg := controller.Package{
 			Pkgid:     uint64(toInt64(pkgid)),
 			Amount:    toInt64(amount),
-			Starttime: uint64(times.Second()),
+			Starttime: uint64(times.Unix()),
 			Chainid:   big.NewInt(int64(chainId)).String(),
 		}
-		flag := s.Controller.BuyPackage(chainId, address, pkg)
-		if !flag {
-			c.JSON(521, "buy pkg failed")
+		receipt, err := s.Controller.BuyPackage(chainId, address, pkg)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
 		}
-		c.JSON(http.StatusOK, toResponse(flag))
+		c.JSON(http.StatusOK, receipt)
 	})
 }
 
@@ -57,7 +59,8 @@ func (s Server) addGetPkgListRoutes(r *gin.RouterGroup) {
 		chain := c.GetInt("chainid")
 		result, err := s.Controller.GetPackageList(chain)
 		if err != nil {
-			c.JSON(522, err.Error())
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
 		}
 		c.JSON(http.StatusOK, result)
 	})
@@ -70,8 +73,8 @@ func (s Server) addGetBuyPkgRoutes(r *gin.RouterGroup) {
 		chain := c.GetInt("chainid")
 		pi, err := s.Controller.GetUserBuyPackages(chain, address)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err.Error())
-			return
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
 		}
 		c.JSON(http.StatusOK, pi)
 	})

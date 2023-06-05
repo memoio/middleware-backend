@@ -81,11 +81,11 @@ func (c *Controller) GetBalance(ctx context.Context, chain int, address string) 
 	return balance.Sub(balance, value), nil
 }
 
-func (c *Controller) BuyPackage(chain int, address string, pkg Package) bool {
+func (c *Controller) BuyPackage(chain int, address string, pkg Package) (string, error) {
 	ct, ok := c.contracts[chain]
 	if !ok {
 		logger.Error(chainIdNotSet(chain))
-		return false
+		return "", chainIdNotSet(chain)
 	}
 	return ct.StoreBuyPkg(address, contract.BuyPackage(pkg))
 }

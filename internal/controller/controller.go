@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"math/big"
 	"os"
 	"time"
@@ -77,9 +78,28 @@ func (c *Controller) UploadToContract() error {
 		scl := c.is.GetAllStorage()
 		for _, sc := range scl {
 
-			add := c.contracts[sc.ChainID].StoreOrderPkg(sc.Address.Hex(), sc.AddHash(), sc.SType, sc.AddSize)
+			receipta, err := c.contracts[sc.ChainID].StoreOrderPkg(sc.Address.Hex(), sc.AddHash(), sc.SType, sc.AddSize)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			receiptd, err := c.contracts[sc.ChainID].StoreOrderPkgExpiration(sc.Address.Hex(), sc.DelHash(), sc.SType, sc.AddSize)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
 
-			del := c.contracts[sc.ChainID].StoreOrderPkgExpiration(sc.Address.Hex(), sc.DelHash(), sc.SType, sc.AddSize)
+			add, err := c.contracts[sc.ChainID].CheckTrsaction(context.TODO(), receipta)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+
+			del, err := c.contracts[sc.ChainID].CheckTrsaction(context.TODO(), receiptd)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
 
 			if add && del {
 				err := c.is.ResetStorage(sc.ChainID, sc.Address.Hex(), sc.SType)
@@ -92,7 +112,17 @@ func (c *Controller) UploadToContract() error {
 
 		pcl := c.sp.GetAllStorage()
 		for _, pc := range pcl {
-			res := c.contracts[pc.ChainID].StoreOrderPay(pc.Address.Hex(), pc.Hash(), pc.SType, pc.Value, pc.Size)
+			receipt, err := c.contracts[pc.ChainID].StoreOrderPay(pc.Address.Hex(), pc.Hash(), pc.SType, pc.Value, pc.Size)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+
+			res, err := c.contracts[pc.ChainID].CheckTrsaction(context.TODO(), receipt)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
 
 			if res {
 				err := c.sp.ResetPay(pc.ChainID, pc.Address.Hex(), pc.SType)
