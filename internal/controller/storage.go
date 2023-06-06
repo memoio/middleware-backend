@@ -21,14 +21,9 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 	result := PutObjectResult{}
 
 	// Check if it is possible to write
-	cw, err := c.CanWrite(ctx, chain, address, big.NewInt(opts.Size))
+	err := c.CanWrite(ctx, chain, address, big.NewInt(opts.Size))
 	if err != nil {
 		return result, err
-	}
-
-	if !cw {
-		logger.Error("Insufficient space or balance")
-		return result, logs.StorageError{Message: "insufficient space or balance"}
 	}
 
 	// put obejct
@@ -136,15 +131,9 @@ func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid s
 		return err
 	}
 
-	res, err := database.Delete(chain, address, mid, c.storageType)
+	err = database.Delete(chain, address, mid, c.storageType)
 	if err != nil {
 		return err
-	}
-
-	if !res {
-		lerr := logs.ConfigError{Message: "delete object failed"}
-		logger.Error(lerr.Error())
-		return lerr
 	}
 
 	return c.is.DelStorage(chain, address, c.storageType, big.NewInt(fi.Size), fi.Mid)

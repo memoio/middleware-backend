@@ -6,20 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/logs"
-	"github.com/memoio/backend/internal/storage"
 )
-
-type StorageResponse struct {
-	Address     string
-	StorageList []storage.StorageInfo
-}
 
 func (s Server) accountRegistRoutes(r *gin.RouterGroup) {
 	s.addGetBalanceRoutes(r)
 	s.addGetStorageRoutes(r)
-	s.addBuyPkgRoutes(r)
-	s.addGetPkgListRoutes(r)
-	s.addGetBuyPkgRoutes(r)
 }
 
 func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
@@ -33,7 +24,7 @@ func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
 			c.JSON(errRes.HTTPStatusCode, errRes)
 			return
 		}
-		c.JSON(http.StatusOK, BalanceResponse{Address: address, Balance: balance.String()})
+		c.JSON(http.StatusOK, gin.H{"Address": address, "Balance": balance.String()})
 	})
 }
 

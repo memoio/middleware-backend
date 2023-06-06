@@ -21,23 +21,27 @@ type PackageInfo struct {
 	contract.PackageInfo
 }
 
-func (c *Controller) CanWrite(ctx context.Context, chain int, address string, size *big.Int) (bool, error) {
-	cs, err := c.CheckStorage(ctx, chain, address, size)
+func (c *Controller) CanWrite(ctx context.Context, chain int, address string, size *big.Int) error {
+	err := c.CheckStorage(ctx, chain, address, size)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return cs, nil
+	return nil
 }
 
 // storage
-func (c *Controller) CheckStorage(ctx context.Context, chain int, address string, size *big.Int) (bool, error) {
+func (c *Controller) CheckStorage(ctx context.Context, chain int, address string, size *big.Int) error {
 	si, err := c.GetStorageInfo(ctx, chain, address)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	logger.Debug("Avi", si.Buysize+si.Free, "Used", si.Used+size.Int64())
-	return si.Buysize+si.Free > si.Used+size.Int64(), nil
+	if si.Buysize+si.Free > si.Used+size.Int64() {
+		err = logs.StorageError{Message: "insufficient space or balance"}
+		return err
+	}
+	return nil
 }
 
 func (c *Controller) GetStorageInfo(ctx context.Context, chain int, address string) (storage.StorageInfo, error) {

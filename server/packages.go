@@ -17,6 +17,12 @@ func toInt64(s string) int64 {
 	return b.Int64()
 }
 
+func (s Server) packagesRegistRoutes(r *gin.RouterGroup) {
+	s.addBuyPkgRoutes(r)
+	s.addGetPkgListRoutes(r)
+	s.addGetBuyPkgRoutes(r)
+}
+
 func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/buypkg", auth.VerifyIdentityHandler, func(c *gin.Context) {
@@ -35,6 +41,7 @@ func (s Server) addBuyPkgRoutes(r *gin.RouterGroup) {
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
 		}
 		c.JSON(http.StatusOK, receipt)
 	})
@@ -48,6 +55,7 @@ func (s Server) addGetPkgListRoutes(r *gin.RouterGroup) {
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
 		}
 		c.JSON(http.StatusOK, result)
 	})
@@ -62,6 +70,7 @@ func (s Server) addGetBuyPkgRoutes(r *gin.RouterGroup) {
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
 		}
 		c.JSON(http.StatusOK, pi)
 	})
