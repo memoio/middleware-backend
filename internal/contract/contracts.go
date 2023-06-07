@@ -116,7 +116,7 @@ func (c *Contract) StoreGetPkgInfos() ([]PackageInfo, error) {
 	out0 := *abi.ConvertType(out[0], new([]PackageInfo)).(*[]PackageInfo)
 
 	return out0, nil
-}
+} 
 
 func (c *Contract) StoreGetBuyPkgs(address string) ([]UserBuyPackage, error) {
 	logger.Info("StoreGetBuyPkgs:")

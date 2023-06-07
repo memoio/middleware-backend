@@ -70,31 +70,10 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 	if err != nil {
 		return result, err
 	}
-
 	key := address + fmt.Sprint(chain)
-	dw := c.download[key]
-	if dw == nil {
-		dw = big.NewInt(0)
-	}
-
-	dw.Add(dw, big.NewInt(obi.Size))
-
-	payflag := dw.Int64() > c.cfg.Storage.FreeDownloadSize
-
-	if payflag {
-		balance, err := c.GetBalance(ctx, chain, address)
-		if err != nil {
-			return result, err
-		}
-
-		trafficCost := c.cfg.Storage.TrafficCost
-
-		needpay := big.NewInt(trafficCost)
-		needpay.Mul(needpay, big.NewInt(obi.Size))
-
-		if balance.Cmp(needpay) < 0 {
-			return result, logs.ControllerError{Message: fmt.Sprintf("balance not enough, balance=%d needpay=%d", balance, needpay)}
-		}
+	dw, err := c.canRead(ctx, address, key, chain, obi.Size)
+	if err != nil {
+		return result, err
 	}
 
 	err = c.storageApi.GetObject(ctx, mid, w, gateway.ObjectOptions(opts))
@@ -105,13 +84,14 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 	result.Name = obi.Name
 	result.CType = utils.TypeByExtension(obi.Name)
 	result.Size = obi.Size
-	if payflag {
+	if dw == nil {
 		value := c.getPrice(result.Size)
 		err = c.sp.AddPay(chain, address, c.storageType, big.NewInt(result.Size), value, obi.Mid)
 		if err != nil {
 			logger.Error(err)
 			return result, err
 		}
+		return result, nil
 	}
 
 	c.download[key] = dw
@@ -146,4 +126,32 @@ func (c *Controller) getPrice(size int64) *big.Int {
 	p.Mul(p, big.NewInt(size))
 
 	return p
+}
+
+func (c *Controller) canRead(ctx context.Context, address, key string, chain int, size int64) (*big.Int, error) {
+	dw := c.download[key]
+	if dw == nil {
+		dw = big.NewInt(0)
+	}
+
+	dw.Add(dw, big.NewInt(size))
+
+	if dw.Int64() > c.cfg.Storage.FreeDownloadSize {
+		balance, err := c.GetBalance(ctx, chain, address)
+		if err != nil {
+			return nil, err
+		}
+
+		trafficCost := c.cfg.Storage.TrafficCost
+
+		needpay := big.NewInt(trafficCost)
+		needpay.Mul(needpay, big.NewInt(size))
+
+		if balance.Cmp(needpay) < 0 {
+			return nil, logs.ControllerError{Message: fmt.Sprintf("balance not enough, balance=%d needpay=%d", balance, needpay)}
+		}
+		return nil, nil
+	}
+
+	return dw, nil
 }

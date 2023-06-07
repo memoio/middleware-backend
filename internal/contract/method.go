@@ -142,7 +142,7 @@ func (c *Contract) sendTransaction(trtype, name string, args ...interface{}) (st
 
 	privateKey, err := crypto.HexToECDSA(c.gatewaySecretKey)
 	if err != nil {
-		lerr := logs.ContractError{Message: fmt.Sprintf("Failed to decode private key: %v", err)}
+		lerr := logs.ContractError{Message: fmt.Sprintf("Failed to decode gateway sk: %v", err)}
 		logger.Error(lerr)
 		return "", lerr
 	}

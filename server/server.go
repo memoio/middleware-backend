@@ -32,7 +32,7 @@ func NewServer(opt ServerOption) *http.Server {
 
 	config, err := config.ReadFile()
 	if err != nil {
-		log.Fatal("config not right")
+		log.Fatal("config not right ", err)
 		return nil
 	}
 
