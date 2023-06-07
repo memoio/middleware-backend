@@ -21,23 +21,27 @@ type PackageInfo struct {
 	contract.PackageInfo
 }
 
-func (c *Controller) CanWrite(ctx context.Context, chain int, address string, size *big.Int) (bool, error) {
-	cs, err := c.CheckStorage(ctx, chain, address, size)
+func (c *Controller) CanWrite(ctx context.Context, chain int, address string, size *big.Int) error {
+	err := c.CheckStorage(ctx, chain, address, size)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return cs, nil
+	return nil
 }
 
 // storage
-func (c *Controller) CheckStorage(ctx context.Context, chain int, address string, size *big.Int) (bool, error) {
+func (c *Controller) CheckStorage(ctx context.Context, chain int, address string, size *big.Int) error {
 	si, err := c.GetStorageInfo(ctx, chain, address)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	logger.Debug("Avi", si.Buysize+si.Free, "Used", si.Used+size.Int64())
-	return si.Buysize+si.Free > si.Used+size.Int64(), nil
+	if si.Buysize+si.Free > si.Used+size.Int64() {
+		err = logs.StorageError{Message: "insufficient space or balance"}
+		return err
+	}
+	return nil
 }
 
 func (c *Controller) GetStorageInfo(ctx context.Context, chain int, address string) (storage.StorageInfo, error) {
@@ -120,5 +124,22 @@ func (c *Controller) GetUserBuyPackages(chain int, address string) ([]contract.U
 
 func (c *Controller) StoreOrderPkg(address string) error {
 	// c.contract.StoreOrderPkg(address)
+	return nil
+}
+
+func (c *Controller) CheckReceipt(ctx context.Context, chain int, hash string) error {
+	err := c.checkContract(chain)
+	if err != nil {
+		return err
+	}
+	return c.contracts[chain].CheckTrsaction(ctx, hash)
+}
+
+func (c *Controller) checkContract(chain int) error {
+	_, ok := c.contracts[chain]
+	if !ok {
+		return logs.ControllerError{Message: fmt.Sprintf("%d not exist", chain)}
+	}
+
 	return nil
 }

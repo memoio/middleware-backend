@@ -157,11 +157,11 @@ func List(chain int, address string, st storage.StorageType) ([]FileInfo, error)
 	return fileList, nil
 }
 
-func Delete(chain int, address, mid string, stype storage.StorageType) (bool, error) {
+func Delete(chain int, address, mid string, stype storage.StorageType) error {
 	db, err := OpenDataBase()
 	if err != nil {
 		logger.Error(err)
-		return false, err
+		return err
 	}
 	defer db.Close()
 
@@ -171,12 +171,18 @@ func Delete(chain int, address, mid string, stype storage.StorageType) (bool, er
 `
 	res, err := db.Exec(sqlStmt, chain, address, mid, stype)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return false, err
+		return err
 	}
-	return rowsAffected > 0, nil
+
+	if rowsAffected <= 0 {
+		err = logs.DataBaseError{Message: "delete object failed"}
+		return err
+	}
+
+	return nil
 }

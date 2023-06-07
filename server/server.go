@@ -32,7 +32,7 @@ func NewServer(opt ServerOption) *http.Server {
 
 	config, err := config.ReadFile()
 	if err != nil {
-		log.Fatal("config not right")
+		log.Fatal("config not right ", err)
 		return nil
 	}
 
@@ -56,8 +56,6 @@ func NewServer(opt ServerOption) *http.Server {
 }
 
 func (s Server) registRoute(checkRegistered bool) {
-	// add storage routes
-
 	s.Router.Use(Cors())
 	s.Router.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Welcome Server")
@@ -76,9 +74,9 @@ func (s Server) registController() {
 		r := s.Router.Group(k)
 		ct := controller.NewController(r.BasePath(), s.Config)
 		s.Controller = ct
-
-		go s.Controller.UploadToContract()
+		ct.Start()
 		s.StorageRegistRoutes(r)
 		s.accountRegistRoutes(r)
+		s.packagesRegistRoutes(r)
 	}
 }

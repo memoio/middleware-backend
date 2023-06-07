@@ -2,6 +2,7 @@ package contract
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"strings"
 
@@ -15,13 +16,6 @@ import (
 )
 
 var logger = logs.Logger("contract")
-
-const (
-	payTopic     = "0xc0e3b3bf3b856068b6537f07e399954cb5abc4fade906ee21432a8ded3c36ec8"
-	storageTopic = "0x63fbca6586cb6d6fcf9fe8ab7daf3ffaf7fdad8f5d2ab29109fe71599b10d800"
-	buyTopic     = "0x9393f0a0a85953b7957a62d1ced4afd964332dad208249e1db83ce254babfccc"
-	delTopic     = "0xbcc253ceed59fcdc9a5bad89f7886c6c4561b5f245b4e99c7d1dea0c397807ed"
-)
 
 const (
 	getPkgSizeABI              = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"kind","type":"uint8"}],"name":"getPkgSize","outputs":[{"name":"used","type":"uint256"},{"name":"available","type":"uint256"},{"name":"total","type":"uint256"},{"name":"expires","type":"uint64"}],"payable":false,"stateMutability":"view","type":"function"}]`
@@ -115,22 +109,25 @@ func (c *Contract) sendTransaction(trtype, name string, args ...interface{}) (st
 	logger.Info("sendTransaction")
 	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
 	if err != nil {
-		logger.Error(err)
-		return "", err
+		lerr := logs.ContractError{Message: err.Error()}
+		logger.Error(lerr)
+		return "", lerr
 	}
 	defer client.Close()
 
 	nonce, err := client.PendingNonceAt(context.TODO(), c.gatewayAddr)
 	if err != nil {
-		logger.Error(err)
-		return "", err
+		lerr := logs.ContractError{Message: err.Error()}
+		logger.Error(lerr)
+		return "", lerr
 	}
 	logger.Debug("nonce: ", nonce)
 
 	chainID, err := client.NetworkID(context.TODO())
 	if err != nil {
-		logger.Error(err)
-		return "", err
+		lerr := logs.ContractError{Message: err.Error()}
+		logger.Error(lerr)
+		return "", lerr
 	}
 	logger.Debug("chainID: ", chainID)
 
@@ -138,14 +135,16 @@ func (c *Contract) sendTransaction(trtype, name string, args ...interface{}) (st
 
 	data, err := contractABI.Pack(name, args...)
 	if err != nil {
-		logger.Error("pack error: ", err)
-		return "", err
+		lerr := logs.ContractError{Message: fmt.Sprint("pack error: ", err)}
+		logger.Error(lerr)
+		return "", lerr
 	}
 
 	privateKey, err := crypto.HexToECDSA(c.gatewaySecretKey)
 	if err != nil {
-		logger.Error("Failed to decode private key: %v\n", err)
-		return "", err
+		lerr := logs.ContractError{Message: fmt.Sprintf("Failed to decode gateway sk: %v", err)}
+		logger.Error(lerr)
+		return "", lerr
 	}
 
 	gasLimit := uint64(300000)
@@ -154,22 +153,25 @@ func (c *Contract) sendTransaction(trtype, name string, args ...interface{}) (st
 
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
 	if err != nil {
-		return "", err
+		lerr := logs.ContractError{Message: fmt.Sprint("Failed to dSignTx", err)}
+		logger.Error(lerr)
+		return "", lerr
 	}
 	err = client.SendTransaction(context.TODO(), signedTx)
 	if err != nil {
-		logger.Errorf("Failed to send transaction: %v\n", err)
-		return "", err
+		lerr := logs.ContractError{Message: fmt.Sprintf("Failed to send transaction: %v\n", err)}
+		logger.Error(lerr)
+		return "", lerr
 	}
 
 	return signedTx.Hash().String(), nil
 }
 
-func (c *Contract) CheckTrsaction(ctx context.Context, hash string) (bool, error) {
+func (c *Contract) CheckTrsaction(ctx context.Context, hash string) error {
 	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
 	if err != nil {
 		logger.Error(err)
-		return false, err
+		return err
 	}
 	defer client.Close()
 
@@ -178,26 +180,28 @@ func (c *Contract) CheckTrsaction(ctx context.Context, hash string) (bool, error
 	receipt, err := client.TransactionReceipt(context.TODO(), signedTx)
 	if err != nil {
 		logger.Error("receipt:", err)
-		return false, err
+		return err
 	}
 
-	return checkResult(receipt), nil
+	return checkResult(receipt)
 }
 
-func checkResult(receipt *types.Receipt) bool {
+func checkResult(receipt *types.Receipt) error {
 	if receipt.Status != 1 {
-		logger.Error("Status not right")
+		err := logs.ContractError{Message: "Status not right"}
+		logger.Error(err)
 		logger.Error(receipt.Logs)
 		logger.Error(receipt)
-		return false
+		return err
 	}
 
 	logger.Debug("RECEIPT: ", receipt)
 
 	if len(receipt.Logs[0].Topics) == 0 {
-		logger.Error("no topics")
-		return false
+		err := logs.ContractError{Message: "no topics"}
+		logger.Error(err)
+		return err
 	}
 
-	return true
+	return nil
 }

@@ -101,12 +101,12 @@ var checkReceipt = &cli.Command{
 		if !ok {
 			return fmt.Errorf("%d is not set", chainid)
 		}
-		res, err := ct.CheckTrsaction(context.Background(), receipt)
+		err = ct.CheckTrsaction(context.Background(), receipt)
 		if err != nil {
 			return err
 		}
 
-		fmt.Println(res)
+		fmt.Println("check success")
 		return nil
 	},
 }
