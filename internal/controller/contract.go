@@ -126,3 +126,20 @@ func (c *Controller) StoreOrderPkg(address string) error {
 	// c.contract.StoreOrderPkg(address)
 	return nil
 }
+
+func (c *Controller) CheckReceipt(ctx context.Context, chain int, hash string) error {
+	err := c.checkContract(chain)
+	if err != nil {
+		return err
+	}
+	return c.contracts[chain].CheckTrsaction(ctx, hash)
+}
+
+func (c *Controller) checkContract(chain int) error {
+	_, ok := c.contracts[chain]
+	if !ok {
+		return logs.ControllerError{Message: fmt.Sprintf("%d not exist", chain)}
+	}
+
+	return nil
+}
