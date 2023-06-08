@@ -2,11 +2,14 @@ package contract
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/logs"
@@ -116,7 +119,7 @@ func (c *Contract) StoreGetPkgInfos() ([]PackageInfo, error) {
 	out0 := *abi.ConvertType(out[0], new([]PackageInfo)).(*[]PackageInfo)
 
 	return out0, nil
-} 
+}
 
 func (c *Contract) StoreGetBuyPkgs(address string) ([]UserBuyPackage, error) {
 	logger.Info("StoreGetBuyPkgs:")
@@ -141,4 +144,30 @@ func (c *Contract) GetStoreAllSize() *big.Int {
 
 	available := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
 	return available
+}
+
+func (c *Contract) CheckContract() error {
+	privateKey, err := crypto.HexToECDSA(c.gatewaySecretKey)
+	if err != nil {
+		lerr := logs.ContractError{Message: fmt.Sprintf("Failed to decode gateway sk: %v", err)}
+		logger.Error(lerr)
+		return lerr
+	}
+
+	pk := privateKey.Public()
+	pubKeyECDSA, ok := pk.(*ecdsa.PublicKey)
+
+	if !ok {
+		lerr := logs.ContractError{Message: "error casting public key to ECDSA"}
+		logger.Error(lerr)
+		return lerr
+	}
+	gatewayaddr := crypto.PubkeyToAddress(*pubKeyECDSA)
+	if gatewayaddr != c.gatewayAddr {
+		lerr := logs.ContractError{Message: fmt.Sprintf("gateway address and private key do not match %s", gatewayaddr)}
+		logger.Error(lerr)
+		return lerr
+	}
+
+	return nil
 }

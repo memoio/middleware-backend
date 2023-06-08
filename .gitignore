@@ -5,3 +5,4 @@ config.json
 *.exe
 internal/repo/*/
 internal/*/test/*
+**/*_test.go

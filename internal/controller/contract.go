@@ -45,9 +45,9 @@ func (c *Controller) CheckStorage(ctx context.Context, chain int, address string
 }
 
 func (c *Controller) GetStorageInfo(ctx context.Context, chain int, address string) (storage.StorageInfo, error) {
-	ct, ok := c.contracts[chain]
-	if !ok {
-		return storage.StorageInfo{}, chainIdNotSet(chain)
+	ct, err := c.getContract(chain)
+	if err != nil {
+		return storage.StorageInfo{}, err
 	}
 
 	si, err := ct.GetPkgSize(c.storageType, address)
@@ -67,9 +67,9 @@ func (c *Controller) GetStorageInfo(ctx context.Context, chain int, address stri
 
 // balance
 func (c *Controller) GetBalance(ctx context.Context, chain int, address string) (*big.Int, error) {
-	ct, ok := c.contracts[chain]
-	if !ok {
-		return nil, chainIdNotSet(chain)
+	ct, err := c.getContract(chain)
+	if err != nil {
+		return nil, err
 	}
 
 	balance, err := ct.BalanceOf(ctx, address)
@@ -86,18 +86,17 @@ func (c *Controller) GetBalance(ctx context.Context, chain int, address string) 
 }
 
 func (c *Controller) BuyPackage(chain int, address string, pkg Package) (string, error) {
-	ct, ok := c.contracts[chain]
-	if !ok {
-		logger.Error(chainIdNotSet(chain))
-		return "", chainIdNotSet(chain)
+	ct, err := c.getContract(chain)
+	if err != nil {
+		return "", err
 	}
 	return ct.StoreBuyPkg(address, contract.BuyPackage(pkg))
 }
 
 func (c *Controller) GetPackageList(chain int) ([]PackageInfo, error) {
-	ct, ok := c.contracts[chain]
-	if !ok {
-		return nil, chainIdNotSet(chain)
+	ct, err := c.getContract(chain)
+	if err != nil {
+		return nil, err
 	}
 	pi, err := ct.StoreGetPkgInfos()
 	if err != nil {
@@ -115,9 +114,9 @@ func (c *Controller) GetPackageList(chain int) ([]PackageInfo, error) {
 }
 
 func (c *Controller) GetUserBuyPackages(chain int, address string) ([]contract.UserBuyPackage, error) {
-	ct, ok := c.contracts[chain]
-	if !ok {
-		return nil, chainIdNotSet(chain)
+	ct, err := c.getContract(chain)
+	if err != nil {
+		return nil, err
 	}
 	return ct.StoreGetBuyPkgs(address)
 }
@@ -128,18 +127,23 @@ func (c *Controller) StoreOrderPkg(address string) error {
 }
 
 func (c *Controller) CheckReceipt(ctx context.Context, chain int, hash string) error {
-	err := c.checkContract(chain)
+	ct, err := c.getContract(chain)
 	if err != nil {
 		return err
 	}
-	return c.contracts[chain].CheckTrsaction(ctx, hash)
+	return ct.CheckTrsaction(ctx, hash)
 }
 
-func (c *Controller) checkContract(chain int) error {
-	_, ok := c.contracts[chain]
+func (c *Controller) getContract(chain int) (*contract.Contract, error) {
+	ct, ok := c.contracts[chain]
 	if !ok {
-		return logs.ControllerError{Message: fmt.Sprintf("%d not exist", chain)}
+		return nil, chainIdNotSet(chain)
 	}
 
-	return nil
+	err := ct.CheckContract()
+	if err != nil {
+		return nil, err
+	}
+
+	return ct, nil
 }
