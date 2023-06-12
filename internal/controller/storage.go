@@ -71,7 +71,7 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 		return result, err
 	}
 	key := address + fmt.Sprint(chain)
-	dw, err := c.canRead(ctx, address, key, chain, obi.Size)
+	err = c.canRead(ctx, address, key, chain, obi.Size)
 	if err != nil {
 		return result, err
 	}
@@ -84,17 +84,11 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 	result.Name = obi.Name
 	result.CType = utils.TypeByExtension(obi.Name)
 	result.Size = obi.Size
-	if dw == nil {
-		value := c.getPrice(result.Size)
-		err = c.sp.AddPay(chain, address, c.storageType, big.NewInt(result.Size), value, obi.Mid)
-		if err != nil {
-			logger.Error(err)
-			return result, err
-		}
-		return result, nil
-	}
 
-	c.download[key] = dw
+	err = c.UpdateFlowSize(ctx, chain, address, obi.Mid, big.NewInt(result.Size))
+	if err != nil {
+		return result, err
+	}
 
 	return result, nil
 }
@@ -128,18 +122,25 @@ func (c *Controller) getPrice(size int64) *big.Int {
 	return p
 }
 
-func (c *Controller) canRead(ctx context.Context, address, key string, chain int, size int64) (*big.Int, error) {
-	dw := c.download[key]
-	if dw == nil {
-		dw = big.NewInt(0)
+func (c *Controller) canRead(ctx context.Context, address, key string, chain int, size int64) error {
+	flowsize, err := c.GetFlowSize(ctx, chain, address)
+	if err != nil {
+		return err
 	}
 
-	dw.Add(dw, big.NewInt(size))
+	used := flowsize.Used
+	used.Add(used, big.NewInt(size))
+	cachesize, err := c.sp.Size(chain, address, c.storageType)
+	if err != nil {
+		return err
+	}
 
-	if dw.Int64() > c.cfg.Storage.FreeDownloadSize {
+	used.Add(used, cachesize)
+
+	if used.Cmp(flowsize.Free) < 0 {
 		balance, err := c.GetBalance(ctx, chain, address)
 		if err != nil {
-			return nil, err
+			return nil
 		}
 
 		trafficCost := c.cfg.Storage.TrafficCost
@@ -148,10 +149,20 @@ func (c *Controller) canRead(ctx context.Context, address, key string, chain int
 		needpay.Mul(needpay, big.NewInt(size))
 
 		if balance.Cmp(needpay) < 0 {
-			return nil, logs.ControllerError{Message: fmt.Sprintf("balance not enough, balance=%d needpay=%d", balance, needpay)}
+			return logs.ControllerError{Message: fmt.Sprintf("balance not enough, balance=%d needpay=%d", balance, needpay)}
 		}
-		return nil, nil
+		return nil
 	}
 
-	return dw, nil
+	return nil
+}
+
+func (c *Controller) UpdateFlowSize(ctx context.Context, chain int, address, mid string, size *big.Int) error {
+	value := c.getPrice(size.Int64())
+	err := c.sp.AddPay(chain, address, c.storageType, size, value, mid)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	return nil
 }

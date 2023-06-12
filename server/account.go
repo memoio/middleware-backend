@@ -44,3 +44,20 @@ func (s Server) addGetStorageRoutes(r *gin.RouterGroup) {
 		c.JSON(http.StatusOK, si)
 	})
 }
+
+func (s Server) addGetFlowSize(r *gin.RouterGroup) {
+	p := r.Group("/")
+	p.GET("/flowsize", auth.VerifyIdentityHandler, func(c *gin.Context) {
+		address := c.GetString("address")
+		chain := c.GetInt("chainid")
+
+		res, err := s.Controller.GetFlowSize(c.Request.Context(), chain, address)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		c.JSON(http.StatusOK, res)
+	})
+}
