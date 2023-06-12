@@ -41,6 +41,11 @@ type UserBuyPackage struct {
 	State     uint8
 }
 
+type FlowSize struct {
+	Used *big.Int
+	Free *big.Int
+}
+
 type Contract struct {
 	contractAddr     common.Address
 	endpoint         string
@@ -144,6 +149,33 @@ func (c *Contract) GetStoreAllSize() *big.Int {
 
 	available := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
 	return available
+}
+
+func (c *Contract) GetFlowSize(address string) (FlowSize, error) {
+	var out []interface{}
+	err := c.CallContract(&out, "flowSize", common.HexToAddress(address))
+	if err != nil {
+		logger.Error(err)
+		return FlowSize{}, err
+	}
+
+	usesize := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	freesize := *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	return FlowSize{
+		Used: usesize,
+		Free: freesize,
+	}, nil
+}
+
+func (c *Contract) Get(name string, args ...interface{}) []interface{} {
+	var out []interface{}
+	err := c.CallContract(&out, name, args...)
+	if err != nil {
+		logger.Error(err)
+		return nil
+	}
+
+	return out
 }
 
 func (c *Contract) CheckContract() error {

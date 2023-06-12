@@ -28,6 +28,9 @@ const (
 	adminAddPkgInfoABI         = `[{"constant":false,"inputs":[{"name":"time","type":"uint64"},{"name":"amount","type":"uint256"},{"name":"kind","type":"uint8"},{"name":"buysize","type":"uint256"}],"name":"adminAddPkgInfo","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
 	storeGetBuyPkgsABI         = `[{"constant":false,"inputs":[{"name":"to","type":"address"}],"name":"storeGetBuyPkgs","outputs":[{"components":[{"name":"starttime","type":"uint64"},{"name":"endtime","type":"uint64"},{"name":"kind","type":"uint8"},{"name":"buysize","type":"uint256"},{"name":"amount","type":"uint256"},{"name":"state","type":"uint8"}],"name":"","type":"tuple[]"}],"payable":false,"stateMutability":"view","type":"function"}]`
 	getStoreAllSizeABI         = `[{"constant": true,"inputs": [], "name": "getStoreAllSize","outputs": [{"name": "","type": "uint256"}],"payable": false,"stateMutability": "view","type": "function"}]`
+
+	flowSizeABI     = `[{"constant":true,"inputs":[{"name":"to","type":"address"}],"name":"flowSize","outputs":[{"name":"","type":"uint256"},{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}]`
+	flowOrderpayABI = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"hashid","type":"string"},{"name":"kind","type":"uint8"},{"name":"amount","type":"uint256"},{"name":"size","type":"uint256"}],"name":"flowOrderpay","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
 )
 
 func createAbi(cabi string) abi.ABI {
@@ -60,6 +63,10 @@ func getContractABI(name string) abi.ABI {
 		return createAbi(storeOrderPkgExpirationABI)
 	case "getStoreAllSize":
 		return createAbi(getStoreAllSizeABI)
+	case "flowSize":
+		return createAbi(flowSizeABI)
+	case "flowOrderpay":
+		return createAbi(flowOrderpayABI)
 	}
 
 	return abi.ABI{}
@@ -78,6 +85,7 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 	}
 
 	contractABI := getContractABI(name)
+	logger.Info(args...)
 
 	encodeData, err := contractABI.Pack(name, args...)
 	if err != nil {
@@ -90,10 +98,13 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 		Data: encodeData,
 	}
 
+	logger.Info("call start")
 	result, err := client.CallContract(context.TODO(), msg, nil)
 	if err != nil {
 		return err
 	}
+
+	logger.Info("call end")
 
 	if len(*results) == 0 {
 		res, err := contractABI.Unpack(name, result)
@@ -105,7 +116,7 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 
 }
 
-func (c *Contract) sendTransaction(trtype, name string, args ...interface{}) (string, error) {
+func (c *Contract) sendTransaction(name string, args ...interface{}) (string, error) {
 	logger.Info("sendTransaction")
 	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
 	if err != nil {
@@ -195,7 +206,7 @@ func checkResult(receipt *types.Receipt) error {
 		return err
 	}
 
-	logger.Debug("RECEIPT: ", receipt)
+	logger.Info("RECEIPT: ", receipt)
 
 	if len(receipt.Logs[0].Topics) == 0 {
 		err := logs.ContractError{Message: "no topics"}

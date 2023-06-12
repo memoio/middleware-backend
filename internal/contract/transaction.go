@@ -9,13 +9,13 @@ import (
 
 func (c *Contract) StoreOrderPkgExpiration(address, mid string, st storage.StorageType, size *big.Int) (string, error) {
 	logger.Info("storeOrderPkgExpiration:", st, address, mid, size)
-	return c.sendTransaction("delpkg", "storeOrderPkgExpiration", common.HexToAddress(address), mid, uint8(st), size)
+	return c.sendTransaction("storeOrderPkgExpiration", common.HexToAddress(address), mid, uint8(st), size)
 }
 
 func (c *Contract) StoreBuyPkg(address string, pkg BuyPackage) (string, error) {
 	logger.Info("StoreBuyPkg:", address, pkg.Pkgid, pkg.Amount, pkg.Starttime, pkg.Chainid)
 	a := big.NewInt(pkg.Amount)
-	return c.sendTransaction("buy", "storeBuyPkg", common.HexToAddress(address), pkg.Pkgid, a, pkg.Starttime, pkg.Chainid)
+	return c.sendTransaction("storeBuyPkg", common.HexToAddress(address), pkg.Pkgid, a, pkg.Starttime, pkg.Chainid)
 }
 
 func (c *Contract) AdminAddPkgInfo(time string, amount string, kind string, size string) (string, error) {
@@ -25,15 +25,20 @@ func (c *Contract) AdminAddPkgInfo(time string, amount string, kind string, size
 	a.SetString(amount, 10)
 	s.SetString(size, 10)
 	k := storage.StringToStorageType(kind)
-	return c.sendTransaction("setpkg", "adminAddPkgInfo", t.Uint64(), a, uint8(k), s)
+	return c.sendTransaction("adminAddPkgInfo", t.Uint64(), a, uint8(k), s)
 }
 
 func (c *Contract) StoreOrderPkg(address, mid string, st storage.StorageType, size *big.Int) (string, error) {
 	logger.Info("StoreOrderPkg:", st, address, mid, size)
-	return c.sendTransaction("storage", "storeOrderPkg", common.HexToAddress(address), mid, uint8(st), size)
+	return c.sendTransaction("storeOrderPkg", common.HexToAddress(address), mid, uint8(st), size)
 }
 
 func (c *Contract) StoreOrderPay(address, hash string, st storage.StorageType, amount *big.Int, size *big.Int) (string, error) {
 	logger.Info("StoreOrderPay:", address, hash, amount, size)
-	return c.sendTransaction("pay", "storeOrderpay", common.HexToAddress(address), hash, uint8(st), amount, size)
+	return c.sendTransaction("storeOrderpay", common.HexToAddress(address), hash, uint8(st), amount, size)
+}
+
+func (c *Contract) FlowOrderPay(address, hash string, st storage.StorageType, amount, size *big.Int) (string, error) {
+	logger.Info("FlowOrderPay:", address, hash, amount, size)
+	return c.sendTransaction("flowOrderpay", common.HexToAddress(address), hash, uint8(st), amount, size)
 }

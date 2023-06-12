@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"math/big"
 	"os"
 	"time"
 
@@ -26,7 +25,6 @@ type Controller struct {
 	cfg         *config.Config
 	is          *database.SendStorage
 	sp          *database.SendPay
-	download    map[string]*big.Int
 	stop        chan struct{}
 }
 
@@ -58,7 +56,6 @@ func NewController(path string, cfg *config.Config) *Controller {
 	is := database.NewSender(dss)
 	sp := database.NewSenderPay(dss)
 
-	dw := make(map[string]*big.Int)
 	return &Controller{
 		storageApi:  api.G,
 		storageType: api.T,
@@ -66,7 +63,6 @@ func NewController(path string, cfg *config.Config) *Controller {
 		is:          is,
 		sp:          sp,
 		cfg:         cfg,
-		download:    dw,
 	}
 }
 
@@ -159,7 +155,7 @@ func (c *Controller) UploadDelStorage(sc *database.StorageCheck) error {
 func (c *Controller) UploadTraffic() error {
 	pcl := c.sp.GetAllStorage()
 	for _, pc := range pcl {
-		receipt, err := c.contracts[pc.ChainID].StoreOrderPay(pc.Address.Hex(), pc.Hash(), pc.SType, pc.Value, pc.Size)
+		receipt, err := c.contracts[pc.ChainID].FlowOrderPay(pc.Address.Hex(), pc.Hash(), pc.SType, pc.Value, pc.Size)
 		if err != nil {
 			continue
 		}

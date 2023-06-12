@@ -147,3 +147,18 @@ func (c *Controller) getContract(chain int) (*contract.Contract, error) {
 
 	return ct, nil
 }
+
+func (c *Controller) GetFlowSize(ctx context.Context, chain int, address string) (contract.FlowSize, error) {
+	result := contract.FlowSize{}
+	ct, err := c.getContract(chain)
+	if err != nil {
+		return result, err
+	}
+
+	flowsize, err := ct.GetFlowSize(address)
+	if err != nil {
+		return result, err
+	}
+
+	return flowsize, nil
+}
