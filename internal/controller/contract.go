@@ -5,20 +5,44 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/memoio/backend/internal/contract"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
 )
 
-func chainIdNotSet(chain int) error {
-	return logs.ContractError{Message: fmt.Sprintf("chain %d not set", chain)}
+type flowSize struct {
+	Used *big.Int
+	Free *big.Int
+}
+
+type userBuyPackage struct {
+	Starttime uint64
+	Endtime   uint64
+	Kind      uint8
+	Buysize   *big.Int
+	Amount    *big.Int
+	State     uint8
 }
 
 type Package contract.BuyPackage
 
-type PackageInfo struct {
+type packageInfo struct {
+	Time    uint64
+	Kind    uint8
+	Buysize *big.Int
+	Amount  *big.Int
+	State   uint8
+}
+
+type packageInfos struct {
 	Pkgid int
-	contract.PackageInfo
+	packageInfo
+}
+
+func chainIdNotSet(chain int) error {
+	return logs.ContractError{Message: fmt.Sprintf("chain %d not set", chain)}
 }
 
 func (c *Controller) CanWrite(ctx context.Context, chain int, address string, size *big.Int) error {
@@ -50,9 +74,22 @@ func (c *Controller) GetStorageInfo(ctx context.Context, chain int, address stri
 		return storage.StorageInfo{}, err
 	}
 
-	si, err := ct.GetPkgSize(c.storageType, address)
+	out, err := ct.Get("storeGetPkgInfos")
 	if err != nil {
 		return storage.StorageInfo{}, err
+	}
+
+	available := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	free := *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	used := *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
+	files := *abi.ConvertType(out[3], new(uint64)).(*uint64)
+
+	si := storage.StorageInfo{
+		Storage: c.storageType.String(),
+		Buysize: available.Int64(),
+		Free:    free.Int64(),
+		Used:    used.Int64(),
+		Files:   int(files),
 	}
 
 	cachesize, err := c.is.GetStorage(chain, address, c.storageType)
@@ -93,32 +130,44 @@ func (c *Controller) BuyPackage(chain int, address string, pkg Package) (string,
 	return ct.StoreBuyPkg(address, contract.BuyPackage(pkg))
 }
 
-func (c *Controller) GetPackageList(chain int) ([]PackageInfo, error) {
+func (c *Controller) GetPackageList(chain int) ([]packageInfos, error) {
 	ct, err := c.getContract(chain)
 	if err != nil {
 		return nil, err
 	}
-	pi, err := ct.StoreGetPkgInfos()
+
+	out, err := ct.Get("storeGetPkgInfos")
 	if err != nil {
 		return nil, err
 	}
-	var pl []PackageInfo
-	for i, p := range pi {
-		pl = append(pl, PackageInfo{
+
+	result := *abi.ConvertType(out[0], new([]packageInfo)).(*[]packageInfo)
+
+	var pl []packageInfos
+	for i, p := range result {
+		pl = append(pl, packageInfos{
 			Pkgid:       i + 1,
-			PackageInfo: p,
+			packageInfo: p,
 		})
 	}
 
 	return pl, nil
 }
 
-func (c *Controller) GetUserBuyPackages(chain int, address string) ([]contract.UserBuyPackage, error) {
+func (c *Controller) GetUserBuyPackages(chain int, address string) ([]userBuyPackage, error) {
 	ct, err := c.getContract(chain)
 	if err != nil {
 		return nil, err
 	}
-	return ct.StoreGetBuyPkgs(address)
+
+	out, err := ct.Get("storeGetBuyPkgs", common.HexToAddress(address))
+	if err != nil {
+		return nil, err
+	}
+
+	result := *abi.ConvertType(out[0], new([]userBuyPackage)).(*[]userBuyPackage)
+
+	return result, nil
 }
 
 func (c *Controller) StoreOrderPkg(address string) error {
@@ -148,17 +197,23 @@ func (c *Controller) getContract(chain int) (*contract.Contract, error) {
 	return ct, nil
 }
 
-func (c *Controller) GetFlowSize(ctx context.Context, chain int, address string) (contract.FlowSize, error) {
-	result := contract.FlowSize{}
+func (c *Controller) GetFlowSize(ctx context.Context, chain int, address string) (flowSize, error) {
+	result := flowSize{}
 	ct, err := c.getContract(chain)
 	if err != nil {
 		return result, err
 	}
 
-	flowsize, err := ct.GetFlowSize(address)
+	out, err := ct.Get("flowSize", common.HexToAddress(address))
 	if err != nil {
 		return result, err
 	}
 
-	return flowsize, nil
+	usesize := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	freesize := *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+
+	return flowSize{
+		Used: usesize,
+		Free: freesize,
+	}, nil
 }

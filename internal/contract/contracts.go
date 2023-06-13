@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/logs"
-	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/contractsv2/go_contracts/erc"
 )
 
@@ -90,92 +88,28 @@ func (c *Contract) BalanceOf(ctx context.Context, addr string) (*big.Int, error)
 	return res.Set(bal), nil
 }
 
-func (c *Contract) GetPkgSize(st storage.StorageType, address string) (storage.StorageInfo, error) {
-	var out []interface{}
-	err := c.CallContract(&out, "getPkgSize", common.HexToAddress(address), uint8(st))
-	if err != nil {
-		logger.Error(err)
-		return storage.StorageInfo{}, logs.ContractError{Message: err.Error()}
-	}
+// func (c *Contract) GetStoreAllSize() *big.Int {
+// 	var out []interface{}
+// 	err := c.CallContract(&out, "getStoreAllSize")
+// 	if err != nil {
+// 		logger.Error(err)
+// 		return nil
+// 	}
 
-	available := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-	free := *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-	used := *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
-	files := *abi.ConvertType(out[3], new(uint64)).(*uint64)
+// 	available := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+// 	return available
+// }
 
-	return storage.StorageInfo{
-		Storage: st.String(),
-		Buysize: available.Int64(),
-		Free:    free.Int64(),
-		Used:    used.Int64(),
-		Files:   int(files),
-	}, nil
-}
-
-func (c *Contract) StoreGetPkgInfos() ([]PackageInfo, error) {
-	logger.Info("StoreGetPkgInfos:")
-	var out []interface{}
-	err := c.CallContract(&out, "storeGetPkgInfos")
-	if err != nil {
-		logger.Error(err)
-		return nil, logs.ContractError{Message: err.Error()}
-	}
-
-	out0 := *abi.ConvertType(out[0], new([]PackageInfo)).(*[]PackageInfo)
-
-	return out0, nil
-}
-
-func (c *Contract) StoreGetBuyPkgs(address string) ([]UserBuyPackage, error) {
-	logger.Info("StoreGetBuyPkgs:")
-	var out []interface{}
-	err := c.CallContract(&out, "storeGetBuyPkgs", common.HexToAddress(address))
-	if err != nil {
-		logger.Error(err)
-		return nil, err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([]UserBuyPackage)).(*[]UserBuyPackage)
-	return out0, nil
-}
-
-func (c *Contract) GetStoreAllSize() *big.Int {
-	var out []interface{}
-	err := c.CallContract(&out, "getStoreAllSize")
-	if err != nil {
-		logger.Error(err)
-		return nil
-	}
-
-	available := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-	return available
-}
-
-func (c *Contract) GetFlowSize(address string) (FlowSize, error) {
-	var out []interface{}
-	err := c.CallContract(&out, "flowSize", common.HexToAddress(address))
-	if err != nil {
-		logger.Error(err)
-		return FlowSize{}, err
-	}
-
-	usesize := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-	freesize := *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-	return FlowSize{
-		Used: usesize,
-		Free: freesize,
-	}, nil
-}
-
-func (c *Contract) Get(name string, args ...interface{}) []interface{} {
+func (c *Contract) Get(name string, args ...interface{}) ([]interface{}, error) {
 	var out []interface{}
 	err := c.CallContract(&out, name, args...)
 	if err != nil {
-		logger.Error(err)
-		return nil
+		lerr := logs.ContractError{Message: err.Error()}
+		logger.Error(lerr)
+		return out, lerr
 	}
 
-	return out
+	return out, nil
 }
 
 func (c *Contract) CheckContract() error {
