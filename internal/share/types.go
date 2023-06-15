@@ -54,7 +54,7 @@ func GetShareByID(shareID string) *ShareObjectInfo {
 }
 
 func (s *ShareObjectInfo) IsAvailable() bool {
-	if s.RemainDownloads == 0 || time.Now().Unix() > s.ExpiredTime {
+	if s.RemainDownloads == 0 || (s.ExpiredTime > 0 && time.Now().Unix() > s.ExpiredTime) {
 		// 考虑删除失效的分享
 		return false
 	}
