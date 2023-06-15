@@ -59,7 +59,7 @@ func (s *ShareObjectInfo) IsAvailable() bool {
 		return false
 	}
 
-	_, err := database.Get(s.UserID.ChainID, s.UserID.Address, s.MID, s.SType)
+	_, err := GetFileInfo(s.UserID.Address, s.UserID.ChainID, s.MID, s.SType)
 	if err != nil {
 		// 文件已删除，考虑删除失效的分享
 		return false
@@ -69,7 +69,7 @@ func (s *ShareObjectInfo) IsAvailable() bool {
 }
 
 func (s *ShareObjectInfo) Source() (database.FileInfo, error) {
-	return database.Get(s.UserID.ChainID, s.UserID.Address, s.MID, s.SType)
+	return GetFileInfo(s.UserID.Address, s.UserID.ChainID, s.MID, s.SType)
 }
 
 // func (s *ShareObjectInfo) Preview() error {

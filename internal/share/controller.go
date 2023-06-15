@@ -21,10 +21,7 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 	// chainID := c.GetInt("chainid")
 
 	// 查看文件是否存在，且属于该用户
-	fileInfo, err := database.Get(chainID, address, request.MID, request.SType)
-	if err != nil {
-		return "", xerrors.Errorf("Can't find the file")
-	}
+	fileInfo, err := GetFileInfo(address, chainID, request.MID, request.SType)
 
 	newShare := ShareObjectInfo{
 		UserID:          Identity{address, chainID},
@@ -94,7 +91,7 @@ func GetShare(address string, chainID int, share *ShareObjectInfo, request GetSh
 }
 
 func SaveShare(address string, chainID int, share *ShareObjectInfo) error {
-	info, err := database.Get(chainID, address, share.MID, share.SType)
+	info, err := GetFileInfo(address, chainID, share.MID, share.SType)
 	if err != nil {
 		return err
 	}
@@ -104,4 +101,21 @@ func SaveShare(address string, chainID int, share *ShareObjectInfo) error {
 
 	_, err = database.Put(info)
 	return err
+}
+
+func GetFileInfo(address string, chainID int, mid string, stype storage.StorageType) (database.FileInfo, error) {
+	fileInfos, err := database.Get(chainID, mid, stype)
+	if err != nil {
+		return database.FileInfo{}, xerrors.Errorf("Can't find the file")
+	}
+	for key, file := range fileInfos {
+		if file.Public {
+			return file, nil
+		}
+		if key == address {
+			return file, nil
+		}
+	}
+
+	return database.FileInfo{}, xerrors.Errorf("Can't access the file")
 }
