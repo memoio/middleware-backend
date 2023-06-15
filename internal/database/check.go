@@ -144,7 +144,8 @@ func (s *StorageCheck) Del(hash string, size *big.Int) error {
 }
 
 func (s *StorageCheck) Size() *big.Int {
-	result := new(big.Int).Set(s.AddSize)
+	result := big.NewInt(0)
+	result.Set(s.AddSize)
 	return result.Sub(result, s.DelSize)
 }
 

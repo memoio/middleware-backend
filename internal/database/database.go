@@ -21,6 +21,7 @@ type FileInfo struct {
 	Mid        string
 	Size       int64
 	ModTime    time.Time
+	Public     bool
 	UserDefine string
 }
 
@@ -34,14 +35,16 @@ func init() {
 func OpenDataBase() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", "./backend.db")
 	if err != nil {
-		logger.Error(err)
-		return nil, err
+		lerr := logs.DataBaseError{Message: err.Error()}
+		logger.Error(lerr)
+		return nil, lerr
 	}
 
 	err = db.Ping()
 	if err != nil {
-		logger.Error(err)
-		return nil, err
+		lerr := logs.DataBaseError{Message: err.Error()}
+		logger.Error(lerr)
+		return nil, lerr
 	}
 
 	return db, nil
@@ -65,6 +68,7 @@ func createTable() error {
 		mid TEXT,
 		size INTEGER,
 		modtime DATETIME,
+		public BOOLEAN,
 		userdefine TEXT,
 		UNIQUE (chainid, address, stype, mid) ON CONFLICT IGNORE
 	);
@@ -72,8 +76,9 @@ func createTable() error {
 
 	_, err = db.Exec(sqlMessage)
 	if err != nil {
-		logger.Error(err)
-		return err
+		lerr := logs.DataBaseError{Message: err.Error()}
+		logger.Error(lerr)
+		return lerr
 	}
 
 	return nil
@@ -89,10 +94,10 @@ func Put(fi FileInfo) (bool, error) {
 
 	logger.Info("put message: ", fi)
 	sqlStmt := `
-        INSERT INTO fileinfo (chainid, address, stype, name, mid, size, modtime, userdefine)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO fileinfo (chainid, address, stype, name, mid, size, modtime, public, userdefine)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
-	_, err = db.Exec(sqlStmt, fi.ChainID, fi.Address, fi.SType, fi.Name, fi.Mid, fi.Size, fi.ModTime, fi.UserDefine)
+	_, err = db.Exec(sqlStmt, fi.ChainID, fi.Address, fi.SType, fi.Name, fi.Mid, fi.Size, fi.ModTime, fi.Public, fi.UserDefine)
 	if err != nil {
 		return false, err
 	}
@@ -100,29 +105,46 @@ func Put(fi FileInfo) (bool, error) {
 	return true, nil
 }
 
-func Get(chain int, address, mid string, st storage.StorageType) (FileInfo, error) {
+func Get(chain int, mid string, st storage.StorageType) (map[string]FileInfo, error) {
+	result := make(map[string]FileInfo)
 	db, err := OpenDataBase()
 	if err != nil {
 		logger.Error(err)
-		return FileInfo{}, err
+		return result, err
 	}
 	defer db.Close()
 
 	sqlStmt := `
 	SELECT * FROM fileinfo
-	WHERE chainid=? AND address=? AND mid=? AND stype=?
-`
+	WHERE chainid=? AND mid=? AND stype=?
+	`
+
 	var fi FileInfo
-	err = db.QueryRow(sqlStmt, chain, address, mid, st).Scan(&fi.Id, &fi.ChainID, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
+	var rows *sql.Rows
+
+	rows, err = db.Query(sqlStmt, chain, mid, st)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			lerr := logs.DataBaseError{Message: fmt.Sprintf("no such record:chainid=%d mid=%s, stype=%d", chain, mid, st)}
 			logger.Errorf(lerr.Message)
-			return FileInfo{}, lerr
+			return result, lerr
 		}
-		return FileInfo{}, err
+		lerr := logs.DataBaseError{Message: err.Error()}
+		logger.Error(lerr.Message)
+		return result, lerr
 	}
-	return fi, nil
+
+	for rows.Next() {
+		err := rows.Scan(&fi.Id, &fi.ChainID, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.Public, &fi.UserDefine)
+		if err != nil {
+			lerr := logs.DataBaseError{Message: err.Error()}
+			logger.Error(lerr.Message)
+			return result, err
+		}
+		result[fi.Address] = fi
+	}
+
+	return result, nil
 }
 
 func List(chain int, address string, st storage.StorageType) ([]FileInfo, error) {
@@ -134,7 +156,7 @@ func List(chain int, address string, st storage.StorageType) ([]FileInfo, error)
 	defer db.Close()
 
 	sqlStmt := `
-        SELECT chainid, address, stype, name, mid, size, modtime, userdefine
+        SELECT chainid, address, stype, name, mid, size, modtime, public, userdefine
         FROM fileinfo
         WHERE chainid=? AND address=? AND stype=?
     `
@@ -147,7 +169,7 @@ func List(chain int, address string, st storage.StorageType) ([]FileInfo, error)
 	var fileList []FileInfo
 	for rows.Next() {
 		var fi FileInfo
-		err := rows.Scan(&fi.ChainID, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
+		err := rows.Scan(&fi.ChainID, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.Public, &fi.UserDefine)
 		if err != nil {
 			return nil, err
 		}
