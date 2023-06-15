@@ -89,6 +89,7 @@ func CreateShareHandler() gin.HandlerFunc {
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
 		}
 
 		res, err := CreateShare(address, chainID, request)
@@ -110,16 +111,18 @@ func GetShareHandler() gin.HandlerFunc {
 		share := shareObj.(*ShareObjectInfo)
 
 		var request GetShareRequest
-		err := c.ShouldBindJSON(&request)
+		err := c.BindJSON(&request)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
 		}
 
 		share, err = GetShare(address, chainID, share, request)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
 		}
 
 		c.JSON(http.StatusOK, share)
@@ -138,6 +141,7 @@ func SaveShareHandler() gin.HandlerFunc {
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
 		}
 
 		c.JSON(http.StatusOK, "add share success")
@@ -154,6 +158,7 @@ func DeleteShareHandler() gin.HandlerFunc {
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
 		}
 
 		c.JSON(http.StatusOK, "delete success")
@@ -169,6 +174,7 @@ func ListSharesHandler() gin.HandlerFunc {
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
 		}
 
 		c.JSON(http.StatusOK, shares)
