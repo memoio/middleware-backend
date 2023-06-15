@@ -34,8 +34,9 @@ func (p *PayCheck) Deserialize(b []byte) error {
 	return cbor.Unmarshal(b, p)
 }
 
-func newPayCheck(address string, st storage.StorageType) *PayCheck {
+func newPayCheck(chain int, address string, st storage.StorageType) *PayCheck {
 	return &PayCheck{
+		ChainID: chain,
 		Address: common.HexToAddress(address),
 		SType:   st,
 		Size:    big.NewInt(0),
@@ -79,8 +80,8 @@ func (s *PayCheck) Hash() string {
 }
 
 type StorageCheck struct {
-	Address common.Address
 	ChainID int
+	Address common.Address
 	SType   storage.StorageType
 	AddSize *big.Int
 	addhash []string
@@ -98,8 +99,9 @@ func (s *StorageCheck) Deserialize(b []byte) error {
 }
 
 // func (s *SendStorage) GetHash()
-func generateCheck(address string, st storage.StorageType) *StorageCheck {
+func generateCheck(chain int, address string, st storage.StorageType) *StorageCheck {
 	return &StorageCheck{
+		ChainID: chain,
 		Address: common.HexToAddress(address),
 		SType:   st,
 		AddSize: big.NewInt(0),
@@ -142,7 +144,8 @@ func (s *StorageCheck) Del(hash string, size *big.Int) error {
 }
 
 func (s *StorageCheck) Size() *big.Int {
-	result := new(big.Int).Set(s.AddSize)
+	result := big.NewInt(0)
+	result.Set(s.AddSize)
 	return result.Sub(result, s.DelSize)
 }
 

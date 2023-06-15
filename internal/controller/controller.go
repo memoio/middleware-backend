@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -24,6 +25,7 @@ type Controller struct {
 	cfg         *config.Config
 	is          *database.SendStorage
 	sp          *database.SendPay
+	stop        chan struct{}
 }
 
 func NewController(path string, cfg *config.Config) *Controller {
@@ -53,6 +55,7 @@ func NewController(path string, cfg *config.Config) *Controller {
 
 	is := database.NewSender(dss)
 	sp := database.NewSenderPay(dss)
+
 	return &Controller{
 		storageApi:  api.G,
 		storageType: api.T,
@@ -63,42 +66,109 @@ func NewController(path string, cfg *config.Config) *Controller {
 	}
 }
 
-func (c *Controller) UploadToContract() error {
+func (c *Controller) Start() {
+	go c.stratTask()
+}
+
+func (c *Controller) Stop() {
+	c.stop <- struct{}{}
+	time.Sleep(2 * time.Second)
+}
+
+func (c *Controller) stratTask() error {
+	return c.uploadToContract()
+}
+
+func (c *Controller) uploadToContract() error {
 	ticker := time.NewTicker(24 * time.Hour)
 
-	for range ticker.C {
-		logger.Info("Upload To Contract")
-
-		scl := c.is.GetAllStorage()
-		for _, sc := range scl {
-
-			add := c.contracts[sc.ChainID].StoreOrderPkg(sc.Address.Hex(), sc.AddHash(), sc.SType, sc.AddSize)
-
-			del := c.contracts[sc.ChainID].StoreOrderPkgExpiration(sc.Address.Hex(), sc.DelHash(), sc.SType, sc.AddSize)
-
-			if add && del {
-				err := c.is.ResetStorage(sc.Address.Hex(), sc.SType)
-				if err != nil {
-					logger.Error(err)
-					return err
-				}
+	for {
+		select {
+		case <-ticker.C:
+			logger.Info("Upload To Contract")
+			err := c.UploadStorage()
+			if err != nil {
+				logger.Error("upload ", err)
+				return err
 			}
+			err = c.UploadTraffic()
+			if err != nil {
+				return err
+			}
+		case <-c.stop:
+			logger.Info("tase stop")
+			ticker.Stop()
+			return nil
+		}
+	}
+}
+
+func (c *Controller) UploadStorage() error {
+	scl := c.is.GetAllStorage()
+	for _, sc := range scl {
+		err := c.UploadAddStorage(sc)
+		if err != nil {
+			continue
 		}
 
-		pcl := c.sp.GetAllStorage()
-		for _, pc := range pcl {
-			res := c.contracts[pc.ChainID].StoreOrderPay(pc.Address.Hex(), pc.Hash(), pc.SType, pc.Value, pc.Size)
-
-			if res {
-				err := c.sp.ResetPay(pc.Address.Hex(), pc.SType)
-				if err != nil {
-					logger.Error(err)
-					return err
-				}
-			}
+		err = c.UploadDelStorage(sc)
+		if err != nil {
+			continue
 		}
 
+		err = c.is.ResetStorage(sc.ChainID, sc.Address.Hex(), sc.SType)
+		if err != nil {
+			return err
+		}
 	}
 
+	return nil
+}
+
+func (c *Controller) UploadAddStorage(sc *database.StorageCheck) error {
+	receipta, err := c.contracts[sc.ChainID].StoreOrderPkg(sc.Address.Hex(), sc.AddHash(), sc.SType, sc.AddSize)
+	if err != nil {
+		return err
+	}
+
+	err = c.contracts[sc.ChainID].CheckTrsaction(context.TODO(), receipta)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Controller) UploadDelStorage(sc *database.StorageCheck) error {
+	receiptd, err := c.contracts[sc.ChainID].StoreOrderPkgExpiration(sc.Address.Hex(), sc.DelHash(), sc.SType, sc.AddSize)
+	if err != nil {
+		return err
+	}
+
+	err = c.contracts[sc.ChainID].CheckTrsaction(context.TODO(), receiptd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Controller) UploadTraffic() error {
+	pcl := c.sp.GetAllStorage()
+	for _, pc := range pcl {
+		receipt, err := c.contracts[pc.ChainID].FlowOrderPay(pc.Address.Hex(), pc.Hash(), pc.SType, pc.Value, pc.Size)
+		if err != nil {
+			continue
+		}
+
+		err = c.contracts[pc.ChainID].CheckTrsaction(context.TODO(), receipt)
+		if err != nil {
+			continue
+		}
+
+		err = c.sp.ResetPay(pc.ChainID, pc.Address.Hex(), pc.SType)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

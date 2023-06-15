@@ -2,12 +2,13 @@ package contract
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"strings"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -15,13 +16,6 @@ import (
 )
 
 var logger = logs.Logger("contract")
-
-const (
-	payTopic     = "0xc0e3b3bf3b856068b6537f07e399954cb5abc4fade906ee21432a8ded3c36ec8"
-	storageTopic = "0x63fbca6586cb6d6fcf9fe8ab7daf3ffaf7fdad8f5d2ab29109fe71599b10d800"
-	buyTopic     = "0x9393f0a0a85953b7957a62d1ced4afd964332dad208249e1db83ce254babfccc"
-	delTopic     = "0xbcc253ceed59fcdc9a5bad89f7886c6c4561b5f245b4e99c7d1dea0c397807ed"
-)
 
 const (
 	getPkgSizeABI              = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"kind","type":"uint8"}],"name":"getPkgSize","outputs":[{"name":"used","type":"uint256"},{"name":"available","type":"uint256"},{"name":"total","type":"uint256"},{"name":"expires","type":"uint64"}],"payable":false,"stateMutability":"view","type":"function"}]`
@@ -34,6 +28,9 @@ const (
 	adminAddPkgInfoABI         = `[{"constant":false,"inputs":[{"name":"time","type":"uint64"},{"name":"amount","type":"uint256"},{"name":"kind","type":"uint8"},{"name":"buysize","type":"uint256"}],"name":"adminAddPkgInfo","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
 	storeGetBuyPkgsABI         = `[{"constant":false,"inputs":[{"name":"to","type":"address"}],"name":"storeGetBuyPkgs","outputs":[{"components":[{"name":"starttime","type":"uint64"},{"name":"endtime","type":"uint64"},{"name":"kind","type":"uint8"},{"name":"buysize","type":"uint256"},{"name":"amount","type":"uint256"},{"name":"state","type":"uint8"}],"name":"","type":"tuple[]"}],"payable":false,"stateMutability":"view","type":"function"}]`
 	getStoreAllSizeABI         = `[{"constant": true,"inputs": [], "name": "getStoreAllSize","outputs": [{"name": "","type": "uint256"}],"payable": false,"stateMutability": "view","type": "function"}]`
+
+	flowSizeABI     = `[{"constant":true,"inputs":[{"name":"to","type":"address"}],"name":"flowSize","outputs":[{"name":"","type":"uint256"},{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}]`
+	flowOrderpayABI = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"hashid","type":"string"},{"name":"kind","type":"uint8"},{"name":"amount","type":"uint256"},{"name":"size","type":"uint256"}],"name":"flowOrderpay","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
 )
 
 func createAbi(cabi string) abi.ABI {
@@ -66,6 +63,10 @@ func getContractABI(name string) abi.ABI {
 		return createAbi(storeOrderPkgExpirationABI)
 	case "getStoreAllSize":
 		return createAbi(getStoreAllSizeABI)
+	case "flowSize":
+		return createAbi(flowSizeABI)
+	case "flowOrderpay":
+		return createAbi(flowOrderpayABI)
 	}
 
 	return abi.ABI{}
@@ -84,6 +85,7 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 	}
 
 	contractABI := getContractABI(name)
+	logger.Info(args...)
 
 	encodeData, err := contractABI.Pack(name, args...)
 	if err != nil {
@@ -96,10 +98,13 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 		Data: encodeData,
 	}
 
+	logger.Info("call start")
 	result, err := client.CallContract(context.TODO(), msg, nil)
 	if err != nil {
 		return err
 	}
+
+	logger.Info("call end")
 
 	if len(*results) == 0 {
 		res, err := contractABI.Unpack(name, result)
@@ -111,26 +116,29 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 
 }
 
-func (c *Contract) sendTransaction(trtype, name string, args ...interface{}) bool {
+func (c *Contract) sendTransaction(name string, args ...interface{}) (string, error) {
 	logger.Info("sendTransaction")
 	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
 	if err != nil {
-		logger.Error(err)
-		return false
+		lerr := logs.ContractError{Message: err.Error()}
+		logger.Error(lerr)
+		return "", lerr
 	}
 	defer client.Close()
 
 	nonce, err := client.PendingNonceAt(context.TODO(), c.gatewayAddr)
 	if err != nil {
-		logger.Error(err)
-		return false
+		lerr := logs.ContractError{Message: err.Error()}
+		logger.Error(lerr)
+		return "", lerr
 	}
 	logger.Debug("nonce: ", nonce)
 
 	chainID, err := client.NetworkID(context.TODO())
 	if err != nil {
-		logger.Error(err)
-		return false
+		lerr := logs.ContractError{Message: err.Error()}
+		logger.Error(lerr)
+		return "", lerr
 	}
 	logger.Debug("chainID: ", chainID)
 
@@ -138,14 +146,16 @@ func (c *Contract) sendTransaction(trtype, name string, args ...interface{}) boo
 
 	data, err := contractABI.Pack(name, args...)
 	if err != nil {
-		logger.Error("pack error: ", err)
-		return false
+		lerr := logs.ContractError{Message: fmt.Sprint("pack error: ", err)}
+		logger.Error(lerr)
+		return "", lerr
 	}
 
 	privateKey, err := crypto.HexToECDSA(c.gatewaySecretKey)
 	if err != nil {
-		logger.Error("Failed to decode private key: %v\n", err)
-		return false
+		lerr := logs.ContractError{Message: fmt.Sprintf("Failed to decode gateway sk: %v", err)}
+		logger.Error(lerr)
+		return "", lerr
 	}
 
 	gasLimit := uint64(300000)
@@ -154,60 +164,55 @@ func (c *Contract) sendTransaction(trtype, name string, args ...interface{}) boo
 
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
 	if err != nil {
-		return false
+		lerr := logs.ContractError{Message: fmt.Sprint("Failed to dSignTx", err)}
+		logger.Error(lerr)
+		return "", lerr
 	}
 	err = client.SendTransaction(context.TODO(), signedTx)
 	if err != nil {
-		logger.Errorf("Failed to send transaction: %v\n", err)
-		return false
+		lerr := logs.ContractError{Message: fmt.Sprintf("Failed to send transaction: %v\n", err)}
+		logger.Error(lerr)
+		return "", lerr
 	}
 
-	logger.Info("waiting tx complete...")
-	time.Sleep(30 * time.Second)
-
-	receipt, err := client.TransactionReceipt(context.TODO(), signedTx.Hash())
-	if err != nil {
-		logger.Error("receipt:", err)
-		return false
-	}
-
-	return checkResult(trtype, receipt)
+	return signedTx.Hash().String(), nil
 }
 
-func checkResult(trtype string, receipt *types.Receipt) bool {
-	var topic string
-	switch trtype {
-	case "pay":
-		topic = payTopic
-	case "storage":
-		topic = storageTopic
-	case "buy":
-		topic = buyTopic
-	case "delpkg":
-		topic = delTopic
+func (c *Contract) CheckTrsaction(ctx context.Context, hash string) error {
+	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	defer client.Close()
+
+	signedTx := common.HexToHash(hash)
+
+	receipt, err := client.TransactionReceipt(context.TODO(), signedTx)
+	if err != nil {
+		logger.Error("receipt:", err)
+		return err
 	}
 
+	return checkResult(receipt)
+}
+
+func checkResult(receipt *types.Receipt) error {
 	if receipt.Status != 1 {
-		logger.Error("Status not right")
+		err := logs.ContractError{Message: "Status not right"}
+		logger.Error(err)
 		logger.Error(receipt.Logs)
 		logger.Error(receipt)
-		return false
+		return err
 	}
 
-	if len(receipt.Logs) == 0 {
-		logger.Error("no logs")
-		return trtype == "setpkg"
-	}
+	logger.Info("RECEIPT: ", receipt)
 
 	if len(receipt.Logs[0].Topics) == 0 {
-		logger.Error("no topics")
-		return false
+		err := logs.ContractError{Message: "no topics"}
+		logger.Error(err)
+		return err
 	}
 
-	if receipt.Logs[0].Topics[0].String() != topic {
-		logger.Error("topic not right: ", receipt.Logs[0].Topics[0].String())
-		return false
-	}
-
-	return true
+	return nil
 }

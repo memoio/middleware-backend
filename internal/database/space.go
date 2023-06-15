@@ -24,21 +24,21 @@ func NewSender(ds store.KVStore) *SendStorage {
 	return ss
 }
 
-func (s *SendStorage) AddStorage(address string, st storage.StorageType, size *big.Int, hashid string) error {
+func (s *SendStorage) AddStorage(chain int, address string, st storage.StorageType, size *big.Int, hashid string) error {
 	if size.Sign() <= 0 {
 		err := logs.DataBaseError{Message: "size should be larger than zero"}
 		logger.Error(err)
 		return err
 	}
 
-	pkey := address + st.String()
+	pkey := string(getKey(storagePrefix, address, st, chain))
 
 	s.lw.Lock()
 	defer s.lw.Unlock()
 
 	p, ok := s.pool[pkey]
 	if !ok {
-		schk, err := s.loadStorage(address, st)
+		schk, err := s.loadStorage(chain, address, st)
 		if err != nil {
 			return err
 		}
@@ -53,27 +53,27 @@ func (s *SendStorage) AddStorage(address string, st storage.StorageType, size *b
 		return logs.DataBaseError{Message: err.Error()}
 	}
 
-	key := store.NewKey(address, st)
+	key := getKey(storagePrefix, address, st, chain)
 	s.ds.Put(key, data)
 
 	return nil
 }
 
-func (s *SendStorage) DelStorage(address string, st storage.StorageType, size *big.Int, hashid string) error {
+func (s *SendStorage) DelStorage(chain int, address string, st storage.StorageType, size *big.Int, hashid string) error {
 	if size.Sign() <= 0 {
 		err := logs.DataBaseError{Message: "size should be larger than zero"}
 		logger.Error(err)
 		return err
 	}
 
-	pkey := address + st.String()
+	pkey := string(getKey(storagePrefix, address, st, chain))
 
 	s.lw.Lock()
 	defer s.lw.Unlock()
 
 	p, ok := s.pool[pkey]
 	if !ok {
-		schk, err := s.loadStorage(address, st)
+		schk, err := s.loadStorage(chain, address, st)
 		if err != nil {
 			return err
 		}
@@ -94,11 +94,11 @@ func (s *SendStorage) DelStorage(address string, st storage.StorageType, size *b
 	return nil
 }
 
-func (s *SendStorage) GetStorage(address string, st storage.StorageType) (*big.Int, error) {
-	pkey := address + st.String()
+func (s *SendStorage) GetStorage(chain int, address string, st storage.StorageType) (*big.Int, error) {
+	pkey := string(getKey(storagePrefix, address, st, chain))
 	p, ok := s.pool[pkey]
 	if !ok {
-		schk, err := s.loadStorage(address, st)
+		schk, err := s.loadStorage(chain, address, st)
 		if err != nil {
 			return nil, err
 		}
@@ -110,8 +110,8 @@ func (s *SendStorage) GetStorage(address string, st storage.StorageType) (*big.I
 	return p.Size(), nil
 }
 
-func (s *SendStorage) ResetStorage(address string, st storage.StorageType) error {
-	schk, err := s.create(address, st)
+func (s *SendStorage) ResetStorage(chain int, address string, st storage.StorageType) error {
+	schk, err := s.create(chain, address, st)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -121,11 +121,11 @@ func (s *SendStorage) ResetStorage(address string, st storage.StorageType) error
 	return nil
 }
 
-func (s *SendStorage) loadStorage(address string, st storage.StorageType) (*StorageCheck, error) {
-	key := store.NewKey(address, st)
+func (s *SendStorage) loadStorage(chain int, address string, st storage.StorageType) (*StorageCheck, error) {
+	key := getKey(storagePrefix, address, st, chain)
 	data, err := s.ds.Get(key)
 	if err != nil {
-		schk, err := s.create(address, st)
+		schk, err := s.create(chain, address, st)
 		if err != nil {
 			logger.Error(err)
 			return nil, err
@@ -144,8 +144,8 @@ func (s *SendStorage) loadStorage(address string, st storage.StorageType) (*Stor
 	return schk, nil
 }
 
-func (s *SendStorage) create(address string, st storage.StorageType) (*StorageCheck, error) {
-	sc := generateCheck(address, st)
+func (s *SendStorage) create(chain int, address string, st storage.StorageType) (*StorageCheck, error) {
+	sc := generateCheck(chain, address, st)
 
 	return sc, sc.Save(s.ds)
 }

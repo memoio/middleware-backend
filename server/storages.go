@@ -32,6 +32,13 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 			c.JSON(errRes.HTTPStatusCode, errRes)
 			return
 		}
+		var public bool
+		publics := c.PostForm("public")
+		if publics == "true" {
+			public = true
+		} else {
+			public = false
+		}
 
 		if file == nil {
 			errRes := logs.ToAPIErrorCode(logs.ServerError{Message: "file is nil"})
@@ -51,7 +58,7 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 			return
 		}
 
-		result, err := s.Controller.PutObject(c.Request.Context(), chain, address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud})
+		result, err := s.Controller.PutObject(c.Request.Context(), chain, address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud, Public: public})
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)

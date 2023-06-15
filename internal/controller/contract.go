@@ -5,54 +5,94 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/memoio/backend/internal/contract"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
 )
 
-func chainIdNotSet(chain int) error {
-	return logs.ContractError{Message: fmt.Sprintf("chain %d not set", chain)}
+type flowSize struct {
+	Used *big.Int
+	Free *big.Int
+}
+
+type userBuyPackage struct {
+	Starttime uint64
+	Endtime   uint64
+	Kind      uint8
+	Buysize   *big.Int
+	Amount    *big.Int
+	State     uint8
 }
 
 type Package contract.BuyPackage
 
-type PackageInfo struct {
-	Pkgid int
-	contract.PackageInfo
+type packageInfo struct {
+	Time    uint64
+	Kind    uint8
+	Buysize *big.Int
+	Amount  *big.Int
+	State   uint8
 }
 
-func (c *Controller) CanWrite(ctx context.Context, chain int, address string, size *big.Int) (bool, error) {
-	cs, err := c.CheckStorage(ctx, chain, address, size)
+type packageInfos struct {
+	Pkgid int
+	packageInfo
+}
+
+func chainIdNotSet(chain int) error {
+	return logs.ContractError{Message: fmt.Sprintf("chain %d not set", chain)}
+}
+
+func (c *Controller) CanWrite(ctx context.Context, chain int, address string, size *big.Int) error {
+	err := c.CheckStorage(ctx, chain, address, size)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return cs, nil
+	return nil
 }
 
 // storage
-func (c *Controller) CheckStorage(ctx context.Context, chain int, address string, size *big.Int) (bool, error) {
+func (c *Controller) CheckStorage(ctx context.Context, chain int, address string, size *big.Int) error {
 	si, err := c.GetStorageInfo(ctx, chain, address)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	logger.Debug("Avi", si.Buysize+si.Free, "Used", si.Used+size.Int64())
-	return si.Buysize+si.Free > si.Used+size.Int64(), nil
+	logger.Info("Avi: ", si.Buysize+si.Free, "Used: ", si.Used+size.Int64())
+	if si.Buysize+si.Free < si.Used+size.Int64() {
+		err = logs.StorageError{Message: "insufficient space or balance"}
+		return err
+	}
+	return nil
 }
 
 func (c *Controller) GetStorageInfo(ctx context.Context, chain int, address string) (storage.StorageInfo, error) {
-
-	ct, ok := c.contracts[chain]
-	if !ok {
-		return storage.StorageInfo{}, chainIdNotSet(chain)
-	}
-
-	si, err := ct.GetPkgSize(c.storageType, address)
+	ct, err := c.getContract(chain)
 	if err != nil {
 		return storage.StorageInfo{}, err
 	}
 
-	cachesize, err := c.is.GetStorage(address, c.storageType)
+	out, err := ct.Get("getPkgSize", common.HexToAddress(address), uint8(c.storageType))
+	if err != nil {
+		return storage.StorageInfo{}, err
+	}
+
+	available := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	free := *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	used := *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
+	files := *abi.ConvertType(out[3], new(uint64)).(*uint64)
+
+	si := storage.StorageInfo{
+		Storage: c.storageType.String(),
+		Buysize: available.Int64(),
+		Free:    free.Int64(),
+		Used:    used.Int64(),
+		Files:   int(files),
+	}
+
+	cachesize, err := c.is.GetStorage(chain, address, c.storageType)
 	if err != nil {
 		return storage.StorageInfo{}, err
 	}
@@ -64,9 +104,9 @@ func (c *Controller) GetStorageInfo(ctx context.Context, chain int, address stri
 
 // balance
 func (c *Controller) GetBalance(ctx context.Context, chain int, address string) (*big.Int, error) {
-	ct, ok := c.contracts[chain]
-	if !ok {
-		return nil, chainIdNotSet(chain)
+	ct, err := c.getContract(chain)
+	if err != nil {
+		return nil, err
 	}
 
 	balance, err := ct.BalanceOf(ctx, address)
@@ -82,44 +122,98 @@ func (c *Controller) GetBalance(ctx context.Context, chain int, address string) 
 	return balance.Sub(balance, value), nil
 }
 
-func (c *Controller) BuyPackage(chain int, address string, pkg Package) bool {
-	ct, ok := c.contracts[chain]
-	if !ok {
-		logger.Error(chainIdNotSet(chain))
-		return false
+func (c *Controller) BuyPackage(chain int, address string, pkg Package) (string, error) {
+	ct, err := c.getContract(chain)
+	if err != nil {
+		return "", err
 	}
 	return ct.StoreBuyPkg(address, contract.BuyPackage(pkg))
 }
 
-func (c *Controller) GetPackageList(chain int) ([]PackageInfo, error) {
-	ct, ok := c.contracts[chain]
-	if !ok {
-		return nil, chainIdNotSet(chain)
-	}
-	pi, err := ct.StoreGetPkgInfos()
+func (c *Controller) GetPackageList(chain int) ([]packageInfos, error) {
+	ct, err := c.getContract(chain)
 	if err != nil {
 		return nil, err
 	}
-	var pl []PackageInfo
-	for i, p := range pi {
-		pl = append(pl, PackageInfo{
+
+	out, err := ct.Get("storeGetPkgInfos")
+	if err != nil {
+		return nil, err
+	}
+
+	result := *abi.ConvertType(out[0], new([]packageInfo)).(*[]packageInfo)
+
+	var pl []packageInfos
+	for i, p := range result {
+		pl = append(pl, packageInfos{
 			Pkgid:       i + 1,
-			PackageInfo: p,
+			packageInfo: p,
 		})
 	}
 
 	return pl, nil
 }
 
-func (c *Controller) GetUserBuyPackages(chain int, address string) ([]contract.UserBuyPackage, error) {
-	ct, ok := c.contracts[chain]
-	if !ok {
-		return nil, chainIdNotSet(chain)
+func (c *Controller) GetUserBuyPackages(chain int, address string) ([]userBuyPackage, error) {
+	ct, err := c.getContract(chain)
+	if err != nil {
+		return nil, err
 	}
-	return ct.StoreGetBuyPkgs(address)
+
+	out, err := ct.Get("storeGetBuyPkgs", common.HexToAddress(address))
+	if err != nil {
+		return nil, err
+	}
+
+	result := *abi.ConvertType(out[0], new([]userBuyPackage)).(*[]userBuyPackage)
+
+	return result, nil
 }
 
 func (c *Controller) StoreOrderPkg(address string) error {
 	// c.contract.StoreOrderPkg(address)
 	return nil
+}
+
+func (c *Controller) CheckReceipt(ctx context.Context, chain int, hash string) error {
+	ct, err := c.getContract(chain)
+	if err != nil {
+		return err
+	}
+	return ct.CheckTrsaction(ctx, hash)
+}
+
+func (c *Controller) getContract(chain int) (*contract.Contract, error) {
+	ct, ok := c.contracts[chain]
+	if !ok {
+		return nil, chainIdNotSet(chain)
+	}
+
+	err := ct.CheckContract()
+	if err != nil {
+		return nil, err
+	}
+
+	return ct, nil
+}
+
+func (c *Controller) GetFlowSize(ctx context.Context, chain int, address string) (flowSize, error) {
+	result := flowSize{}
+	ct, err := c.getContract(chain)
+	if err != nil {
+		return result, err
+	}
+
+	out, err := ct.Get("flowSize", common.HexToAddress(address))
+	if err != nil {
+		return result, err
+	}
+
+	usesize := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	freesize := *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+
+	return flowSize{
+		Used: usesize,
+		Free: freesize,
+	}, nil
 }

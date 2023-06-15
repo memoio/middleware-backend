@@ -21,18 +21,14 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 	result := PutObjectResult{}
 
 	// Check if it is possible to write
-	cw, err := c.CanWrite(ctx, chain, address, big.NewInt(opts.Size))
+	err := c.CanWrite(ctx, chain, address, big.NewInt(opts.Size))
 	if err != nil {
 		return result, err
 	}
 
-	if !cw {
-		logger.Error("Insufficient space or balance")
-		return result, logs.StorageError{Message: "insufficient space or balance"}
-	}
-
 	// put obejct
-	oi, err := c.storageApi.PutObject(ctx, address, object, r, gateway.ObjectOptions(opts))
+	bucket := address + fmt.Sprint(chain)
+	oi, err := c.storageApi.PutObject(ctx, bucket, object, r, gateway.ObjectOptions(opts))
 	if err != nil {
 		return result, err
 	}
@@ -49,6 +45,7 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 		SType:      c.storageType,
 		Size:       oi.Size,
 		ModTime:    oi.ModTime,
+		Public:     opts.Public,
 		UserDefine: string(userdefine),
 	}
 
@@ -57,7 +54,7 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 		return result, logs.StorageError{Message: "write to database error, err"}
 	}
 
-	err = c.is.AddStorage(address, c.storageType, big.NewInt(oi.Size), oi.Cid)
+	err = c.is.AddStorage(chain, address, c.storageType, big.NewInt(oi.Size), oi.Cid)
 	if err != nil {
 		return result, err
 	}
@@ -70,23 +67,14 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 func (c *Controller) GetObject(ctx context.Context, chain int, address, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
 	result := GetObjectResult{}
 
-	obi, err := c.GetObjectInfo(ctx, chain, address, mid)
+	obi, err := c.checkAccess(ctx, chain, address, mid)
 	if err != nil {
 		return result, err
 	}
 
-	balance, err := c.GetBalance(ctx, chain, address)
+	err = c.canRead(ctx, address, chain, obi.Size)
 	if err != nil {
 		return result, err
-	}
-
-	trafficCost := c.cfg.Storage.TrafficCost
-
-	needpay := big.NewInt(trafficCost)
-	needpay.Mul(needpay, big.NewInt(obi.Size))
-
-	if balance.Cmp(needpay) < 0 {
-		return result, logs.ControllerError{Message: fmt.Sprintf("balance not enough, balance=%d needpay=%d", balance, needpay)}
 	}
 
 	err = c.storageApi.GetObject(ctx, mid, w, gateway.ObjectOptions(opts))
@@ -98,11 +86,8 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 	result.CType = utils.TypeByExtension(obi.Name)
 	result.Size = obi.Size
 
-	value := c.getPrice(result.Size)
-	err = c.sp.AddPay(chain, address, c.storageType, big.NewInt(result.Size), value, obi.Mid)
-
+	err = c.UpdateFlowSize(ctx, chain, address, obi.Mid, big.NewInt(result.Size))
 	if err != nil {
-		logger.Error(err)
 		return result, err
 	}
 
@@ -110,28 +95,23 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 }
 
 func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid string) error {
-	err := c.storageApi.DeleteObject(ctx, address, mid)
+	fi, err := c.checkAccess(ctx, chain, address, mid)
 	if err != nil {
 		return err
 	}
 
-	fi, err := c.GetObjectInfo(ctx, chain, address, mid)
+	bucket := address + fmt.Sprint(chain)
+	err = c.storageApi.DeleteObject(ctx, bucket, fi.Name)
 	if err != nil {
 		return err
 	}
 
-	res, err := database.Delete(address, mid, c.storageType)
+	err = database.Delete(chain, address, mid, c.storageType)
 	if err != nil {
 		return err
 	}
 
-	if !res {
-		lerr := logs.ConfigError{Message: "delete object failed"}
-		logger.Error(lerr.Error())
-		return lerr
-	}
-
-	return c.is.DelStorage(address, c.storageType, big.NewInt(fi.Size), fi.Mid)
+	return c.is.DelStorage(chain, address, c.storageType, big.NewInt(fi.Size), fi.Mid)
 }
 
 func (c *Controller) getPrice(size int64) *big.Int {
@@ -141,4 +121,66 @@ func (c *Controller) getPrice(size int64) *big.Int {
 	p.Mul(p, big.NewInt(size))
 
 	return p
+}
+
+func (c *Controller) canRead(ctx context.Context, address string, chain int, size int64) error {
+	flowsize, err := c.GetFlowSize(ctx, chain, address)
+	if err != nil {
+		return err
+	}
+
+	used := flowsize.Used
+	used.Add(used, big.NewInt(size))
+	cachesize, err := c.sp.Size(chain, address, c.storageType)
+	if err != nil {
+		return err
+	}
+
+	used.Add(used, cachesize)
+	if used.Cmp(flowsize.Free) > 0 {
+		balance, err := c.GetBalance(ctx, chain, address)
+		if err != nil {
+			return nil
+		}
+
+		trafficCost := c.cfg.Storage.TrafficCost
+
+		needpay := big.NewInt(trafficCost)
+		needpay.Mul(needpay, big.NewInt(size))
+
+		if balance.Cmp(needpay) < 0 {
+			return logs.ControllerError{Message: fmt.Sprintf("balance not enough, balance=%d needpay=%d", balance, needpay)}
+		}
+		return nil
+	}
+
+	return nil
+}
+
+func (c *Controller) UpdateFlowSize(ctx context.Context, chain int, address, mid string, size *big.Int) error {
+	value := c.getPrice(size.Int64())
+	err := c.sp.AddPay(chain, address, c.storageType, size, value, mid)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	return nil
+}
+
+func (c *Controller) checkAccess(ctx context.Context, chain int, address string, mid string) (database.FileInfo, error) {
+	result := database.FileInfo{}
+	obi, err := c.GetObjectInfo(ctx, chain, mid)
+	if err != nil {
+		return result, err
+	}
+	for key, fi := range obi {
+		if fi.Public {
+			return fi, nil
+		}
+		if key == address {
+			return fi, nil
+		}
+	}
+	err = logs.ControllerError{Message: "no access"}
+	return result, err
 }

@@ -7,7 +7,7 @@ import (
 )
 
 type ObjectInfo struct {
-	Address     string
+	Bucket      string
 	Name        string
 	Size        int64
 	Cid         string
@@ -18,6 +18,7 @@ type ObjectInfo struct {
 
 type ObjectOptions struct {
 	Size         int64
+	Public       bool
 	MTime        time.Time
 	DeleteMarker bool
 	UserDefined  map[string]string

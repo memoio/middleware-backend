@@ -1,9 +1,7 @@
 package mefs
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -78,41 +76,41 @@ func (m *Mefs) GetBucketInfo(ctx context.Context, bucket string) (bi mtypes.Buck
 	return bi, nil
 }
 
-func (m *Mefs) QueryPrice(ctx context.Context) (string, error) {
-	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
-	if err != nil {
-		return "", err
-	}
-	defer closer()
+// func (m *Mefs) QueryPrice(ctx context.Context) (string, error) {
+// 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	defer closer()
 
-	res, err := napi.ConfigGet(ctx, "order.price")
-	if err != nil {
-		return "", err
-	}
+// 	res, err := napi.ConfigGet(ctx, "order.price")
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	bs, err := json.MarshalIndent(res, "", "\t")
-	if err != nil {
-		return "", err
-	}
+// 	bs, err := json.MarshalIndent(res, "", "\t")
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	var out bytes.Buffer
-	err = json.Indent(&out, bs, "", "\t")
-	if err != nil {
-		return "", err
-	}
+// 	var out bytes.Buffer
+// 	err = json.Indent(&out, bs, "", "\t")
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	return out.String(), nil
-}
+// 	return out.String(), nil
+// }
 
-func (m *Mefs) PutObject(ctx context.Context, address, object string, r io.Reader, opt gateway.ObjectOptions) (objInfo gateway.ObjectInfo, err error) {
-	err = m.MakeBucketWithLocation(ctx, address)
+func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader, opt gateway.ObjectOptions) (objInfo gateway.ObjectInfo, err error) {
+	err = m.MakeBucketWithLocation(ctx, bucket)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
 			return objInfo, err
 		}
 	} else {
-		log.Println("create bucket ", address)
-		for !m.CheckBucket(ctx, address) {
+		log.Println("create bucket ", bucket)
+		for !m.CheckBucket(ctx, bucket) {
 			time.Sleep(10 * time.Second)
 		}
 	}
@@ -127,7 +125,7 @@ func (m *Mefs) PutObject(ctx context.Context, address, object string, r io.Reade
 	for k, v := range opt.UserDefined {
 		poo.UserDefined[k] = v
 	}
-	moi, err := napi.PutObject(ctx, address, object, r, poo)
+	moi, err := napi.PutObject(ctx, bucket, object, r, poo)
 	if err != nil {
 		log.Println(err)
 		return objInfo, err
@@ -136,7 +134,7 @@ func (m *Mefs) PutObject(ctx context.Context, address, object string, r io.Reade
 	etag, _ := metag.ToString(moi.ETag)
 
 	return gateway.ObjectInfo{
-		Address:     address,
+		Bucket:      bucket,
 		Name:        moi.Name,
 		Size:        int64(moi.Size),
 		Cid:         etag,
@@ -215,14 +213,14 @@ func (m *Mefs) GetObjectInfo(ctx context.Context, cid string) (gateway.ObjectInf
 	}, nil
 }
 
-func (m *Mefs) ListObjects(ctx context.Context, address string) ([]gateway.ObjectInfo, error) {
+func (m *Mefs) ListObjects(ctx context.Context, bucket string) ([]gateway.ObjectInfo, error) {
 	var loi []gateway.ObjectInfo
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
 		return loi, err
 	}
 	defer closer()
-	mloi, err := napi.ListObjects(ctx, address, mtypes.ListObjectsOptions{MaxKeys: 1000})
+	mloi, err := napi.ListObjects(ctx, bucket, mtypes.ListObjectsOptions{MaxKeys: 1000})
 	if err != nil {
 		return loi, err
 	}
@@ -230,7 +228,7 @@ func (m *Mefs) ListObjects(ctx context.Context, address string) ([]gateway.Objec
 	for _, oi := range mloi.Objects {
 		etag, _ := metag.ToString(oi.ETag)
 		loi = append(loi, gateway.ObjectInfo{
-			Address:     address,
+			Bucket:      bucket,
 			Name:        oi.GetName(),
 			ModTime:     time.Unix(oi.GetTime(), 0).UTC(),
 			Size:        int64(oi.Size),
@@ -242,21 +240,22 @@ func (m *Mefs) ListObjects(ctx context.Context, address string) ([]gateway.Objec
 	return loi, nil
 }
 
-func (m *Mefs) DeleteObject(ctx context.Context, address, object string) error {
+func (m *Mefs) DeleteObject(ctx context.Context, bucket, object string) error {
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
 		return err
 	}
 	defer closer()
-	err = napi.DeleteObject(ctx, address, object)
+
+	err = napi.DeleteObject(ctx, bucket, object)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *Mefs) CheckBucket(ctx context.Context, address string) bool {
-	bi, err := m.GetBucketInfo(ctx, address)
+func (m *Mefs) CheckBucket(ctx context.Context, bucket string) bool {
+	bi, err := m.GetBucketInfo(ctx, bucket)
 	if err != nil {
 		return false
 	}

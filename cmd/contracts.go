@@ -1,13 +1,12 @@
 package cmd
 
 import (
-	"errors"
-	"log"
+	"context"
+	"fmt"
 
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/contract"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/xerrors"
 )
 
 var ContractCmd = &cli.Command{
@@ -15,6 +14,7 @@ var ContractCmd = &cli.Command{
 	Usage: "contract command",
 	Subcommands: []*cli.Command{
 		setPkgCmd,
+		checkReceipt,
 	},
 }
 
@@ -42,6 +42,12 @@ var setPkgCmd = &cli.Command{
 			Aliases: []string{"s"},
 			Usage:   "size",
 		},
+		&cli.IntFlag{
+			Name:    "chainid",
+			Aliases: []string{"c"},
+			Usage:   "chainid",
+			Value:   985,
+		},
 	},
 	Action: func(ctx *cli.Context) error {
 		time := ctx.String("time")
@@ -57,14 +63,50 @@ var setPkgCmd = &cli.Command{
 		contracts := contract.NewContract(cf.Contract)
 		ct, ok := contracts[chainid]
 		if !ok {
-			return xerrors.Errorf("%s is not set", chainid)
+			return fmt.Errorf("%d is not set", chainid)
 		}
-		flag := ct.AdminAddPkgInfo(time, amount, kind, size)
-		if flag {
-			log.Println("set package success!")
-		} else {
-			return errors.New("set package falid")
+		receipt, err := ct.AdminAddPkgInfo(time, amount, kind, size)
+		if err != nil {
+			return err
 		}
+
+		fmt.Println(receipt)
+		return nil
+	},
+}
+
+var checkReceipt = &cli.Command{
+	Name:  "check",
+	Usage: "check [chainid] [receipt]",
+	Flags: []cli.Flag{
+		&cli.IntFlag{
+			Name:    "chainid",
+			Aliases: []string{"c"},
+			Usage:   "chainid",
+			Value:   985,
+		},
+	},
+	Action: func(ctx *cli.Context) error {
+		chainid := ctx.Int("chainid")
+
+		receipt := ctx.Args().Get(0)
+
+		cf, err := config.ReadFile()
+		if err != nil {
+			return err
+		}
+
+		contracts := contract.NewContract(cf.Contract)
+		ct, ok := contracts[chainid]
+		if !ok {
+			return fmt.Errorf("%d is not set", chainid)
+		}
+		err = ct.CheckTrsaction(context.Background(), receipt)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("check success")
 		return nil
 	},
 }
