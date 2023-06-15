@@ -99,7 +99,7 @@ func GetShare(address string, chainID int, share *ShareObjectInfo, request GetSh
 }
 
 func SaveShare(address string, chainID int, share *ShareObjectInfo) error {
-	info, err := GetFileInfo(address, chainID, share.MID, share.SType)
+	info, err := GetFileInfo(share.UserID.Address, share.UserID.ChainID, share.MID, share.SType)
 	if err != nil {
 		return err
 	}
