@@ -17,11 +17,11 @@ type CreateShareRequest struct {
 }
 
 func CreateShare(address string, chainID int, request CreateShareRequest) (string, error) {
-	// address := c.GetString("address")
-	// chainID := c.GetInt("chainid")
-
 	// 查看文件是否存在，且属于该用户
 	fileInfo, err := GetFileInfo(address, chainID, request.MID, request.SType)
+	if err != nil {
+		return "", err
+	}
 
 	newShare := ShareObjectInfo{
 		UserID:          Identity{address, chainID},
@@ -29,8 +29,16 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 		SType:           request.SType,
 		FileName:        fileInfo.Name,
 		Password:        request.Password,
-		ExpiredTime:     time.Now().Add(time.Duration(request.ExpiredTime) * time.Second).Unix(),
-		RemainDownloads: request.RemainDownloads,
+		ExpiredTime:     -1,
+		RemainDownloads: -1,
+	}
+
+	if request.RemainDownloads > 0 {
+		newShare.RemainDownloads = request.RemainDownloads
+	}
+
+	if request.ExpiredTime > 0 {
+		newShare.ExpiredTime = time.Now().Unix() + request.ExpiredTime
 	}
 
 	id, err := newShare.CreateShare()

@@ -1,6 +1,7 @@
 package share
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -39,8 +40,11 @@ func ShareAvailableHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		share := GetShareByID(c.Param("shareid"))
 
+		log.Println(c.Param("shareid"))
+		log.Println(share)
+
 		if share == nil || !share.IsAvailable() {
-			c.AbortWithStatusJSON(404, "The share link is available")
+			c.AbortWithStatusJSON(404, "The share link is not available")
 			return
 		}
 
