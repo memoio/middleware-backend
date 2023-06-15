@@ -22,6 +22,7 @@ type ObjectInfoResult struct {
 	Name    string
 	Size    int64
 	Mid     string
+	Public  bool
 	ModTime time.Time
 	// UserDefined map[string]string
 }

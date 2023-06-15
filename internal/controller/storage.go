@@ -45,6 +45,7 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 		SType:      c.storageType,
 		Size:       oi.Size,
 		ModTime:    oi.ModTime,
+		Public:     opts.Public,
 		UserDefine: string(userdefine),
 	}
 
@@ -66,12 +67,12 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 func (c *Controller) GetObject(ctx context.Context, chain int, address, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
 	result := GetObjectResult{}
 
-	obi, err := c.GetObjectInfo(ctx, chain, address, mid)
+	obi, err := c.checkAccess(ctx, chain, address, mid)
 	if err != nil {
 		return result, err
 	}
-	key := address + fmt.Sprint(chain)
-	err = c.canRead(ctx, address, key, chain, obi.Size)
+
+	err = c.canRead(ctx, address, chain, obi.Size)
 	if err != nil {
 		return result, err
 	}
@@ -94,7 +95,7 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 }
 
 func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid string) error {
-	fi, err := c.GetObjectInfo(ctx, chain, address, mid)
+	fi, err := c.checkAccess(ctx, chain, address, mid)
 	if err != nil {
 		return err
 	}
@@ -122,7 +123,7 @@ func (c *Controller) getPrice(size int64) *big.Int {
 	return p
 }
 
-func (c *Controller) canRead(ctx context.Context, address, key string, chain int, size int64) error {
+func (c *Controller) canRead(ctx context.Context, address string, chain int, size int64) error {
 	flowsize, err := c.GetFlowSize(ctx, chain, address)
 	if err != nil {
 		return err
@@ -136,8 +137,7 @@ func (c *Controller) canRead(ctx context.Context, address, key string, chain int
 	}
 
 	used.Add(used, cachesize)
-
-	if used.Cmp(flowsize.Free) < 0 {
+	if used.Cmp(flowsize.Free) > 0 {
 		balance, err := c.GetBalance(ctx, chain, address)
 		if err != nil {
 			return nil
@@ -165,4 +165,22 @@ func (c *Controller) UpdateFlowSize(ctx context.Context, chain int, address, mid
 		return err
 	}
 	return nil
+}
+
+func (c *Controller) checkAccess(ctx context.Context, chain int, address string, mid string) (database.FileInfo, error) {
+	result := database.FileInfo{}
+	obi, err := c.GetObjectInfo(ctx, chain, mid)
+	if err != nil {
+		return result, err
+	}
+	for key, fi := range obi {
+		if fi.Public {
+			return fi, nil
+		}
+		if key == address {
+			return fi, nil
+		}
+	}
+	err = logs.ControllerError{Message: "no access"}
+	return result, err
 }

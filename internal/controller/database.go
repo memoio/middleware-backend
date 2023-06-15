@@ -34,6 +34,7 @@ func (c *Controller) ListObjects(ctx context.Context, chain int, address string)
 			Size:    oi.Size,
 			Mid:     oi.Mid,
 			ModTime: oi.ModTime,
+			Public:  oi.Public,
 			// UserDefined: userdefine,
 		})
 	}
@@ -41,6 +42,6 @@ func (c *Controller) ListObjects(ctx context.Context, chain int, address string)
 	return result, nil
 }
 
-func (c *Controller) GetObjectInfo(ctx context.Context, chain int, address, mid string) (database.FileInfo, error) {
-	return database.Get(chain, address, mid, c.storageType)
+func (c *Controller) GetObjectInfo(ctx context.Context, chain int, mid string) (map[string]database.FileInfo, error) {
+	return database.Get(chain, mid, c.storageType)
 }

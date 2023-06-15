@@ -53,7 +53,7 @@ func (s *SendStorage) AddStorage(chain int, address string, st storage.StorageTy
 		return logs.DataBaseError{Message: err.Error()}
 	}
 
-	key := store.NewKey(address, st)
+	key := getKey(storagePrefix, address, st, chain)
 	s.ds.Put(key, data)
 
 	return nil
@@ -122,7 +122,7 @@ func (s *SendStorage) ResetStorage(chain int, address string, st storage.Storage
 }
 
 func (s *SendStorage) loadStorage(chain int, address string, st storage.StorageType) (*StorageCheck, error) {
-	key := getKey(payPrefix, address, st, chain)
+	key := getKey(storagePrefix, address, st, chain)
 	data, err := s.ds.Get(key)
 	if err != nil {
 		schk, err := s.create(chain, address, st)

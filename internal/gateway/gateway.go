@@ -18,6 +18,7 @@ type ObjectInfo struct {
 
 type ObjectOptions struct {
 	Size         int64
+	Public       bool
 	MTime        time.Time
 	DeleteMarker bool
 	UserDefined  map[string]string

@@ -60,8 +60,8 @@ func (c *Controller) CheckStorage(ctx context.Context, chain int, address string
 		return err
 	}
 
-	logger.Debug("Avi", si.Buysize+si.Free, "Used", si.Used+size.Int64())
-	if si.Buysize+si.Free > si.Used+size.Int64() {
+	logger.Info("Avi: ", si.Buysize+si.Free, "Used: ", si.Used+size.Int64())
+	if si.Buysize+si.Free < si.Used+size.Int64() {
 		err = logs.StorageError{Message: "insufficient space or balance"}
 		return err
 	}
@@ -74,7 +74,7 @@ func (c *Controller) GetStorageInfo(ctx context.Context, chain int, address stri
 		return storage.StorageInfo{}, err
 	}
 
-	out, err := ct.Get("storeGetPkgInfos")
+	out, err := ct.Get("getPkgSize", common.HexToAddress(address), uint8(c.storageType))
 	if err != nil {
 		return storage.StorageInfo{}, err
 	}

@@ -51,7 +51,7 @@ func (s *SendPay) AddPay(chain int, address string, st storage.StorageType, size
 		return logs.DataBaseError{Message: err.Error()}
 	}
 
-	key := store.NewKey(address, st)
+	key := getKey(payPrefix, address, st, chain)
 	s.ds.Put(key, data)
 
 	return nil
