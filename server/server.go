@@ -8,6 +8,7 @@ import (
 	"github.com/memoio/backend/config"
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/controller"
+	"github.com/memoio/backend/internal/share"
 )
 
 type Server struct {
@@ -62,11 +63,16 @@ func (s Server) registRoute(checkRegistered bool) {
 	})
 
 	s.registLogin(checkRegistered)
+	s.registShare()
 	s.registController()
 }
 
 func (s Server) registLogin(checkRegistered bool) {
 	auth.LoadAuthModule(s.Router.Group("/"), checkRegistered)
+}
+
+func (s Server) registShare() {
+	share.LoadAuthModule(s.Router.Group("/"))
 }
 
 func (s Server) registController() {

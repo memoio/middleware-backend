@@ -19,6 +19,7 @@ type Config struct {
 	SecurityKey string                 `json:"securityKey"`
 	Domain      string                 `json:"domain"`
 	LensAPIUrl  string                 `json:"lensAPIUrl"`
+	EthDriveUrl string                 `json:"ethDriveUrl"`
 }
 
 type StorageConfig struct {
@@ -85,6 +86,7 @@ func NewDefaultConfig() *Config {
 		SecurityKey: newDefaultSecurityKeyConfig(),
 		Domain:      newDefaultDomainConfig(),
 		LensAPIUrl:  "https://api.lens.dev",
+		EthDriveUrl: "https://ethdrive.net",
 	}
 }
 
