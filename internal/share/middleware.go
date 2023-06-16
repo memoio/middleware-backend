@@ -9,13 +9,13 @@ import (
 )
 
 func LoadAuthModule(g *gin.RouterGroup) {
-	{
-		// 免费
-		share := g.Group("share", ShareAvailableHandler())
+	// {
+	// 	// 免费
+	// 	share := g.Group("share", ShareAvailableHandler())
 
-		// 获取分享信息
-		share.GET("info/:shareid", GetShareHandler())
-	}
+	// 	// 获取分享信息
+	// 	share.GET("info/:shareid", GetShareHandler())
+	// }
 
 	{
 		// 需要登录
@@ -23,6 +23,9 @@ func LoadAuthModule(g *gin.RouterGroup) {
 
 		// 创建分享
 		share.POST("", CreateShareHandler())
+
+		// 获取分享信息
+		share.GET("info/:shareid", ShareAvailableHandler(), GetShareHandler())
 
 		// 列出分享
 		share.GET("", ListSharesHandler())
@@ -51,13 +54,21 @@ func ShareAvailableHandler() gin.HandlerFunc {
 
 func BeforeDownloadHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		password := c.Query("password")
 		address := c.GetString("address")
 		chainID := c.GetInt("chainid")
 
 		shareObj, _ := c.Get("share")
 		share := shareObj.(*ShareObjectInfo)
 
-		err := share.CanDownload(address, chainID)
+		share, err := GetShare(address, chainID, share, password)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		err = share.CanDownload(address, chainID)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.AbortWithStatusJSON(errRes.HTTPStatusCode, errRes)
@@ -100,21 +111,14 @@ func CreateShareHandler() gin.HandlerFunc {
 
 func GetShareHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		password := c.Query("password")
 		address := c.GetString("address")
 		chainID := c.GetInt("chainid")
 
 		shareObj, _ := c.Get("share")
 		share := shareObj.(*ShareObjectInfo)
 
-		var request GetShareRequest
-		err := c.ShouldBindJSON(&request)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
-
-		share, err = GetShare(address, chainID, share, request)
+		share, err := GetShare(address, chainID, share, password)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)

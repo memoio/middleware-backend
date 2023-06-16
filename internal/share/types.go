@@ -1,14 +1,12 @@
 package share
 
 import (
-	"encoding/base64"
-	"strconv"
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/memoio/backend/internal/database"
 	"github.com/memoio/backend/internal/storage"
+	"github.com/segmentio/ksuid"
 	"golang.org/x/xerrors"
 )
 
@@ -36,8 +34,11 @@ var mutex sync.RWMutex
 var MemoCache = new(sync.Map)
 
 func (s *ShareObjectInfo) CreateShare() (string, error) {
-	data := crypto.Keccak256([]byte(s.UserID.Address), []byte(strconv.Itoa(s.UserID.ChainID)), []byte(s.MID))
-	s.ShareID = base64.StdEncoding.EncodeToString(data)
+	uuid, err := ksuid.NewRandom()
+	if err != nil {
+		return "", err
+	}
+	s.ShareID = uuid.String()
 
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -56,12 +57,14 @@ func GetShareByID(shareID string) *ShareObjectInfo {
 func (s *ShareObjectInfo) IsAvailable() bool {
 	if s.RemainDownloads == 0 || (s.ExpiredTime > 0 && time.Now().Unix() > s.ExpiredTime) {
 		// 考虑删除失效的分享
+		s.DeleteShare()
 		return false
 	}
 
 	_, err := GetFileInfo(s.UserID.Address, s.UserID.ChainID, s.MID, s.SType)
 	if err != nil {
 		// 文件已删除，考虑删除失效的分享
+		s.DeleteShare()
 		return false
 	}
 
@@ -71,10 +74,6 @@ func (s *ShareObjectInfo) IsAvailable() bool {
 func (s *ShareObjectInfo) Source() (database.FileInfo, error) {
 	return GetFileInfo(s.UserID.Address, s.UserID.ChainID, s.MID, s.SType)
 }
-
-// func (s *ShareObjectInfo) Preview() error {
-// 	return nil
-// }
 
 func (s *ShareObjectInfo) CanDownload(address string, chainID int) error {
 	// now anyone can download

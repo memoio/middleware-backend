@@ -12,6 +12,7 @@ require (
 	github.com/memoio/contractsv2 v0.0.0-00010101000000-000000000000
 	github.com/memoio/go-mefs-v2 v0.0.0-00010101000000-000000000000
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/segmentio/ksuid v1.0.4
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29
 	github.com/spruceid/siwe-go v0.2.0
 	github.com/urfave/cli/v2 v2.23.7

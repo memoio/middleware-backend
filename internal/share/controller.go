@@ -3,6 +3,7 @@ package share
 import (
 	"time"
 
+	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/database"
 	"github.com/memoio/backend/internal/storage"
 	"golang.org/x/xerrors"
@@ -46,9 +47,12 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 		return "", xerrors.Errorf("Failed to create share link")
 	}
 
-	// baseUrl := GetBaseUrl()
-	// return baseUrl.String() + "/s/" + id, nil
-	return "http://localhost:8081/s/" + id, nil
+	baseUrl := "https://ethdrive.net"
+	config, err := config.ReadFile()
+	if err == nil {
+		baseUrl = config.EthDriveUrl
+	}
+	return baseUrl + "/s/" + id, nil
 }
 
 type UpdateShareRequest struct {
@@ -78,13 +82,13 @@ type GetShareRequest struct {
 	Password string `json:"password"`
 }
 
-func GetShare(address string, chainID int, share *ShareObjectInfo, request GetShareRequest) (*ShareObjectInfo, error) {
+func GetShare(address string, chainID int, share *ShareObjectInfo, password string) (*ShareObjectInfo, error) {
 	var unlocked = true
 	if share.Password != "" {
 		_, unlocked = MemoCache.Load("unlock" + address + share.ShareID)
 		// 当前用户未输入相应的密码解锁
 		if !unlocked {
-			if share.Password == request.Password {
+			if share.Password == password {
 				unlocked = true
 				MemoCache.Store("unlock"+address+share.ShareID, struct{}{})
 			}
