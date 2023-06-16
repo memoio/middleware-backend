@@ -39,9 +39,6 @@ func ShareAvailableHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		share := GetShareByID(c.Param("shareid"))
 
-		// log.Println(c.Param("shareid"))
-		// log.Println(share)
-
 		if share == nil || !share.IsAvailable() {
 			c.AbortWithStatusJSON(404, "The share link is not available")
 			return
@@ -104,7 +101,7 @@ func CreateShareHandler() gin.HandlerFunc {
 func GetShareHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		address := c.GetString("address")
-		chainID := c.GetInt("chainID")
+		chainID := c.GetInt("chainid")
 
 		shareObj, _ := c.Get("share")
 		share := shareObj.(*ShareObjectInfo)
@@ -131,7 +128,7 @@ func GetShareHandler() gin.HandlerFunc {
 func SaveShareHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		address := c.GetString("address")
-		chainID := c.GetInt("chainID")
+		chainID := c.GetInt("chainid")
 
 		shareObj, _ := c.Get("share")
 		share := shareObj.(*ShareObjectInfo)
