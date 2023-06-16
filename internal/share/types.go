@@ -11,20 +11,20 @@ import (
 )
 
 type Identity struct {
-	Address string
-	ChainID int
+	Address string `json:"address"`
+	ChainID int    `json:"chainid"`
 }
 
 type ShareObjectInfo struct {
-	ShareID         string
-	UserID          Identity
-	MID             string
-	SType           storage.StorageType
-	FileName        string
-	Password        string
-	ExpiredTime     int64
-	Downloads       int
-	RemainDownloads int
+	ShareID         string              `json:"shareid"`
+	UserID          Identity            `json:"userid"`
+	MID             string              `json:"mid"`
+	SType           storage.StorageType `json:"type"`
+	FileName        string              `json:"filename"`
+	Password        string              `json:"password"`
+	ExpiredTime     int64               `json:"expire"`
+	Downloads       int                 `josn:"downloads"`
+	RemainDownloads int                 `json:"remainDownloads"`
 }
 
 var shareObjectMap = make(map[string]*ShareObjectInfo)
