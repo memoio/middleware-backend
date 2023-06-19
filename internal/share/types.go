@@ -122,6 +122,23 @@ func (s *ShareObjectInfo) DeleteShare() error {
 	return nil
 }
 
+func GetFileInfo(address string, chainID int, mid string, stype storage.StorageType) (database.FileInfo, error) {
+	fileInfos, err := database.Get(chainID, mid, stype)
+	if err != nil {
+		return database.FileInfo{}, xerrors.Errorf("Can't find the file")
+	}
+	for key, file := range fileInfos {
+		if file.Public {
+			return file, nil
+		}
+		if key == address {
+			return file, nil
+		}
+	}
+
+	return database.FileInfo{}, xerrors.Errorf("Can't access the file")
+}
+
 func ListShares(address string, chainID int) ([]ShareObjectInfo, error) {
 	mutex.RLock()
 	defer mutex.RUnlock()

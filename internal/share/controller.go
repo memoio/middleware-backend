@@ -64,22 +64,12 @@ func UpdateShare(share *ShareObjectInfo, request UpdateShareRequest) error {
 	return share.UpdateShare(request.Attribute, request.Value)
 }
 
-func DeleteShare(address string, chainID int, shareID string) error {
-	share := GetShareByID(shareID)
-	if share == nil {
-		return xerrors.Errorf("share link not found")
-	}
+func DeleteShare(address string, chainID int, share *ShareObjectInfo) error {
 	if share.UserID.Address != address || share.UserID.ChainID != chainID {
-		return xerrors.Errorf("there is not your share link, can't delete")
+		return xerrors.Errorf("It's not your share link, can't delete")
 	}
 
 	return share.DeleteShare()
-}
-
-// func ListShares()
-
-type GetShareRequest struct {
-	Password string `json:"password"`
 }
 
 func GetShare(address string, chainID int, share *ShareObjectInfo, password string) (*ShareObjectInfo, error) {
@@ -113,21 +103,4 @@ func SaveShare(address string, chainID int, share *ShareObjectInfo) error {
 
 	_, err = database.Put(info)
 	return err
-}
-
-func GetFileInfo(address string, chainID int, mid string, stype storage.StorageType) (database.FileInfo, error) {
-	fileInfos, err := database.Get(chainID, mid, stype)
-	if err != nil {
-		return database.FileInfo{}, xerrors.Errorf("Can't find the file")
-	}
-	for key, file := range fileInfos {
-		if file.Public {
-			return file, nil
-		}
-		if key == address {
-			return file, nil
-		}
-	}
-
-	return database.FileInfo{}, xerrors.Errorf("Can't access the file")
 }

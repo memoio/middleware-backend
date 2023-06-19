@@ -152,9 +152,11 @@ func DeleteShareHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		address := c.GetString("address")
 		chainID := c.GetInt("chainid")
-		shareID := c.Param("shareid")
 
-		err := DeleteShare(address, chainID, shareID)
+		shareObj, _ := c.Get("share")
+		share := shareObj.(*ShareObjectInfo)
+
+		err := DeleteShare(address, chainID, share)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
