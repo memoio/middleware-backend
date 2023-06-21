@@ -1,21 +1,26 @@
 package share
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	auth "github.com/memoio/backend/internal/authentication"
+	"github.com/memoio/backend/internal/controller"
+	"github.com/memoio/backend/internal/gateway"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/utils"
 )
 
 func LoadAuthModule(g *gin.RouterGroup) {
-	// {
-	// 	// 免费
-	// 	share := g.Group("share", ShareAvailableHandler())
+	{
+		// 免费
+		share := g.Group("share", ShareAvailableHandler())
 
-	// 	// 获取分享信息
-	// 	share.GET("info/:shareid", GetShareHandler())
-	// }
+		// 下载分享文件
+		share.GET("/:shareid", BeforeDownloadHandler(), DownloadShareHandler())
+	}
 
 	{
 		// 需要登录
@@ -83,6 +88,38 @@ func BeforeDownloadHandler() gin.HandlerFunc {
 		}
 
 		// c.Next()
+	}
+}
+
+func DownloadShareHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		shareObj, _ := c.Get("share")
+		share := shareObj.(*ShareObjectInfo)
+
+		file, err := share.Source()
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		fmt.Println(share.SType.String())
+
+		var w bytes.Buffer
+		err = controller.ApiMap["/"+share.SType.String()].G.GetObject(c.Request.Context(), file.Mid, &w, gateway.ObjectOptions{})
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		head := fmt.Sprintf("attachment; filename=\"%s\"", file.Name)
+		extraHeaders := map[string]string{
+			"Content-Disposition": head,
+		}
+
+		c.DataFromReader(http.StatusOK, file.Size, utils.TypeByExtension(file.Name), &w, extraHeaders)
+
 	}
 }
 
