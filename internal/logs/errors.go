@@ -100,6 +100,14 @@ func (e ControllerError) Error() string {
 	return e.Message
 }
 
+type NoPermission struct {
+	Message string
+}
+
+func (e NoPermission) Error() string {
+	return e.Message
+}
+
 type APIError struct {
 	Code           string
 	Description    string
@@ -125,6 +133,7 @@ const (
 	ErrConfigError
 	ErrDataBaseError
 	ErrControllerError
+	ErrNoPermission
 )
 
 func (e errorCodeMap) ToAPIErrWithErr(errCode APIErrorCode, err error) APIError {
@@ -208,6 +217,11 @@ var ErrorCodes = errorCodeMap{
 		Description:    "Controller Error",
 		HTTPStatusCode: 525,
 	},
+	ErrNoPermission: {
+		Code:           "Permission",
+		Description:    "You don't have access to the resource",
+		HTTPStatusCode: 526,
+	},
 }
 
 func ToAPIErrorCode(err error) APIError {
@@ -231,6 +245,18 @@ func ToAPIErrorCode(err error) APIError {
 		apiErr = ErrContractError
 	case EthError:
 		apiErr = ErrEthError
+	case ServerError:
+		apiErr = ErrServerError
+	case GatewayError:
+		apiErr = ErrGatewayError
+	case ConfigError:
+		apiErr = ErrConfigError
+	case DataBaseError:
+		apiErr = ErrDataBaseError
+	case ControllerError:
+		apiErr = ErrControllerError
+	case NoPermission:
+		apiErr = ErrNoPermission
 	default:
 		apiErr = ErrInternalError
 	}
