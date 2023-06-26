@@ -1,11 +1,11 @@
 package share
 
 import (
-	"errors"
 	"time"
 
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/database"
+	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
 )
 
@@ -37,7 +37,7 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 
 	id, err := newShare.CreateShare()
 	if err != nil {
-		return "", errors.New("Failed to create share link")
+		return "", err
 	}
 
 	baseUrl := "https://ethdrive.net"
@@ -59,7 +59,7 @@ func UpdateShare(share *ShareObjectInfo, request UpdateShareRequest) error {
 
 func DeleteShare(address string, chainID int, share *ShareObjectInfo) error {
 	if share.Address != address || share.ChainID != chainID {
-		return errors.New("It's not your share link, can't delete")
+		return logs.NoPermission{Message: "can't delete"}
 	}
 
 	return share.DeleteShare()

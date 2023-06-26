@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/memoio/backend/internal/database"
+	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
 	"github.com/segmentio/ksuid"
 )
@@ -33,7 +34,12 @@ func (s *ShareObjectInfo) CreateShare() (string, error) {
 	}
 	s.ShareID = uuid.String()
 
-	return s.ShareID, database.DataBase.Create(s).Error
+	err = database.DataBase.Create(s).Error
+	if err != nil {
+		return "", logs.DataBaseError{Message: err.Error()}
+	}
+
+	return s.ShareID, nil
 }
 
 func GetShareByID(shareID string) *ShareObjectInfo {
@@ -75,6 +81,9 @@ func (s *ShareObjectInfo) UpdateShare(attr string, value string) error {
 	switch attr {
 	case "password":
 		err = database.DataBase.Model(s).Update(attr, value).Error
+		if err != nil {
+			err = logs.DataBaseError{Message: err.Error()}
+		}
 	default:
 		err = errors.New("unsupport attribute")
 	}
@@ -82,13 +91,17 @@ func (s *ShareObjectInfo) UpdateShare(attr string, value string) error {
 }
 
 func (s *ShareObjectInfo) DeleteShare() error {
-	return database.DataBase.Delete(s).Error
+	err := database.DataBase.Delete(s).Error
+	if err != nil {
+		return logs.DataBaseError{Message: err.Error()}
+	}
+	return nil
 }
 
 func GetFileInfo(address string, chainID int, mid string, stype storage.StorageType) (database.FileInfo, error) {
 	fileInfos, err := database.Get(chainID, mid, stype)
 	if err != nil {
-		return database.FileInfo{}, errors.New("Can't find the file")
+		return database.FileInfo{}, logs.DataBaseError{Message: err.Error()}
 	}
 	for key, file := range fileInfos {
 		if file.Public {
@@ -99,14 +112,14 @@ func GetFileInfo(address string, chainID int, mid string, stype storage.StorageT
 		}
 	}
 
-	return database.FileInfo{}, errors.New("Can't access the file")
+	return database.FileInfo{}, logs.NoPermission{Message: "can't access the file"}
 }
 
 func ListShares(address string, chainID int) ([]ShareObjectInfo, error) {
 	var shares []ShareObjectInfo
 	err := database.DataBase.Where("address = ? and chain_id = ?", address, chainID).Find(&shares).Error
 	if err != nil {
-		return nil, err
+		return nil, logs.DataBaseError{Message: err.Error()}
 	}
 
 	return shares, nil
