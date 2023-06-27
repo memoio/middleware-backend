@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/memoio/backend/config"
+	"github.com/memoio/backend/internal/controller"
 	"github.com/memoio/backend/internal/database"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
@@ -16,6 +17,12 @@ type CreateShareRequest struct {
 }
 
 func CreateShare(address string, chainID int, request CreateShareRequest) (string, error) {
+	// 查看是否支持该存储模式
+	_, ok := controller.ApiMap["/"+request.SType.String()]
+	if !ok {
+		return "", logs.StorageNotSupport{}
+	}
+
 	// 查看文件是否存在，且属于该用户
 	fileInfo, err := GetFileInfo(address, chainID, request.MID, request.SType)
 	if err != nil {

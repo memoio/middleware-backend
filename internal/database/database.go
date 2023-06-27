@@ -6,6 +6,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
+	"gorm.io/gorm"
 )
 
 var logger = logs.Logger("database")
@@ -40,6 +41,10 @@ func Get(chain int, mid string, st storage.StorageType) (map[string]FileInfo, er
 	err := DataBase.Where("chainid = ? and mid = ? and stype = ?", chain, mid, st).Find(&fileInfos).Error
 	if err != nil {
 		return nil, err
+	}
+
+	if len(fileInfos) == 0 {
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	for _, file := range fileInfos {

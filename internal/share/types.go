@@ -2,6 +2,7 @@ package share
 
 import (
 	"errors"
+	"strings"
 	"sync"
 	"time"
 
@@ -36,10 +37,21 @@ func (s *ShareObjectInfo) CreateShare() (string, error) {
 
 	err = database.DataBase.Create(s).Error
 	if err != nil {
+		if strings.HasPrefix(err.Error(), "UNIQUE constraint failed") {
+			return "", logs.DataBaseError{Message: "Alread created the share"}
+		}
 		return "", logs.DataBaseError{Message: err.Error()}
 	}
 
 	return s.ShareID, nil
+}
+
+func GetShareByUniqueIndex(address string, chainid int, mid string, stype storage.StorageType) *ShareObjectInfo {
+	var share ShareObjectInfo
+	if err := database.DataBase.Where("address = ? and chain_id = ? and mid = ? and s_type = ?", address, chainid, mid, stype).Find(&share).Error; err != nil {
+		return nil
+	}
+	return &share
 }
 
 func GetShareByID(shareID string) *ShareObjectInfo {
