@@ -1,5 +1,31 @@
 # design
 
+## modules
+
+### auth
+
+登录验证模块，用于接入和验证操作的合法性
+
+### pay
+
+包括读写支付和数据交易支付
+
+原则：
+每个账户包含一定量的免费读写空间，由管理员申请
+
+
+### did
+
+账户did和文件did，用于文件nft化和交易（付费获取did的读取权限）
+
+### data
+
+数据写入和读取
+
+### sdk
+
+js调用api以及常用的工具函数
+
 ## address as account
 
 ### data structure
