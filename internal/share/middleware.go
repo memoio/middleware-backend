@@ -1,21 +1,34 @@
 package share
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	auth "github.com/memoio/backend/internal/authentication"
+	"github.com/memoio/backend/internal/controller"
+	"github.com/memoio/backend/internal/gateway"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/utils"
 )
 
 func LoadAuthModule(g *gin.RouterGroup) {
-	// {
-	// 	// 免费
-	// 	share := g.Group("share", ShareAvailableHandler())
+	err := InitShareTable()
+	if err != nil {
+		panic(err.Error())
+	}
 
-	// 	// 获取分享信息
-	// 	share.GET("info/:shareid", GetShareHandler())
-	// }
+	{
+		// 免费
+		share := g.Group("share", ShareAvailableHandler())
+
+		// 下载分享文件
+		share.GET("/:shareid", BeforeDownloadHandler(), DownloadShareHandler())
+
+		// 获取分享信息
+		share.GET("info/:shareid", GetShareHandler())
+	}
 
 	{
 		// 需要登录
@@ -23,9 +36,6 @@ func LoadAuthModule(g *gin.RouterGroup) {
 
 		// 创建分享
 		share.POST("", CreateShareHandler())
-
-		// 获取分享信息
-		share.GET("info/:shareid", ShareAvailableHandler(), GetShareHandler())
 
 		// 列出分享
 		share.GET("", ListSharesHandler())
@@ -54,14 +64,14 @@ func ShareAvailableHandler() gin.HandlerFunc {
 
 func BeforeDownloadHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		password := c.Query("password")
+		// password := c.Query("password")
 		address := c.GetString("address")
 		chainID := c.GetInt("chainid")
 
 		shareObj, _ := c.Get("share")
 		share := shareObj.(*ShareObjectInfo)
 
-		share, err := GetShare(address, chainID, share, password)
+		share, err := GetShare(address, chainID, share)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
@@ -75,14 +85,37 @@ func BeforeDownloadHandler() gin.HandlerFunc {
 			return
 		}
 
-		err = share.DownloadBy(address, chainID)
+		// c.Next()
+	}
+}
+
+func DownloadShareHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		shareObj, _ := c.Get("share")
+		share := shareObj.(*ShareObjectInfo)
+
+		file, err := share.Source()
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
-			c.AbortWithStatusJSON(errRes.HTTPStatusCode, errRes)
+			c.JSON(errRes.HTTPStatusCode, errRes)
 			return
 		}
 
-		// c.Next()
+		var w bytes.Buffer
+		err = controller.ApiMap["/"+share.SType.String()].G.GetObject(c.Request.Context(), file.Mid, &w, gateway.ObjectOptions{})
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		head := fmt.Sprintf("attachment; filename=\"%s\"", file.Name)
+		extraHeaders := map[string]string{
+			"Content-Disposition": head,
+		}
+
+		c.DataFromReader(http.StatusOK, file.Size, utils.TypeByExtension(file.Name), &w, extraHeaders)
+
 	}
 }
 
@@ -111,14 +144,14 @@ func CreateShareHandler() gin.HandlerFunc {
 
 func GetShareHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		password := c.Query("password")
+		// password := c.Query("password")
 		address := c.GetString("address")
 		chainID := c.GetInt("chainid")
 
 		shareObj, _ := c.Get("share")
 		share := shareObj.(*ShareObjectInfo)
 
-		share, err := GetShare(address, chainID, share, password)
+		share, err := GetShare(address, chainID, share)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
@@ -152,9 +185,11 @@ func DeleteShareHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		address := c.GetString("address")
 		chainID := c.GetInt("chainid")
-		shareID := c.Param("shareid")
 
-		err := DeleteShare(address, chainID, shareID)
+		shareObj, _ := c.Get("share")
+		share := shareObj.(*ShareObjectInfo)
+
+		err := DeleteShare(address, chainID, share)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)

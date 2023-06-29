@@ -38,9 +38,9 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 		var public bool
 		publics := c.PostForm("public")
 		if publics == "true" {
-			public = false
-		} else {
 			public = true
+		} else {
+			public = false
 		}
 		log.Println(public)
 

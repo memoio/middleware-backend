@@ -5,16 +5,14 @@ import (
 
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/database"
+	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
-	"golang.org/x/xerrors"
 )
 
 type CreateShareRequest struct {
-	MID             string              `josn:"mid"`
-	SType           storage.StorageType `json:"type"`
-	Password        string              `json:"password"`
-	ExpiredTime     int64               `josn:"expire"`
-	RemainDownloads int                 `json:"downloads"`
+	MID         string              `josn:"mid"`
+	SType       storage.StorageType `json:"type"`
+	ExpiredTime int64               `josn:"expire"`
 }
 
 func CreateShare(address string, chainID int, request CreateShareRequest) (string, error) {
@@ -25,17 +23,12 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 	}
 
 	newShare := ShareObjectInfo{
-		UserID:          Identity{address, chainID},
-		MID:             request.MID,
-		SType:           request.SType,
-		FileName:        fileInfo.Name,
-		Password:        request.Password,
-		ExpiredTime:     -1,
-		RemainDownloads: -1,
-	}
-
-	if request.RemainDownloads > 0 {
-		newShare.RemainDownloads = request.RemainDownloads
+		Address:     address,
+		ChainID:     chainID,
+		MID:         request.MID,
+		SType:       request.SType,
+		FileName:    fileInfo.Name,
+		ExpiredTime: -1,
 	}
 
 	if request.ExpiredTime > 0 {
@@ -44,7 +37,7 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 
 	id, err := newShare.CreateShare()
 	if err != nil {
-		return "", xerrors.Errorf("Failed to create share link")
+		return "", err
 	}
 
 	baseUrl := "https://ethdrive.net"
@@ -64,46 +57,24 @@ func UpdateShare(share *ShareObjectInfo, request UpdateShareRequest) error {
 	return share.UpdateShare(request.Attribute, request.Value)
 }
 
-func DeleteShare(address string, chainID int, shareID string) error {
-	share := GetShareByID(shareID)
-	if share == nil {
-		return xerrors.Errorf("share link not found")
-	}
-	if share.UserID.Address != address || share.UserID.ChainID != chainID {
-		return xerrors.Errorf("there is not your share link, can't delete")
+func DeleteShare(address string, chainID int, share *ShareObjectInfo) error {
+	if share.Address != address || share.ChainID != chainID {
+		return logs.NoPermission{Message: "can't delete"}
 	}
 
 	return share.DeleteShare()
 }
 
-// func ListShares()
+func GetShare(address string, chainID int, share *ShareObjectInfo) (*ShareObjectInfo, error) {
+	// if !CanRead(address, chainID, share) {
 
-type GetShareRequest struct {
-	Password string `json:"password"`
-}
-
-func GetShare(address string, chainID int, share *ShareObjectInfo, password string) (*ShareObjectInfo, error) {
-	var unlocked = true
-	if share.Password != "" {
-		_, unlocked = MemoCache.Load("unlock" + address + share.ShareID)
-		// 当前用户未输入相应的密码解锁
-		if !unlocked {
-			if share.Password == password {
-				unlocked = true
-				MemoCache.Store("unlock"+address+share.ShareID, struct{}{})
-			}
-		}
-	}
-
-	if !unlocked {
-		return nil, xerrors.Errorf("Please enter the correct password")
-	}
+	// }
 
 	return share, nil
 }
 
 func SaveShare(address string, chainID int, share *ShareObjectInfo) error {
-	info, err := GetFileInfo(share.UserID.Address, share.UserID.ChainID, share.MID, share.SType)
+	info, err := GetFileInfo(share.Address, share.ChainID, share.MID, share.SType)
 	if err != nil {
 		return err
 	}
@@ -113,21 +84,4 @@ func SaveShare(address string, chainID int, share *ShareObjectInfo) error {
 
 	_, err = database.Put(info)
 	return err
-}
-
-func GetFileInfo(address string, chainID int, mid string, stype storage.StorageType) (database.FileInfo, error) {
-	fileInfos, err := database.Get(chainID, mid, stype)
-	if err != nil {
-		return database.FileInfo{}, xerrors.Errorf("Can't find the file")
-	}
-	for key, file := range fileInfos {
-		if file.Public {
-			return file, nil
-		}
-		if key == address {
-			return file, nil
-		}
-	}
-
-	return database.FileInfo{}, xerrors.Errorf("Can't access the file")
 }
