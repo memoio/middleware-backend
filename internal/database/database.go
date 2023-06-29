@@ -69,8 +69,7 @@ func createTable() error {
 		size INTEGER,
 		modtime DATETIME,
 		public BOOLEAN,
-		userdefine TEXT,
-		UNIQUE (chainid, address, stype, mid) ON CONFLICT IGNORE
+		userdefine TEXT
 	);
 	`
 

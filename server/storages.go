@@ -3,6 +3,8 @@ package server
 import (
 	"bytes"
 	"fmt"
+	"log"
+	"math/big"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +18,7 @@ func (s Server) StorageRegistRoutes(r *gin.RouterGroup) {
 	s.GetObjectRoute(r)
 	s.ListObjectsRoute(r)
 	s.DeleteObejectRoute(r)
+	s.GetObjectPublicRoute(r)
 }
 
 func (s Server) PutobjectRoute(r *gin.RouterGroup) {
@@ -35,10 +38,11 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 		var public bool
 		publics := c.PostForm("public")
 		if publics == "true" {
-			public = true
-		} else {
 			public = false
+		} else {
+			public = true
 		}
+		log.Println(public)
 
 		if file == nil {
 			errRes := logs.ToAPIErrorCode(logs.ServerError{Message: "file is nil"})
@@ -123,5 +127,29 @@ func (s Server) DeleteObejectRoute(r *gin.RouterGroup) {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"state": "success"})
+	})
+}
+
+func (s Server) GetObjectPublicRoute(r *gin.RouterGroup) {
+	p := r.Group("/")
+	p.GET("/public/:cid", func(c *gin.Context) {
+		cid := c.Param("cid")
+		chain := c.Query("chainid")
+		chainid := big.NewInt(0)
+		chainid.SetString(chain, 10)
+		var w bytes.Buffer
+		result, err := s.Controller.GetObjectPublic(c.Request.Context(), int(chainid.Int64()), cid, &w, controller.ObjectOptions{})
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		head := fmt.Sprintf("attachment; filename=\"%s\"", result.Name)
+		extraHeaders := map[string]string{
+			"Content-Disposition": head,
+		}
+
+		c.DataFromReader(http.StatusOK, result.Size, result.CType, &w, extraHeaders)
 	})
 }

@@ -221,6 +221,8 @@ func ToAPIErrorCode(err error) APIError {
 		apiErr = ErrNotImplemented
 	case StorageError:
 		apiErr = ErrStorage
+	case ControllerError:
+		apiErr = ErrControllerError
 	case AddressError:
 		apiErr = ErrAddressError
 	case StorageNotSupport:
