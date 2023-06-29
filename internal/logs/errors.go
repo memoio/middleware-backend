@@ -229,6 +229,8 @@ func ToAPIErrorCode(err error) APIError {
 		apiErr = ErrAuthenticationFailed
 	case ContractError:
 		apiErr = ErrContractError
+	case ServerError:
+		apiErr = ErrServerError
 	case EthError:
 		apiErr = ErrEthError
 	default:
