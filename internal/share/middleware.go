@@ -71,14 +71,7 @@ func BeforeDownloadHandler() gin.HandlerFunc {
 		shareObj, _ := c.Get("share")
 		share := shareObj.(*ShareObjectInfo)
 
-		share, err := GetShare(address, chainID, share)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
-
-		err = share.CanDownload(address, chainID)
+		err := share.CanDownload(address, chainID)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.AbortWithStatusJSON(errRes.HTTPStatusCode, errRes)

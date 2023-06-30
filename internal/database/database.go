@@ -6,26 +6,36 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
+	"gorm.io/gorm"
 )
 
 var logger = logs.Logger("database")
 
 type FileInfo struct {
-	ID         int                 `gorm:"primarykey"`
-	ChainID    int                 `gorm:"uniqueIndex:composite;column:chainid"`
-	Address    string              `gorm:"uniqueIndex:composite"`
-	SType      storage.StorageType `gorm:"uniqueIndex:composite;column:stype"`
-	Mid        string              `gorm:"uniqueIndex:composite"`
-	Name       string
-	Size       int64
-	ModTime    time.Time `gorm:"column:modtime"`
-	Public     bool
+	ID      int                 `gorm:"primarykey"`
+	ChainID int                 `gorm:"uniqueIndex:composite;column:chainid"`
+	Address string              `gorm:"uniqueIndex:composite"`
+	SType   storage.StorageType `gorm:"uniqueIndex:composite;column:stype"`
+	Mid     string              `gorm:"uniqueIndex:composite"`
+	Name    string
+	Size    int64
+	ModTime time.Time `gorm:"column:modtime"`
+	Public  bool
+	// Shared     bool
 	UserDefine string `gorm:"column:userdefine"`
 }
 
 func (FileInfo) TableName() string {
 	return "fileinfo"
 }
+
+// func GetFileByUniqueIndex(address string, chainid int, mid string, stype storage.StorageType) *FileInfo {
+// 	var file FileInfo
+// 	if err := DataBase.Where("address = ? and chain_id = ? and mid = ? and s_type = ?", address, chainid, mid, stype).Find(&file).Error; err != nil {
+// 		return nil
+// 	}
+// 	return &file
+// }
 
 func Put(fi FileInfo) (bool, error) {
 	if err := DataBase.Create(&fi).Error; err != nil {
@@ -40,6 +50,10 @@ func Get(chain int, mid string, st storage.StorageType) (map[string]FileInfo, er
 	err := DataBase.Where("chainid = ? and mid = ? and stype = ?", chain, mid, st).Find(&fileInfos).Error
 	if err != nil {
 		return nil, err
+	}
+
+	if len(fileInfos) == 0 {
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	for _, file := range fileInfos {
