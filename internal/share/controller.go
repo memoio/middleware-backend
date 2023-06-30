@@ -29,6 +29,16 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 		return "", err
 	}
 
+	share := GetShareByUniqueIndex(address, chainID, request.MID, request.SType)
+	if share != nil {
+		baseUrl := "https://ethdrive.net"
+		config, err := config.ReadFile()
+		if err == nil {
+			baseUrl = config.EthDriveUrl
+		}
+		return baseUrl + "/s/" + share.ShareID, nil
+	}
+
 	newShare := ShareObjectInfo{
 		Address:     address,
 		ChainID:     chainID,
@@ -46,6 +56,10 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 	if err != nil {
 		return "", err
 	}
+
+	// if err = database.DataBase.Model(&fileInfo).Update("shared", true).Error; err != nil {
+	// 	return "", logs.DataBaseError{Message: err.Error()}
+	// }
 
 	baseUrl := "https://ethdrive.net"
 	config, err := config.ReadFile()
@@ -68,6 +82,13 @@ func DeleteShare(address string, chainID int, share *ShareObjectInfo) error {
 	if share.Address != address || share.ChainID != chainID {
 		return logs.NoPermission{Message: "can't delete"}
 	}
+
+	// fileInfo, err := GetFileInfo(address, chainID, share.MID, share.SType)
+	// if err == nil {
+	// 	if err = database.DataBase.Model(&fileInfo).Update("shared", false).Error; err != nil {
+	// 		return logs.DataBaseError{Message: err.Error()}
+	// 	}
+	// }
 
 	return share.DeleteShare()
 }

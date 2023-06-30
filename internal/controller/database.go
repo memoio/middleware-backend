@@ -35,6 +35,7 @@ func (c *Controller) ListObjects(ctx context.Context, chain int, address string)
 			Mid:     oi.Mid,
 			ModTime: oi.ModTime,
 			Public:  oi.Public,
+			// Shared:  oi.Shared,
 			// UserDefined: userdefine,
 		})
 	}

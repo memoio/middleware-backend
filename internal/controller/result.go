@@ -19,10 +19,11 @@ type ListObjectsResult struct {
 }
 
 type ObjectInfoResult struct {
-	Name    string
-	Size    int64
-	Mid     string
-	Public  bool
+	Name   string
+	Size   int64
+	Mid    string
+	Public bool
+	// Shared  bool
 	ModTime time.Time
 	// UserDefined map[string]string
 }
