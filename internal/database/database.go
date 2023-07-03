@@ -17,7 +17,7 @@ type FileInfo struct {
 	Address string              `gorm:"uniqueIndex:composite"`
 	SType   storage.StorageType `gorm:"uniqueIndex:composite;column:stype"`
 	Mid     string              `gorm:"uniqueIndex:composite"`
-	Name    string
+	Name    string              `gorm:"uniqueIndex:composite"`
 	Size    int64
 	ModTime time.Time `gorm:"column:modtime"`
 	Public  bool
