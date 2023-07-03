@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math/big"
 
 	"github.com/memoio/backend/internal/database"
@@ -94,6 +95,25 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 	return result, nil
 }
 
+func (c *Controller) GetObjectPublic(ctx context.Context, chain int, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
+	result := GetObjectResult{}
+	obi, err := c.checkAccessPublic(ctx, chain, mid)
+	if err != nil {
+		return result, err
+	}
+
+	err = c.storageApi.GetObject(ctx, mid, w, gateway.ObjectOptions(opts))
+	if err != nil {
+		return result, err
+	}
+
+	result.Name = obi.Name
+	result.CType = utils.TypeByExtension(obi.Name)
+	result.Size = obi.Size
+
+	return result, nil
+}
+
 func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid string) error {
 	fi, err := c.checkAccess(ctx, chain, address, mid)
 	if err != nil {
@@ -178,6 +198,22 @@ func (c *Controller) checkAccess(ctx context.Context, chain int, address string,
 			return fi, nil
 		}
 		if key == address {
+			return fi, nil
+		}
+	}
+	err = logs.ControllerError{Message: "no access"}
+	return result, err
+}
+
+func (c *Controller) checkAccessPublic(ctx context.Context, chain int, mid string) (database.FileInfo, error) {
+	result := database.FileInfo{}
+	obi, err := c.GetObjectInfo(ctx, chain, mid)
+	if err != nil {
+		return result, err
+	}
+	for _, fi := range obi {
+		log.Println(fi)
+		if fi.Public {
 			return fi, nil
 		}
 	}
