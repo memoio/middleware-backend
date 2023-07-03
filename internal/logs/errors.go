@@ -235,6 +235,8 @@ func ToAPIErrorCode(err error) APIError {
 		apiErr = ErrNotImplemented
 	case StorageError:
 		apiErr = ErrStorage
+	case ControllerError:
+		apiErr = ErrControllerError
 	case AddressError:
 		apiErr = ErrAddressError
 	case StorageNotSupport:
@@ -243,18 +245,16 @@ func ToAPIErrorCode(err error) APIError {
 		apiErr = ErrAuthenticationFailed
 	case ContractError:
 		apiErr = ErrContractError
-	case EthError:
-		apiErr = ErrEthError
 	case ServerError:
 		apiErr = ErrServerError
+	case EthError:
+		apiErr = ErrEthError
 	case GatewayError:
 		apiErr = ErrGatewayError
 	case ConfigError:
 		apiErr = ErrConfigError
 	case DataBaseError:
 		apiErr = ErrDataBaseError
-	case ControllerError:
-		apiErr = ErrControllerError
 	case NoPermission:
 		apiErr = ErrNoPermission
 	default:

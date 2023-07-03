@@ -11,6 +11,7 @@ import (
 func (s Server) accountRegistRoutes(r *gin.RouterGroup) {
 	s.addGetBalanceRoutes(r)
 	s.addGetStorageRoutes(r)
+	s.addGetFlowSize(r)
 }
 
 func (s Server) addGetBalanceRoutes(r *gin.RouterGroup) {
