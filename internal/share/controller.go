@@ -32,6 +32,8 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 
 	share := GetShareByUniqueIndex(address, chainID, request.MID, request.SType, request.Name)
 	if share != nil && share.ShareID != "" {
+		database.DataBase.Model(&fileInfo).Update("shared", true)
+
 		baseUrl := "https://ethdrive.net"
 		config, err := config.ReadFile()
 		if err == nil {
