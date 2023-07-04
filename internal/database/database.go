@@ -12,16 +12,16 @@ import (
 var logger = logs.Logger("database")
 
 type FileInfo struct {
-	ID      int                 `gorm:"primarykey"`
-	ChainID int                 `gorm:"uniqueIndex:composite;column:chainid"`
-	Address string              `gorm:"uniqueIndex:composite"`
-	SType   storage.StorageType `gorm:"uniqueIndex:composite;column:stype"`
-	Mid     string              `gorm:"uniqueIndex:composite"`
-	Name    string              `gorm:"uniqueIndex:composite"`
-	Size    int64
-	ModTime time.Time `gorm:"column:modtime"`
-	Public  bool
-	// Shared     bool
+	ID         int                 `gorm:"primarykey"`
+	ChainID    int                 `gorm:"uniqueIndex:composite;column:chainid"`
+	Address    string              `gorm:"uniqueIndex:composite"`
+	SType      storage.StorageType `gorm:"uniqueIndex:composite;column:stype"`
+	Mid        string              `gorm:"uniqueIndex:composite"`
+	Name       string              `gorm:"uniqueIndex:composite"`
+	Size       int64
+	ModTime    time.Time `gorm:"column:modtime"`
+	Public     bool
+	Shared     bool
 	UserDefine string `gorm:"column:userdefine"`
 }
 

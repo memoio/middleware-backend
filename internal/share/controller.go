@@ -12,6 +12,7 @@ import (
 
 type CreateShareRequest struct {
 	MID         string              `josn:"mid"`
+	Name        string              `json:"name"`
 	SType       storage.StorageType `json:"type"`
 	ExpiredTime int64               `josn:"expire"`
 }
@@ -24,13 +25,13 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 	}
 
 	// 查看文件是否存在，且属于该用户
-	fileInfo, err := GetFileInfo(address, chainID, request.MID, request.SType)
+	fileInfo, err := GetFileInfo(address, chainID, request.MID, request.SType, request.Name)
 	if err != nil {
 		return "", err
 	}
 
-	share := GetShareByUniqueIndex(address, chainID, request.MID, request.SType)
-	if share != nil {
+	share := GetShareByUniqueIndex(address, chainID, request.MID, request.SType, request.Name)
+	if share != nil && share.ShareID != "" {
 		baseUrl := "https://ethdrive.net"
 		config, err := config.ReadFile()
 		if err == nil {
@@ -57,9 +58,9 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 		return "", err
 	}
 
-	// if err = database.DataBase.Model(&fileInfo).Update("shared", true).Error; err != nil {
-	// 	return "", logs.DataBaseError{Message: err.Error()}
-	// }
+	if err = database.DataBase.Model(&fileInfo).Update("shared", true).Error; err != nil {
+		return "", logs.DataBaseError{Message: err.Error()}
+	}
 
 	baseUrl := "https://ethdrive.net"
 	config, err := config.ReadFile()
@@ -83,12 +84,12 @@ func DeleteShare(address string, chainID int, share *ShareObjectInfo) error {
 		return logs.NoPermission{Message: "can't delete"}
 	}
 
-	// fileInfo, err := GetFileInfo(address, chainID, share.MID, share.SType)
-	// if err == nil {
-	// 	if err = database.DataBase.Model(&fileInfo).Update("shared", false).Error; err != nil {
-	// 		return logs.DataBaseError{Message: err.Error()}
-	// 	}
-	// }
+	fileInfo, err := GetFileInfo(address, chainID, share.MID, share.SType, share.FileName)
+	if err == nil {
+		if err = database.DataBase.Model(&fileInfo).Update("shared", false).Error; err != nil {
+			return logs.DataBaseError{Message: err.Error()}
+		}
+	}
 
 	return share.DeleteShare()
 }
@@ -102,7 +103,7 @@ func GetShare(address string, chainID int, share *ShareObjectInfo) (*ShareObject
 }
 
 func SaveShare(address string, chainID int, share *ShareObjectInfo) error {
-	info, err := GetFileInfo(share.Address, share.ChainID, share.MID, share.SType)
+	info, err := GetFileInfo(share.Address, share.ChainID, share.MID, share.SType, share.FileName)
 	if err != nil {
 		return err
 	}

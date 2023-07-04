@@ -18,7 +18,7 @@ type ShareObjectInfo struct {
 	ChainID     int                 `json:"chainid" gorm:"uniqueIndex:uni"`
 	MID         string              `json:"mid" gorm:"uniqueIndex:uni"`
 	SType       storage.StorageType `json:"type" gorm:"uniqueIndex:uni"`
-	FileName    string              `json:"filename"`
+	FileName    string              `json:"filename" gorm:"uniqueIndex:uni"`
 	ExpiredTime int64               `json:"expire"`
 }
 
@@ -46,9 +46,9 @@ func (s *ShareObjectInfo) CreateShare() (string, error) {
 	return s.ShareID, nil
 }
 
-func GetShareByUniqueIndex(address string, chainid int, mid string, stype storage.StorageType) *ShareObjectInfo {
+func GetShareByUniqueIndex(address string, chainid int, mid string, stype storage.StorageType, name string) *ShareObjectInfo {
 	var share ShareObjectInfo
-	if err := database.DataBase.Where("address = ? and chain_id = ? and m_id = ? and s_type = ?", address, chainid, mid, stype).Find(&share).Error; err != nil {
+	if err := database.DataBase.Where("address = ? and chain_id = ? and m_id = ? and s_type = ? and file_name = ?", address, chainid, mid, stype, name).Find(&share).Error; err != nil {
 		return nil
 	}
 	return &share
@@ -69,7 +69,7 @@ func (s *ShareObjectInfo) IsAvailable() bool {
 		return false
 	}
 
-	_, err := GetFileInfo(s.Address, s.ChainID, s.MID, s.SType)
+	_, err := GetFileInfo(s.Address, s.ChainID, s.MID, s.SType, s.FileName)
 	if err != nil {
 		// 文件已删除，考虑删除失效的分享
 		s.DeleteShare()
@@ -80,7 +80,7 @@ func (s *ShareObjectInfo) IsAvailable() bool {
 }
 
 func (s *ShareObjectInfo) Source() (database.FileInfo, error) {
-	return GetFileInfo(s.Address, s.ChainID, s.MID, s.SType)
+	return GetFileInfo(s.Address, s.ChainID, s.MID, s.SType, s.FileName)
 }
 
 func (s *ShareObjectInfo) CanDownload(address string, chainID int) error {
@@ -110,16 +110,18 @@ func (s *ShareObjectInfo) DeleteShare() error {
 	return nil
 }
 
-func GetFileInfo(address string, chainID int, mid string, stype storage.StorageType) (database.FileInfo, error) {
-	fileInfos, err := database.Get(chainID, mid, stype)
+func GetFileInfo(address string, chainID int, mid string, stype storage.StorageType, name string) (database.FileInfo, error) {
+	var fileinfos []database.FileInfo
+	err := database.DataBase.Where("chainid = ? and mid = ? and stype = ? and name = ?", chainID, mid, stype, name).Find(&fileinfos).Error
 	if err != nil {
 		return database.FileInfo{}, logs.DataBaseError{Message: err.Error()}
 	}
-	for key, file := range fileInfos {
+
+	for _, file := range fileinfos {
 		if file.Public {
 			return file, nil
 		}
-		if key == address {
+		if file.Address == address {
 			return file, nil
 		}
 	}
