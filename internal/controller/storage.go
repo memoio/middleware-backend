@@ -73,11 +73,6 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 		return result, err
 	}
 
-	err = c.canRead(ctx, address, chain, obi.Size)
-	if err != nil {
-		return result, err
-	}
-
 	err = c.storageApi.GetObject(ctx, mid, w, gateway.ObjectOptions(opts))
 	if err != nil {
 		return result, err
@@ -86,11 +81,6 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 	result.Name = obi.Name
 	result.CType = utils.TypeByExtension(obi.Name)
 	result.Size = obi.Size
-
-	err = c.UpdateFlowSize(ctx, chain, address, obi.Mid, big.NewInt(result.Size))
-	if err != nil {
-		return result, err
-	}
 
 	return result, nil
 }
