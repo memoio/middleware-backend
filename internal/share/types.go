@@ -48,8 +48,14 @@ func (s *ShareObjectInfo) CreateShare() (string, error) {
 
 func GetShareByUniqueIndex(address string, chainid int, mid string, stype storage.StorageType, name string) *ShareObjectInfo {
 	var share ShareObjectInfo
-	if err := database.DataBase.Where("address = ? and chain_id = ? and m_id = ? and s_type = ? and file_name = ?", address, chainid, mid, stype, name).Find(&share).Error; err != nil {
-		return nil
+	if name != "" {
+		if err := database.DataBase.Where("address = ? and chain_id = ? and m_id = ? and s_type = ? and file_name = ?", address, chainid, mid, stype, name).Find(&share).Error; err != nil {
+			return nil
+		}
+	} else {
+		if err := database.DataBase.Where("address = ? and chain_id = ? and m_id = ? and s_type = ?", address, chainid, mid, stype).Find(&share).Error; err != nil {
+			return nil
+		}
 	}
 	return &share
 }
