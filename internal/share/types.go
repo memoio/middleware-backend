@@ -2,7 +2,6 @@ package share
 
 import (
 	"errors"
-	"strings"
 	"sync"
 	"time"
 
@@ -37,9 +36,6 @@ func (s *ShareObjectInfo) CreateShare() (string, error) {
 
 	err = database.DataBase.Create(s).Error
 	if err != nil {
-		if strings.HasPrefix(err.Error(), "UNIQUE constraint failed") {
-			return "", logs.DataBaseError{Message: "Alread created the share"}
-		}
 		return "", logs.DataBaseError{Message: err.Error()}
 	}
 
