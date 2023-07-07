@@ -112,7 +112,12 @@ func (s *ShareObjectInfo) DeleteShare() error {
 
 func GetFileInfo(address string, chainID int, mid string, stype storage.StorageType, name string) (database.FileInfo, error) {
 	var fileinfos []database.FileInfo
-	err := database.DataBase.Where("chainid = ? and mid = ? and stype = ? and name = ?", chainID, mid, stype, name).Find(&fileinfos).Error
+	var err error
+	if name != "" {
+		err = database.DataBase.Where("chainid = ? and mid = ? and stype = ? and name = ?", chainID, mid, stype, name).Find(&fileinfos).Error
+	} else {
+		err = database.DataBase.Where("chainid = ? and mid = ? and stype = ?", chainID, mid, stype).Find(&fileinfos).Error
+	}
 	if err != nil {
 		return database.FileInfo{}, logs.DataBaseError{Message: err.Error()}
 	}
