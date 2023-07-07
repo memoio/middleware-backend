@@ -109,6 +109,14 @@ func (s *ShareObjectInfo) DeleteShare() error {
 	if err != nil {
 		return logs.DataBaseError{Message: err.Error()}
 	}
+
+	fileInfo, err := GetFileInfo(s.Address, s.ChainID, s.MID, s.SType, s.FileName)
+	if err == nil {
+		if err = database.DataBase.Model(&fileInfo).Update("shared", false).Error; err != nil {
+			return logs.DataBaseError{Message: err.Error()}
+		}
+	}
+
 	return nil
 }
 

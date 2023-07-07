@@ -43,6 +43,9 @@ func LoadAuthModule(g *gin.RouterGroup) {
 		// 将分享添加到我的文件列表中
 		share.POST("save/:shareid", ShareAvailableHandler(), BeforeDownloadHandler(), SaveShareHandler())
 
+		// 通过mid, stype, filename删除分享
+		share.DELETE("", DeleteShareByMidHandler())
+
 		// 删除分享
 		share.DELETE(":shareid", ShareAvailableHandler(), DeleteShareHandler())
 	}
@@ -51,8 +54,7 @@ func LoadAuthModule(g *gin.RouterGroup) {
 func ShareAvailableHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		share := GetShareByID(c.Param("shareid"))
-
-		if share == nil || !share.IsAvailable() {
+		if share == nil || share.ShareID == "" || !share.IsAvailable() {
 			c.AbortWithStatusJSON(404, "The share link is not available")
 			return
 		}
@@ -171,6 +173,35 @@ func SaveShareHandler() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, "add share success")
+	}
+}
+
+func DeleteShareByMidHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		address := c.GetString("address")
+		chainID := c.GetInt("chainid")
+
+		var request DeleteShareRequest
+		err := c.ShouldBindJSON(&request)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		share := GetShareByUniqueIndex(address, chainID, request.MID, request.SType, request.Name)
+		if share == nil || share.ShareID == "" || !share.IsAvailable() {
+			c.JSON(404, "The share link is not available")
+			return
+		}
+
+		err = DeleteShare(address, chainID, share)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+		c.JSON(200, "delete success")
 	}
 }
 
