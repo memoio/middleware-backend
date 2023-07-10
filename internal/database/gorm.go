@@ -3,6 +3,7 @@ package database
 import (
 	"time"
 
+	"github.com/memoio/backend/api"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -38,5 +39,5 @@ func init() {
 
 	DataBase = &DataStore{db}
 
-	DataBase.AutoMigrate(&FileInfo{})
+	DataBase.AutoMigrate(&api.FileInfo{})
 }

@@ -68,3 +68,20 @@ type BuyPackage struct {
 	Starttime uint64
 	Chainid   string
 }
+
+type FileInfo struct {
+	ID         int         `gorm:"primarykey"`
+	ChainID    int         `gorm:"uniqueIndex:composite;column:chainid"`
+	Address    string      `gorm:"uniqueIndex:composite"`
+	SType      StorageType `gorm:"uniqueIndex:composite;column:stype"`
+	Mid        string      `gorm:"uniqueIndex:composite"`
+	Name       string      `gorm:"uniqueIndex:composite"`
+	Size       int64
+	ModTime    time.Time `gorm:"column:modtime"`
+	Public     bool
+	UserDefine string `gorm:"column:userdefine"`
+}
+
+func (FileInfo) TableName() string {
+	return "fileinfo"
+}

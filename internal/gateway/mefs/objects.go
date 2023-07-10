@@ -32,16 +32,22 @@ func NewGateway() (api.IGateway, error) {
 	repoDir := os.Getenv("MEFS_PATH")
 	addr, headers, err := mclient.GetMemoClientInfo(repoDir)
 	if err != nil {
-		return nil, err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return nil, lerr
 	}
 	napi, closer, err := mclient.NewUserNode(context.Background(), addr, headers)
 	if err != nil {
-		return nil, err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return nil, lerr
 	}
 	defer closer()
 	_, err = napi.ShowStorage(context.Background())
 	if err != nil {
-		return nil, err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return nil, lerr
 	}
 
 	return &Mefs{
@@ -72,13 +78,17 @@ func (m *Mefs) MakeBucketWithLocation(ctx context.Context, bucket string) error 
 func (m *Mefs) GetBucketInfo(ctx context.Context, bucket string) (bi mtypes.BucketInfo, err error) {
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return bi, err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return bi, lerr
 	}
 	defer closer()
 
 	bi, err = napi.HeadBucket(ctx, bucket)
 	if err != nil {
-		return bi, err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return bi, lerr
 	}
 	return bi, nil
 }
@@ -113,7 +123,9 @@ func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader
 	err = m.MakeBucketWithLocation(ctx, bucket)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
-			return objInfo, err
+			lerr := logs.StorageError{Message: err.Error()}
+			logger.Error(lerr)
+			return objInfo, lerr
 		}
 	} else {
 		log.Println("create bucket ", bucket)
@@ -124,7 +136,9 @@ func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader
 
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return objInfo, err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return objInfo, lerr
 	}
 	defer closer()
 
@@ -134,8 +148,9 @@ func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader
 	}
 	moi, err := napi.PutObject(ctx, bucket, object, r, poo)
 	if err != nil {
-		log.Println(err)
-		return objInfo, err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return objInfo, lerr
 	}
 
 	etag, _ := metag.ToString(moi.ETag)
@@ -153,13 +168,17 @@ func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader
 func (m *Mefs) GetObject(ctx context.Context, objectName string, writer io.Writer, opts api.ObjectOptions) error {
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return lerr
 	}
 	defer closer()
 
 	objInfo, err := napi.HeadObject(ctx, "", objectName)
 	if err != nil {
-		return err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return lerr
 	}
 
 	length := int64(objInfo.Size)
@@ -202,13 +221,17 @@ func (m *Mefs) GetObjectInfo(ctx context.Context, cid string) (api.ObjectInfo, e
 	result := api.ObjectInfo{}
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return result, err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return result, lerr
 	}
 	defer closer()
 
 	objInfo, err := napi.HeadObject(ctx, "", cid)
 	if err != nil {
-		return result, err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return result, lerr
 	}
 	ctype := utils.TypeByExtension(objInfo.Name)
 	if objInfo.UserDefined["content-type"] != "" {
@@ -225,12 +248,16 @@ func (m *Mefs) ListObjects(ctx context.Context, bucket string) ([]api.ObjectInfo
 	var loi []api.ObjectInfo
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return loi, err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return loi, lerr
 	}
 	defer closer()
 	mloi, err := napi.ListObjects(ctx, bucket, mtypes.ListObjectsOptions{MaxKeys: 1000})
 	if err != nil {
-		return loi, err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return loi, lerr
 	}
 
 	for _, oi := range mloi.Objects {
@@ -251,13 +278,17 @@ func (m *Mefs) ListObjects(ctx context.Context, bucket string) ([]api.ObjectInfo
 func (m *Mefs) DeleteObject(ctx context.Context, bucket, object string) error {
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return lerr
 	}
 	defer closer()
 
 	err = napi.DeleteObject(ctx, bucket, object)
 	if err != nil {
-		return err
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return lerr
 	}
 	return nil
 }

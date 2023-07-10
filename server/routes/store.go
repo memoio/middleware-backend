@@ -78,11 +78,11 @@ func (h handler) listObjectsHandle(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (h handler) deleteObjectHandle(c *gin.Context)() {
+func (h handler) deleteObjectHandle(c *gin.Context) {
 	address := c.GetString("address")
-	mid := c.Query("mid")
+	id := c.Query("id")
 
-	err := h.controller.DeleteObject(c.Request.Context(), address, mid)
+	err := h.controller.DeleteObject(c.Request.Context(), address, int(toInt64(id)))
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)

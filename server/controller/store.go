@@ -2,10 +2,12 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"io"
+	"strings"
 
 	"github.com/memoio/backend/api"
-	"github.com/memoio/backend/internal/database"
+	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/utils"
 )
 
@@ -21,7 +23,23 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 		return result, err
 	}
 
-	err = storeFileInfo()
+	userdefine, err := json.Marshal(oi.UserDefined)
+	if err != nil {
+		return result, err
+	}
+
+	fi := api.FileInfo{
+		Address:    address,
+		Name:       object,
+		Mid:        oi.Cid,
+		SType:      c.st,
+		Size:       oi.Size,
+		ModTime:    oi.ModTime,
+		Public:     opts.Public,
+		UserDefine: string(userdefine),
+	}
+
+	err = c.storeFileInfo(ctx, fi)
 	if err != nil {
 		c.store.DeleteObject(ctx, address, oi.Cid)
 		return result, err
@@ -62,7 +80,7 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 	return result, nil
 }
 
-func (c *Controller) GetObjectInfo(ctx context.Context, address, mid string) (database.FileInfo, error) {
+func (c *Controller) GetObjectInfo(ctx context.Context, address, mid string) (api.FileInfo, error) {
 	return c.getObjectInfo(ctx, address, mid, c.st)
 }
 
@@ -70,20 +88,29 @@ func (c *Controller) ListObjects(ctx context.Context, address string) (ListObjec
 	return c.listobjects(ctx, address)
 }
 
-func (c *Controller) GetObjectInfoById(ctx context.Context, id int) (database.FileInfo, error) {
+func (c *Controller) GetObjectInfoById(ctx context.Context, id int) (api.FileInfo, error) {
 	return c.getObjectInfoById(ctx, id)
 }
 
-func (c *Controller) DeleteObject(ctx context.Context, address, mid string) error {
-	oi, err := c.getObjectInfo(ctx, address, mid, c.st)
+func (c *Controller) DeleteObject(ctx context.Context, address string, id int) error {
+	oi, err := c.GetObjectInfoById(ctx, id)
 	if err != nil {
 		return err
+	}
+
+	if address != oi.Address {
+		lerr := logs.ControllerError{Message: "address not right"}
+		logger.Error(lerr)
+		return lerr
 	}
 
 	err = c.store.DeleteObject(ctx, address, oi.Name)
 	if err != nil {
+		if strings.Contains(err.Error(), "not exist") {
+			return c.deleteObject(ctx, id)
+		}
 		return err
 	}
 
-	return c.deleteObject(ctx, address, mid)
+	return c.deleteObject(ctx, id)
 }

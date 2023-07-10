@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/database"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
@@ -79,7 +80,7 @@ func (s *ShareObjectInfo) IsAvailable() bool {
 	return true
 }
 
-func (s *ShareObjectInfo) Source() (database.FileInfo, error) {
+func (s *ShareObjectInfo) Source() (api.FileInfo, error) {
 	return GetFileInfo(s.Address, s.ChainID, s.MID, s.SType)
 }
 
@@ -110,10 +111,10 @@ func (s *ShareObjectInfo) DeleteShare() error {
 	return nil
 }
 
-func GetFileInfo(address string, chainID int, mid string, stype storage.StorageType) (database.FileInfo, error) {
+func GetFileInfo(address string, chainID int, mid string, stype storage.StorageType) (api.FileInfo, error) {
 	fileInfos, err := database.Get(chainID, mid, stype)
 	if err != nil {
-		return database.FileInfo{}, logs.DataBaseError{Message: err.Error()}
+		return api.FileInfo{}, logs.DataBaseError{Message: err.Error()}
 	}
 	for key, file := range fileInfos {
 		if file.Public {
@@ -124,7 +125,7 @@ func GetFileInfo(address string, chainID int, mid string, stype storage.StorageT
 		}
 	}
 
-	return database.FileInfo{}, logs.NoPermission{Message: "can't access the file"}
+	return api.FileInfo{}, logs.NoPermission{Message: "can't access the file"}
 }
 
 func ListShares(address string, chainID int) ([]ShareObjectInfo, error) {

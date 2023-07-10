@@ -26,6 +26,8 @@ type IDataBase interface {
 	ListObjects(context.Context, string, StorageType) ([]interface{}, error)
 	GetObjectInfo(context.Context, string, string, StorageType) (interface{}, error)
 	GetObjectInfoById(context.Context, int) (interface{}, error)
+	PutObject(context.Context, FileInfo) error
+	DeleteObject(context.Context, int) error
 }
 
 type IConfig interface {
