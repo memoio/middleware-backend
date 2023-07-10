@@ -6,33 +6,42 @@ import (
 	"fmt"
 
 	"github.com/memoio/backend/api"
-	"github.com/memoio/backend/internal/database"
 	"github.com/memoio/backend/internal/logs"
 )
 
-func storeFileInfo() error {
-	return nil
+func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo) error {
+	return c.database.PutObject(ctx, fi)
 }
 
-func (c *Controller) getObjectInfo(ctx context.Context, address, mid string, st api.StorageType) (database.FileInfo, error) {
-	result := database.FileInfo{}
+func (c *Controller) getObjectInfo(ctx context.Context, address, mid string, st api.StorageType) (api.FileInfo, error) {
+	result := api.FileInfo{}
 	oi, err := c.database.GetObjectInfo(ctx, address, mid, st)
 	if err != nil {
 		return result, err
 	}
 
-	fi := oi.(database.FileInfo)
+	fi := oi.(api.FileInfo)
+	if fi == result {
+		lerr := logs.DataBaseError{Message: "file not exist"}
+		logger.Error(lerr)
+		return result, lerr
+	}
 	return fi, nil
 }
 
-func (c *Controller) getObjectInfoById(ctx context.Context, id int) (database.FileInfo, error) {
-	result := database.FileInfo{}
+func (c *Controller) getObjectInfoById(ctx context.Context, id int) (api.FileInfo, error) {
+	result := api.FileInfo{}
 	oi, err := c.database.GetObjectInfoById(ctx, id)
 	if err != nil {
 		return result, err
 	}
 
-	fi := oi.(database.FileInfo)
+	fi := oi.(api.FileInfo)
+	if fi == result {
+		lerr := logs.DataBaseError{Message: "file not exist"}
+		logger.Error(lerr)
+		return result, lerr
+	}
 	return fi, nil
 }
 
@@ -53,7 +62,7 @@ func (c *Controller) listobjects(ctx context.Context, address string) (ListObjec
 
 	for _, ioi := range loi {
 		userdefine := make(map[string]string)
-		oi := ioi.(database.FileInfo)
+		oi := ioi.(api.FileInfo)
 		err = json.Unmarshal([]byte(oi.UserDefine), &userdefine)
 		if err != nil {
 			lerr := logs.ControllerError{Message: fmt.Sprint("unmarshal userdefine error, ", err)}
@@ -62,6 +71,7 @@ func (c *Controller) listobjects(ctx context.Context, address string) (ListObjec
 		}
 
 		result.Objects = append(result.Objects, ObjectInfoResult{
+			ID:      oi.ID,
 			Name:    oi.Name,
 			Size:    oi.Size,
 			Mid:     oi.Mid,
@@ -74,8 +84,8 @@ func (c *Controller) listobjects(ctx context.Context, address string) (ListObjec
 	return result, nil
 }
 
-func (c *Controller) deleteObject(ctx context.Context, address, mid string) error {
-	return logs.NotImplemented{}
+func (c *Controller) deleteObject(ctx context.Context, id int) error {
+	return c.database.DeleteObject(ctx, id)
 }
 
 func (c *Controller) getCacheStorageInfo(ctx context.Context, address string) (int64, error) {
