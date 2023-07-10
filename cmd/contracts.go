@@ -60,7 +60,7 @@ var setPkgCmd = &cli.Command{
 			return err
 		}
 
-		contracts := contract.NewContract(cf.Contract)
+		contracts := contract.NewContracts(cf.Contracts)
 		ct, ok := contracts[chainid]
 		if !ok {
 			return fmt.Errorf("%d is not set", chainid)
@@ -96,7 +96,7 @@ var checkReceipt = &cli.Command{
 			return err
 		}
 
-		contracts := contract.NewContract(cf.Contract)
+		contracts := contract.NewContracts(cf.Contracts)
 		ct, ok := contracts[chainid]
 		if !ok {
 			return fmt.Errorf("%d is not set", chainid)

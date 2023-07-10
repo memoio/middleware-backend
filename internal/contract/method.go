@@ -113,7 +113,6 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 	}
 	res := *results
 	return contractABI.UnpackIntoInterface(res[0], name, result)
-
 }
 
 func (c *Contract) sendTransaction(name string, args ...interface{}) (string, error) {

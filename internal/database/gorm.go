@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var DataBase *gorm.DB
+var DataBase *DataStore
 
 // var logger = logs.Logger("share")
 
@@ -36,7 +36,7 @@ func init() {
 		logger.Panicf("Failed to ping database: %s", err.Error())
 	}
 
-	DataBase = db
+	DataBase = &DataStore{db}
 
 	DataBase.AutoMigrate(&FileInfo{})
 }

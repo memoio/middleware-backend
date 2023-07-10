@@ -15,13 +15,6 @@ import (
 	"github.com/memoio/contractsv2/go_contracts/erc"
 )
 
-type BuyPackage struct {
-	Pkgid     uint64
-	Amount    int64
-	Starttime uint64
-	Chainid   string
-}
-
 type PackageInfo struct {
 	Time    uint64
 	Kind    uint8
@@ -51,7 +44,15 @@ type Contract struct {
 	gatewaySecretKey string
 }
 
-func NewContract(cfc map[int]config.ContractConfig) map[int]*Contract {
+func NewContract(cfc config.ContractConfig) *Contract {
+	return &Contract{
+		contractAddr:     common.HexToAddress(cfc.ContractAddr),
+		endpoint:         cfc.Endpoint,
+		gatewayAddr:      common.HexToAddress(cfc.GatewayAddr),
+		gatewaySecretKey: cfc.GatewaySecretKey,
+	}
+}
+func NewContracts(cfc map[int]config.ContractConfig) map[int]*Contract {
 	res := make(map[int]*Contract)
 
 	for chainid, cfg := range cfc {
@@ -100,7 +101,7 @@ func (c *Contract) BalanceOf(ctx context.Context, addr string) (*big.Int, error)
 // 	return available
 // }
 
-func (c *Contract) Get(name string, args ...interface{}) ([]interface{}, error) {
+func (c *Contract) Call(name string, args ...interface{}) ([]interface{}, error) {
 	var out []interface{}
 	err := c.CallContract(&out, name, args...)
 	if err != nil {

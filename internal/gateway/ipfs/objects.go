@@ -7,13 +7,13 @@ import (
 	"time"
 
 	shapi "github.com/ipfs/go-ipfs-api"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/config"
-	"github.com/memoio/backend/internal/gateway"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/utils"
 )
 
-var _ gateway.IGateway = (*Ipfs)(nil)
+var _ api.IGateway = (*Ipfs)(nil)
 
 func ChunkerSize(size string) shapi.AddOpts {
 	return func(rb *shapi.RequestBuilder) error {
@@ -26,7 +26,7 @@ type Ipfs struct {
 	host string
 }
 
-func NewGateway() (gateway.IGateway, error) {
+func NewGateway() (api.IGateway, error) {
 	cf, err := config.ReadFile()
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func NewGateway() (gateway.IGateway, error) {
 	}, nil
 }
 
-func (i *Ipfs) PutObject(ctx context.Context, bucket, object string, r io.Reader, opt gateway.ObjectOptions) (objInfo gateway.ObjectInfo, err error) {
+func (i *Ipfs) PutObject(ctx context.Context, bucket, object string, r io.Reader, opts api.ObjectOptions) (objInfo api.ObjectInfo, err error) {
 	sh := shapi.NewShell(i.host)
 	cidvereion := shapi.CidVersion(1)
 	chunkersize := ChunkerSize("size-253952")
@@ -46,17 +46,17 @@ func (i *Ipfs) PutObject(ctx context.Context, bucket, object string, r io.Reader
 		return objInfo, err
 	}
 
-	return gateway.ObjectInfo{
+	return api.ObjectInfo{
 		Bucket:      bucket,
 		Name:        object,
-		Size:        int64(opt.Size),
+		Size:        int64(opts.Size),
 		Cid:         hash,
 		ModTime:     time.Now(),
-		UserDefined: opt.UserDefined,
+		UserDefined: opts.UserDefined,
 	}, nil
 }
 
-func (i *Ipfs) GetObject(ctx context.Context, cid string, w io.Writer, opts gateway.ObjectOptions) error {
+func (i *Ipfs) GetObject(ctx context.Context, cid string, w io.Writer, opts api.ObjectOptions) error {
 	sh := shapi.NewShell(i.host)
 	r, err := sh.Cat(cid)
 	if err != nil {
@@ -67,14 +67,15 @@ func (i *Ipfs) GetObject(ctx context.Context, cid string, w io.Writer, opts gate
 	return nil
 }
 
-func (i *Ipfs) GetObjectInfo(ctx context.Context, cid string) (gateway.ObjectInfo, error) {
+func (i *Ipfs) GetObjectInfo(ctx context.Context, cid string) (api.ObjectInfo, error) {
+	result := api.ObjectInfo{}
 	sh := shapi.NewShell(i.host)
 	objects, err := sh.List(cid)
 	if err != nil {
-		return gateway.ObjectInfo{}, err
+		return result, err
 	}
 	ctype := utils.TypeByExtension(objects[0].Name)
-	return gateway.ObjectInfo{
+	return api.ObjectInfo{
 		Name:  objects[0].Name,
 		Size:  int64(objects[0].Size),
 		CType: ctype,

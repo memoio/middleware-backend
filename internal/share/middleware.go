@@ -3,15 +3,47 @@ package share
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/memoio/backend/api"
 	auth "github.com/memoio/backend/internal/authentication"
-	"github.com/memoio/backend/internal/controller"
-	"github.com/memoio/backend/internal/gateway"
+	"github.com/memoio/backend/internal/gateway/ipfs"
+	"github.com/memoio/backend/internal/gateway/mefs"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/backend/utils"
 )
+
+var ApiMap map[string]*Api
+
+type Api struct {
+	G api.IGateway
+	T storage.StorageType
+}
+
+func init() {
+	loadApiMap()
+}
+
+func loadApiMap() {
+	ApiMap = make(map[string]*Api)
+
+	mefs, err := mefs.NewGateway()
+	if err != nil {
+		log.Println("load mefs ap failed")
+		return
+	}
+	ApiMap["/mefs"] = &Api{G: mefs, T: storage.MEFS}
+
+	ipfs, err := ipfs.NewGateway()
+	if err != nil {
+		log.Println("load ipfs ap failed")
+		return
+	}
+	ApiMap["/ipfs"] = &Api{G: ipfs, T: storage.IPFS}
+}
 
 func LoadAuthModule(g *gin.RouterGroup) {
 	err := InitShareTable()
@@ -95,7 +127,7 @@ func DownloadShareHandler() gin.HandlerFunc {
 		}
 
 		var w bytes.Buffer
-		err = controller.ApiMap["/"+share.SType.String()].G.GetObject(c.Request.Context(), file.Mid, &w, gateway.ObjectOptions{})
+		err = ApiMap["/"+share.SType.String()].G.GetObject(c.Request.Context(), file.Mid, &w, api.ObjectOptions{})
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
