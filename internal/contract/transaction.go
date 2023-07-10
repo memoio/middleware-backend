@@ -1,18 +1,25 @@
 package contract
 
 import (
+	"context"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/storage"
 )
+
+func (c *Contract) Send(name string, args ...interface{}) (string, error) {
+	logger.Info(name, args)
+	return c.sendTransaction(name, args...)
+}
 
 func (c *Contract) StoreOrderPkgExpiration(address, mid string, st storage.StorageType, size *big.Int) (string, error) {
 	logger.Info("storeOrderPkgExpiration:", st, address, mid, size)
 	return c.sendTransaction("storeOrderPkgExpiration", common.HexToAddress(address), mid, uint8(st), size)
 }
 
-func (c *Contract) StoreBuyPkg(address string, pkg BuyPackage) (string, error) {
+func (c *Contract) StoreBuyPkg(ctx context.Context, address string, pkg api.BuyPackage) (string, error) {
 	logger.Info("StoreBuyPkg:", address, pkg.Pkgid, pkg.Amount, pkg.Starttime, pkg.Chainid)
 	a := big.NewInt(pkg.Amount)
 	return c.sendTransaction("storeBuyPkg", common.HexToAddress(address), pkg.Pkgid, a, pkg.Starttime, pkg.Chainid)
