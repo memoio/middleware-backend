@@ -63,6 +63,25 @@ func Get(chain int, mid string, st storage.StorageType) (map[string]FileInfo, er
 	return result, err
 }
 
+func GetPublic(chain int, mid string, st storage.StorageType) (map[string]FileInfo, error) {
+	var fileInfos []FileInfo
+	var result = make(map[string]FileInfo)
+	err := DataBase.Where("chainid = ? and mid = ? and stype = ? and public = true", chain, mid, st).Find(&fileInfos).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if len(fileInfos) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	for _, file := range fileInfos {
+		result[file.Address] = file
+	}
+
+	return result, err
+}
+
 func List(chain int, address string, st storage.StorageType) ([]FileInfo, error) {
 	var fileInfos []FileInfo
 	err := DataBase.Where("chainid = ? and address = ? and stype = ?", chain, address, st).Find(&fileInfos).Error

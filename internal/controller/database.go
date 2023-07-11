@@ -46,3 +46,7 @@ func (c *Controller) ListObjects(ctx context.Context, chain int, address string)
 func (c *Controller) GetObjectInfo(ctx context.Context, chain int, mid string) (map[string]database.FileInfo, error) {
 	return database.Get(chain, mid, c.storageType)
 }
+
+func (c *Controller) GetObjectInfoPublic(ctx context.Context, chain int, mid string) (map[string]database.FileInfo, error) {
+	return database.GetPublic(chain, mid, c.storageType)
+}
