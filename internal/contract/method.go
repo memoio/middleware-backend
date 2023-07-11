@@ -109,6 +109,7 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 	if len(*results) == 0 {
 		res, err := contractABI.Unpack(name, result)
 		*results = res
+		logger.Info(result)
 		return err
 	}
 	res := *results
@@ -208,10 +209,12 @@ func checkResult(receipt *types.Receipt) error {
 
 	logger.Info("RECEIPT: ", receipt)
 
-	if len(receipt.Logs[0].Topics) == 0 {
-		err := logs.ContractError{Message: "no topics"}
-		logger.Error(err)
-		return err
+	if len(receipt.Logs) != 0 {
+		if len(receipt.Logs[0].Topics) == 0 {
+			err := logs.ContractError{Message: "no topics"}
+			logger.Error(err)
+			return err
+		}
 	}
 
 	return nil
