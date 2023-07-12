@@ -135,6 +135,10 @@ func RefreshHandler() gin.HandlerFunc {
 
 func VerifyIdentityHandler(c *gin.Context) {
 	tokenString := c.GetHeader("Authorization")
+	if tokenString == "" {
+		tokenString = "Bearer " + c.Query("token")
+	}
+
 	address, chainid, err := VerifyAccessToken(tokenString)
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
