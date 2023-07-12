@@ -184,9 +184,6 @@ func (c *Controller) checkAccess(ctx context.Context, chain int, address string,
 		return result, err
 	}
 	for key, fi := range obi {
-		if fi.Public {
-			return fi, nil
-		}
 		if key == address {
 			return fi, nil
 		}
@@ -197,7 +194,7 @@ func (c *Controller) checkAccess(ctx context.Context, chain int, address string,
 
 func (c *Controller) checkAccessPublic(ctx context.Context, chain int, mid string) (database.FileInfo, error) {
 	result := database.FileInfo{}
-	obi, err := c.GetObjectInfo(ctx, chain, mid)
+	obi, err := c.GetObjectInfoPublic(ctx, chain, mid)
 	if err != nil {
 		return result, err
 	}
