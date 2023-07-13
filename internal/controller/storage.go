@@ -104,24 +104,28 @@ func (c *Controller) GetObjectPublic(ctx context.Context, chain int, mid string,
 	return result, nil
 }
 
-func (c *Controller) DeleteObject(ctx context.Context, chain int, address, mid string) error {
-	fi, err := c.checkAccess(ctx, chain, address, mid)
+func (c *Controller) DeleteObject(ctx context.Context, address string, id int) error {
+	fi, err := c.GetObjectById(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	bucket := address + fmt.Sprint(chain)
+	if fi.Address != address {
+		return logs.ControllerError{"no access to delete"}
+	}
+
+	bucket := address + fmt.Sprint(fi.ChainID)
 	err = c.storageApi.DeleteObject(ctx, bucket, fi.Name)
 	if err != nil {
 		return err
 	}
 
-	err = database.Delete(chain, address, mid, c.storageType)
+	err = database.Delete(fi.ChainID, address, fi.Mid, c.storageType)
 	if err != nil {
 		return err
 	}
 
-	return c.is.DelStorage(chain, address, c.storageType, big.NewInt(fi.Size), fi.Mid)
+	return c.is.DelStorage(fi.ChainID, address, c.storageType, big.NewInt(fi.Size), fi.Mid)
 }
 
 func (c *Controller) getPrice(size int64) *big.Int {

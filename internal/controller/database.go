@@ -30,6 +30,7 @@ func (c *Controller) ListObjects(ctx context.Context, chain int, address string)
 		}
 
 		result.Objects = append(result.Objects, ObjectInfoResult{
+			ID:      oi.ID,
 			Name:    oi.Name,
 			Size:    oi.Size,
 			Mid:     oi.Mid,
@@ -49,4 +50,8 @@ func (c *Controller) GetObjectInfo(ctx context.Context, chain int, mid string) (
 
 func (c *Controller) GetObjectInfoPublic(ctx context.Context, chain int, mid string) (map[string]database.FileInfo, error) {
 	return database.GetPublic(chain, mid, c.storageType)
+}
+
+func (c *Controller) GetObjectById(ctx context.Context, id int) (database.FileInfo, error) {
+	return database.GetById(id)
 }

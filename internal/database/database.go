@@ -82,6 +82,16 @@ func GetPublic(chain int, mid string, st storage.StorageType) (map[string]FileIn
 	return result, err
 }
 
+func GetById(id int) (FileInfo, error) {
+	var result = FileInfo{}
+	err := DataBase.Where("id = ?", id).Find(&result).Error
+	if err != nil {
+		return result, err
+	}
+
+	return result, err
+}
+
 func List(chain int, address string, st storage.StorageType) ([]FileInfo, error) {
 	var fileInfos []FileInfo
 	err := DataBase.Where("chainid = ? and address = ? and stype = ?", chain, address, st).Find(&fileInfos).Error
