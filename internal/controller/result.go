@@ -19,6 +19,7 @@ type ListObjectsResult struct {
 }
 
 type ObjectInfoResult struct {
+	ID      int
 	Name    string
 	Size    int64
 	Mid     string

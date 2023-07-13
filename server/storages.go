@@ -116,10 +116,9 @@ func (s Server) DeleteObejectRoute(r *gin.RouterGroup) {
 	p := r.Group("/")
 	p.GET("/delete", auth.VerifyIdentityHandler, func(c *gin.Context) {
 		address := c.GetString("address")
-		mid := c.Query("mid")
-		chain := c.GetInt("chainid")
+		id := c.Query("id")
 
-		err := s.Controller.DeleteObject(c.Request.Context(), chain, address, mid)
+		err := s.Controller.DeleteObject(c.Request.Context(), address, int(toInt64(id)))
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
