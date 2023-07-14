@@ -42,6 +42,12 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 		} else {
 			public = false
 		}
+
+		key := c.PostForm("key")
+		if key == "" {
+			key = "f1d4a0b37124c3a7"
+		}
+
 		log.Println(public)
 
 		if file == nil {
@@ -62,7 +68,7 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 			return
 		}
 
-		result, err := s.Controller.PutObject(c.Request.Context(), chain, address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud, Public: public})
+		result, err := s.Controller.PutObject(c.Request.Context(), chain, address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud, Public: public, Key: []byte(key)})
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
@@ -80,7 +86,13 @@ func (s Server) GetObjectRoute(r *gin.RouterGroup) {
 		address := c.GetString("address")
 		chain := c.GetInt("chainid")
 		var w bytes.Buffer
-		result, err := s.Controller.GetObject(c.Request.Context(), chain, address, cid, &w, controller.ObjectOptions{})
+
+		key := c.PostForm("key")
+		if key == "" {
+			key = "f1d4a0b37124c3a7"
+		}
+
+		result, err := s.Controller.GetObject(c.Request.Context(), chain, address, cid, &w, controller.ObjectOptions{Key: []byte(key)})
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)

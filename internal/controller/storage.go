@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -27,9 +28,13 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 		return result, err
 	}
 
+	re, err := utils.EncryptFile(r, opts.Key)
+	if err != nil {
+		return result, logs.ControllerError{Message: fmt.Sprint("encryt error", err)}
+	}
 	// put obejct
 	bucket := address + fmt.Sprint(chain)
-	oi, err := c.storageApi.PutObject(ctx, bucket, object, r, gateway.ObjectOptions(opts))
+	oi, err := c.storageApi.PutObject(ctx, bucket, object, re, gateway.ObjectOptions(opts))
 	if err != nil {
 		return result, err
 	}
@@ -65,7 +70,7 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 	return result, nil
 }
 
-func (c *Controller) GetObject(ctx context.Context, chain int, address, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
+func (c *Controller) GetObject(ctx context.Context, chain int, address, mid string, w *bytes.Buffer, opts ObjectOptions) (GetObjectResult, error) {
 	result := GetObjectResult{}
 
 	obi, err := c.checkAccess(ctx, chain, address, mid)
@@ -76,6 +81,15 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 	err = c.storageApi.GetObject(ctx, mid, w, gateway.ObjectOptions(opts))
 	if err != nil {
 		return result, err
+	}
+	// output := new(bytes.Buffer)
+
+	output := new(bytes.Buffer)
+	output.Write(w.Bytes())
+	w.Reset()
+	err = utils.DecryptFile(output, w, opts.Key)
+	if err != nil {
+		return result, logs.ControllerError{Message: fmt.Sprint("encryt error", err)}
 	}
 
 	result.Name = obi.Name
