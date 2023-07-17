@@ -17,6 +17,7 @@ type ObjectInfo struct {
 }
 
 type ObjectOptions struct {
+	Key          []byte
 	Size         int64
 	Public       bool
 	MTime        time.Time

@@ -109,7 +109,6 @@ func (c *Contract) CallContract(results *[]interface{}, name string, args ...int
 	if len(*results) == 0 {
 		res, err := contractABI.Unpack(name, result)
 		*results = res
-		logger.Info(result)
 		return err
 	}
 	res := *results

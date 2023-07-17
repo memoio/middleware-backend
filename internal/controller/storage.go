@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -65,7 +66,7 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 	return result, nil
 }
 
-func (c *Controller) GetObject(ctx context.Context, chain int, address, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
+func (c *Controller) GetObject(ctx context.Context, chain int, address, mid string, w *bytes.Buffer, opts ObjectOptions) (GetObjectResult, error) {
 	result := GetObjectResult{}
 
 	obi, err := c.checkAccess(ctx, chain, address, mid)

@@ -11,6 +11,7 @@ import (
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/controller"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/utils"
 )
 
 func (s Server) StorageRegistRoutes(r *gin.RouterGroup) {
@@ -35,13 +36,21 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 			c.JSON(errRes.HTTPStatusCode, errRes)
 			return
 		}
+
+		key := c.PostForm("key")
+		if key == "" {
+			key = "f1d4a0b37124c3a7"
+		}
+
 		var public bool
 		publics := c.PostForm("public")
 		if publics == "true" {
+			key = ""
 			public = true
 		} else {
 			public = false
 		}
+
 		log.Println(public)
 
 		if file == nil {
@@ -62,6 +71,23 @@ func (s Server) PutobjectRoute(r *gin.RouterGroup) {
 			return
 		}
 
+		if key != "" {
+			re, err := utils.EncryptFile(fr, []byte(key))
+			if err != nil {
+				lerr := logs.ControllerError{Message: fmt.Sprint("encryt error", err)}
+				errRes := logs.ToAPIErrorCode(lerr)
+				c.JSON(errRes.HTTPStatusCode, errRes)
+				return
+			}
+			result, err := s.Controller.PutObject(c.Request.Context(), chain, address, object, re, controller.ObjectOptions{Size: size, UserDefined: ud, Public: public})
+			if err != nil {
+				errRes := logs.ToAPIErrorCode(err)
+				c.JSON(errRes.HTTPStatusCode, errRes)
+				return
+			}
+			c.JSON(http.StatusOK, result)
+			return
+		}
 		result, err := s.Controller.PutObject(c.Request.Context(), chain, address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud, Public: public})
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
@@ -80,11 +106,26 @@ func (s Server) GetObjectRoute(r *gin.RouterGroup) {
 		address := c.GetString("address")
 		chain := c.GetInt("chainid")
 		var w bytes.Buffer
-		result, err := s.Controller.GetObject(c.Request.Context(), chain, address, cid, &w, controller.ObjectOptions{})
+
+		key := c.PostForm("key")
+
+		result, err := s.Controller.GetObject(c.Request.Context(), chain, address, cid, &w, controller.ObjectOptions{Key: []byte(key)})
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
 			return
+		}
+		if key != "" {
+			output := new(bytes.Buffer)
+			output.Write(w.Bytes())
+			w.Reset()
+			err = utils.DecryptFile(output, &w, []byte(key))
+			if err != nil {
+				lerr := logs.ControllerError{Message: fmt.Sprint("encryt error", err)}
+				errRes := logs.ToAPIErrorCode(lerr)
+				c.JSON(errRes.HTTPStatusCode, errRes)
+				return
+			}
 		}
 
 		head := fmt.Sprintf("attachment; filename=\"%s\"", result.Name)
