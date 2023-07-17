@@ -115,7 +115,10 @@ func (s Server) GetObjectRoute(r *gin.RouterGroup) {
 			c.JSON(errRes.HTTPStatusCode, errRes)
 			return
 		}
-		if key != "" {
+		if !result.Public {
+			if key == "" {
+				key = "f1d4a0b37124c3a7"
+			}
 			output := new(bytes.Buffer)
 			output.Write(w.Bytes())
 			w.Reset()

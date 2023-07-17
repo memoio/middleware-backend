@@ -7,9 +7,10 @@ type PutObjectResult struct {
 }
 
 type GetObjectResult struct {
-	Name  string
-	Size  int64
-	CType string
+	Name   string
+	Size   int64
+	CType  string
+	Public bool
 }
 
 type ListObjectsResult struct {
