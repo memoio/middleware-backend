@@ -112,7 +112,7 @@ func (c *Controller) DeleteObject(ctx context.Context, address string, id int) e
 	}
 
 	if fi.Address != address {
-		return logs.ControllerError{"no access to delete"}
+		return logs.ControllerError{Message: "no access to delete"}
 	}
 
 	bucket := address + fmt.Sprint(fi.ChainID)
