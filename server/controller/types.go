@@ -7,11 +7,6 @@ import (
 	"github.com/memoio/backend/api"
 )
 
-type objectInfo struct {
-	Name string
-	Size int64
-}
-
 type ObjectOptions api.ObjectOptions
 
 type PutObjectResult struct {
@@ -65,4 +60,12 @@ type userBuyPackage struct {
 type flowSize struct {
 	Used *big.Int
 	Free *big.Int
+}
+
+type IPayPayment struct {
+	Nonce    *big.Int
+	Balance  *big.Int
+	SizeByte uint64
+	FreeByte uint64
+	Expire   uint64
 }

@@ -4,13 +4,14 @@ go 1.18
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/ethereum/go-ethereum v1.11.5
+	github.com/ethereum/go-ethereum v1.12.0
 	github.com/fxamacker/cbor/v2 v2.3.0
 	github.com/gin-gonic/gin v1.8.2
 	github.com/ipfs/go-ipfs-api v0.3.0
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/memoio/contractsv2 v0.0.0-00010101000000-000000000000
 	github.com/memoio/go-mefs-v2 v0.0.0-00010101000000-000000000000
+	github.com/memoio/middleware-contracts v0.0.0-00010101000000-000000000000
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29
@@ -51,13 +52,13 @@ require (
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/golang/snappy v0.0.4 // indirect
+	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/herumi/bls-eth-go-binary v0.0.0-20210917013441-d37c07cfda4e // indirect
-	github.com/holiman/uint256 v1.2.1 // indirect
+	github.com/holiman/uint256 v1.2.2-0.20230321075855-87b91420868c // indirect
 	github.com/ipfs/go-block-format v0.0.2 // indirect
 	github.com/ipfs/go-cid v0.2.0 // indirect
 	github.com/ipfs/go-ipfs-files v0.0.9 // indirect
@@ -128,6 +129,7 @@ require (
 replace (
 	github.com/memoio/contractsv2 => ../memov2-contractsv2
 	github.com/memoio/go-mefs-v2 => ../go-mefs-v2
+	github.com/memoio/middleware-contracts => ../contracts
 	github.com/memoio/relay => ../relay
 	memoc => ../memo-go-contracts-v2
 )

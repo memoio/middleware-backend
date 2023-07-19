@@ -13,25 +13,11 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/middleware-contracts/go-contracts/control"
+	"github.com/memoio/middleware-contracts/go-contracts/proxy"
 )
 
 var logger = logs.Logger("contract")
-
-const (
-	getPkgSizeABI              = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"kind","type":"uint8"}],"name":"getPkgSize","outputs":[{"name":"used","type":"uint256"},{"name":"available","type":"uint256"},{"name":"total","type":"uint256"},{"name":"expires","type":"uint64"}],"payable":false,"stateMutability":"view","type":"function"}]`
-	storeOrderPkgExpirationABI = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"hashid","type":"string"},{"name":"kind","type":"uint8"},{"name":"size","type":"uint256"}],"name":"storeOrderPkgExpiration","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"from","type":"address"},{"indexed":false,"name":"to","type":"address"},{"indexed":false,"name":"hashid","type":"string"},{"indexed":false,"name":"size","type":"uint256"},{"indexed":false,"name":"nonce","type":"uint256"}],"name":"StoreOrderExpirationed","type":"event"}]`
-	storeOrderPkgABI           = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"hashid","type":"string"},{"name":"kind","type":"uint8"},{"name":"size","type":"uint256"}],"name":"storeOrderPkg","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"from","type":"address"},{"indexed":false,"name":"to","type":"address"},{"indexed":false,"name":"hashid","type":"string"},{"indexed":false,"name":"size","type":"uint256"},{"indexed":false,"name":"nonce","type":"uint256"}],"name":"StoreOrderPkg","type":"event"}]`
-	storeOrderPayABI           = `[{"constant":false,"inputs":[{"name":"_addr","type":"address"},{"name":"_str","type":"string"},{"name":"kind","type":"uint8"},{"name":"amount","type":"uint256"},{"name":"size","type":"uint256"}],"name":"storeOrderpay","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
-	buyPkgABI                  = `[{"constant":false,"inputs":[{"name":"pkgId","type":"uint64"},{"name":"amount","type":"uint256"},{"name":"starttime","type":"uint64"}],"name":"buyPkg","outputs":[],"payable":true,"stateMutability":"payable","type":"function"}]`
-	storeBuyPkgABI             = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"pkgId","type":"uint64"},{"name":"amount","type":"uint256"},{"name":"starttime","type":"uint64"},{"name":"chainId","type":"string"}],"name":"storeBuyPkg","outputs":[],"payable":true,"stateMutability":"payable","type":"function"}]`
-	storeGetPkgInfosABI        = `[{"constant":true,"inputs":[],"name":"storeGetPkgInfos","outputs":[{"components":[{"name":"time","type":"uint64"},{"name":"kind","type":"uint8"},{"name":"buysize","type":"uint256"},{"name":"amount","type":"uint256"},{"name":"state","type":"uint8"}],"name":"","type":"tuple[]"}],"payable":false,"stateMutability":"view","type":"function"}]`
-	adminAddPkgInfoABI         = `[{"constant":false,"inputs":[{"name":"time","type":"uint64"},{"name":"amount","type":"uint256"},{"name":"kind","type":"uint8"},{"name":"buysize","type":"uint256"}],"name":"adminAddPkgInfo","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
-	storeGetBuyPkgsABI         = `[{"constant":false,"inputs":[{"name":"to","type":"address"}],"name":"storeGetBuyPkgs","outputs":[{"components":[{"name":"starttime","type":"uint64"},{"name":"endtime","type":"uint64"},{"name":"kind","type":"uint8"},{"name":"buysize","type":"uint256"},{"name":"amount","type":"uint256"},{"name":"state","type":"uint8"}],"name":"","type":"tuple[]"}],"payable":false,"stateMutability":"view","type":"function"}]`
-	getStoreAllSizeABI         = `[{"constant": true,"inputs": [], "name": "getStoreAllSize","outputs": [{"name": "","type": "uint256"}],"payable": false,"stateMutability": "view","type": "function"}]`
-
-	flowSizeABI     = `[{"constant":true,"inputs":[{"name":"to","type":"address"}],"name":"flowSize","outputs":[{"name":"","type":"uint256"},{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}]`
-	flowOrderpayABI = `[{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"hashid","type":"string"},{"name":"kind","type":"uint8"},{"name":"amount","type":"uint256"},{"name":"size","type":"uint256"}],"name":"flowOrderpay","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"}]`
-)
 
 func createAbi(cabi string) abi.ABI {
 	parsed, err := abi.JSON(strings.NewReader(cabi))
@@ -43,81 +29,55 @@ func createAbi(cabi string) abi.ABI {
 
 func getContractABI(name string) abi.ABI {
 	switch name {
-	case "getPkgSize":
-		return createAbi(getPkgSizeABI)
-	case "storeOrderPkg":
-		return createAbi(storeOrderPkgABI)
-	case "storeOrderpay":
-		return createAbi(storeOrderPayABI)
-	case "buyPkg":
-		return createAbi(buyPkgABI)
-	case "storeBuyPkg":
-		return createAbi(storeBuyPkgABI)
-	case "storeGetPkgInfos":
-		return createAbi(storeGetPkgInfosABI)
-	case "adminAddPkgInfo":
-		return createAbi(adminAddPkgInfoABI)
-	case "storeGetBuyPkgs":
-		return createAbi(storeGetBuyPkgsABI)
-	case "storeOrderPkgExpiration":
-		return createAbi(storeOrderPkgExpirationABI)
-	case "getStoreAllSize":
-		return createAbi(getStoreAllSizeABI)
-	case "flowSize":
-		return createAbi(flowSizeABI)
-	case "flowOrderpay":
-		return createAbi(flowOrderpayABI)
+	case "control":
+		return createAbi(control.ControlABI)
+	case "proxy":
+		return createAbi(proxy.ProxyABI)
 	}
-
 	return abi.ABI{}
 }
 
-func (c *Contract) CallContract(results *[]interface{}, name string, args ...interface{}) error {
-	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
+func (c *Contract) CallContract(ctx context.Context, results *[]interface{}, name, method string, args ...interface{}) error {
+	client, err := ethclient.DialContext(ctx, c.endpoint)
 	if err != nil {
 		return err
 	}
 	defer client.Close()
-	// logger.Info(c.contractAddr, c.endpoint, c.gatewayAddr, c.gatewaySecretKey)
-	logger.Info("CallContract ", name)
+
+	logger.Infof("CallContract %s %s %s %s", name, method, args, c.contractAddr)
 	if results == nil {
 		results = new([]interface{})
 	}
 
 	contractABI := getContractABI(name)
-	logger.Info(args...)
 
-	encodeData, err := contractABI.Pack(name, args...)
+	encodeData, err := contractABI.Pack(method, args...)
 	if err != nil {
 		return err
 	}
 
-	logger.Info("packed!")
 	msg := ethereum.CallMsg{
-		To:   &c.contractAddr,
+		To:   &c.proxyAddr,
 		Data: encodeData,
 	}
 
-	logger.Info("call start")
 	result, err := client.CallContract(context.TODO(), msg, nil)
 	if err != nil {
 		return err
 	}
 
-	logger.Info("call end")
-
 	if len(*results) == 0 {
-		res, err := contractABI.Unpack(name, result)
+		res, err := contractABI.Unpack(method, result)
 		*results = res
 		return err
 	}
 	res := *results
-	return contractABI.UnpackIntoInterface(res[0], name, result)
+	return contractABI.UnpackIntoInterface(res[0], method, result)
 }
 
-func (c *Contract) sendTransaction(name string, args ...interface{}) (string, error) {
+func (c *Contract) sendTransaction(ctx context.Context, name, method string, args ...interface{}) (string, error) {
 	logger.Info("sendTransaction")
-	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
+	client, err := ethclient.DialContext(ctx, c.endpoint)
 	if err != nil {
 		lerr := logs.ContractError{Message: err.Error()}
 		logger.Error(lerr)
@@ -125,7 +85,7 @@ func (c *Contract) sendTransaction(name string, args ...interface{}) (string, er
 	}
 	defer client.Close()
 
-	nonce, err := client.PendingNonceAt(context.TODO(), c.gatewayAddr)
+	nonce, err := client.PendingNonceAt(ctx, c.gatewayAddr)
 	if err != nil {
 		lerr := logs.ContractError{Message: err.Error()}
 		logger.Error(lerr)
@@ -133,7 +93,7 @@ func (c *Contract) sendTransaction(name string, args ...interface{}) (string, er
 	}
 	logger.Debug("nonce: ", nonce)
 
-	chainID, err := client.NetworkID(context.TODO())
+	chainID, err := client.NetworkID(ctx)
 	if err != nil {
 		lerr := logs.ContractError{Message: err.Error()}
 		logger.Error(lerr)
@@ -143,7 +103,7 @@ func (c *Contract) sendTransaction(name string, args ...interface{}) (string, er
 
 	contractABI := getContractABI(name)
 
-	data, err := contractABI.Pack(name, args...)
+	data, err := contractABI.Pack(method, args...)
 	if err != nil {
 		lerr := logs.ContractError{Message: fmt.Sprint("pack error: ", err)}
 		logger.Error(lerr)
@@ -167,7 +127,7 @@ func (c *Contract) sendTransaction(name string, args ...interface{}) (string, er
 		logger.Error(lerr)
 		return "", lerr
 	}
-	err = client.SendTransaction(context.TODO(), signedTx)
+	err = client.SendTransaction(ctx, signedTx)
 	if err != nil {
 		lerr := logs.ContractError{Message: fmt.Sprintf("Failed to send transaction: %v\n", err)}
 		logger.Error(lerr)
@@ -178,7 +138,7 @@ func (c *Contract) sendTransaction(name string, args ...interface{}) (string, er
 }
 
 func (c *Contract) CheckTrsaction(ctx context.Context, hash string) error {
-	client, err := ethclient.DialContext(context.TODO(), c.endpoint)
+	client, err := ethclient.DialContext(ctx, c.endpoint)
 	if err != nil {
 		logger.Error(err)
 		return err
@@ -187,7 +147,7 @@ func (c *Contract) CheckTrsaction(ctx context.Context, hash string) error {
 
 	signedTx := common.HexToHash(hash)
 
-	receipt, err := client.TransactionReceipt(context.TODO(), signedTx)
+	receipt, err := client.TransactionReceipt(ctx, signedTx)
 	if err != nil {
 		logger.Error("receipt:", err)
 		return err
@@ -206,12 +166,12 @@ func checkResult(receipt *types.Receipt) error {
 	}
 
 	logger.Info("RECEIPT: ", receipt)
-
-	if len(receipt.Logs[0].Topics) == 0 {
-		err := logs.ContractError{Message: "no topics"}
-		logger.Error(err)
-		return err
+	if len(receipt.Logs) != 0 {
+		if len(receipt.Logs[0].Topics) == 0 {
+			err := logs.ContractError{Message: "no topics"}
+			logger.Error(err)
+			return err
+		}
 	}
-
 	return nil
 }

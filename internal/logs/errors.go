@@ -108,6 +108,14 @@ func (e NoPermission) Error() string {
 	return e.Message
 }
 
+type WalletError struct {
+	Message string
+}
+
+func (e WalletError) Error() string {
+	return e.Message
+}
+
 type APIError struct {
 	Code           string
 	Description    string
@@ -134,6 +142,7 @@ const (
 	ErrDataBaseError
 	ErrControllerError
 	ErrNoPermission
+	ErrWalletError
 )
 
 func (e errorCodeMap) ToAPIErrWithErr(errCode APIErrorCode, err error) APIError {
@@ -222,6 +231,11 @@ var ErrorCodes = errorCodeMap{
 		Description:    "You don't have access to the resource",
 		HTTPStatusCode: 526,
 	},
+	ErrWalletError: {
+		Code:           "Wallet",
+		Description:    "Wallet error",
+		HTTPStatusCode: 527,
+	},
 }
 
 func ToAPIErrorCode(err error) APIError {
@@ -257,6 +271,8 @@ func ToAPIErrorCode(err error) APIError {
 		apiErr = ErrControllerError
 	case NoPermission:
 		apiErr = ErrNoPermission
+	case WalletError:
+		apiErr = ErrWalletError
 	default:
 		apiErr = ErrInternalError
 	}
@@ -271,14 +287,4 @@ var (
 type ErrResponse struct {
 	Package string
 	Err     error
-}
-
-type GenericError struct {
-	pkg     string
-	method  string
-	message string
-}
-
-func SetPkg(pkg string) GenericError {
-	return GenericError{pkg: pkg}
 }

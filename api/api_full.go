@@ -15,8 +15,8 @@ type IGateway interface {
 }
 
 type IContract interface {
-	Call(name string, args ...interface{}) ([]interface{}, error)
-	Send(name string, args ...interface{}) (string, error)
+	Call(ctx context.Context, name, method string, args ...interface{}) ([]interface{}, error)
+	Send(ctx context.Context, name, method string, args ...interface{}) (string, error)
 	BalanceOf(context.Context, string) (*big.Int, error)
 	StoreBuyPkg(context.Context, string, BuyPackage) (string, error)
 	CheckTrsaction(context.Context, string) error
@@ -28,9 +28,18 @@ type IDataBase interface {
 	GetObjectInfoById(context.Context, int) (interface{}, error)
 	PutObject(context.Context, FileInfo) error
 	DeleteObject(context.Context, int) error
+
+	GetSize(context.Context, string) (uint64, error)
 }
 
 type IConfig interface {
 	GetStore() interface{}
 	GetContract() interface{}
+}
+
+type Keystore interface {
+	Get(string) ([]byte, error)
+	Put(string, []byte) error
+	List() ([]string, error)
+	Delete(string) error
 }

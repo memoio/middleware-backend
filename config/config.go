@@ -66,9 +66,7 @@ func newDefaultStorageConfig() StorageConfig {
 func newDefaultContractsConfig() map[int]ContractConfig {
 	cfg := map[int]ContractConfig{
 		985: {
-			Endpoint:     "https://chain.metamemo.one:8501",
-			ContractAddr: "0xA78b166947487d93EA0e87e68132FC4609B00fA1",
-			GatewayAddr:  "0x31e7829Ea2054fDF4BCB921eDD3a98a825242267",
+			Chain: "dev",
 		},
 	}
 	return cfg
@@ -76,9 +74,7 @@ func newDefaultContractsConfig() map[int]ContractConfig {
 
 func newDefaultContractConfig() ContractConfig {
 	cfg := ContractConfig{
-		Endpoint:     "https://chain.metamemo.one:8501",
-		ContractAddr: "0xA78b166947487d93EA0e87e68132FC4609B00fA1",
-		GatewayAddr:  "0x31e7829Ea2054fDF4BCB921eDD3a98a825242267",
+		Chain: "dev",
 	}
 	return cfg
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/memoio/backend/internal/logs"
 )
 
-func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo) error {
+func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo, sign string, checksize uint64) error {
 	return c.database.PutObject(ctx, fi)
 }
 
@@ -88,6 +88,6 @@ func (c *Controller) deleteObject(ctx context.Context, id int) error {
 	return c.database.DeleteObject(ctx, id)
 }
 
-func (c *Controller) getCacheStorageInfo(ctx context.Context, address string) (int64, error) {
-	return 0, logs.NotImplemented{}
+func getCacheSize() {
+
 }

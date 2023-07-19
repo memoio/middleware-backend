@@ -20,7 +20,10 @@ func initMefs() {
 		logger.Error("init mefs error:", err)
 	}
 
-	control := controller.NewController(api.MEFS, store)
+	control, err := controller.NewController(api.MEFS, store)
+	if err != nil {
+		logger.Error("get control error:", err)
+	}
 	handlerMap["mefs"] = handler{controller: control}
 }
 
@@ -29,6 +32,9 @@ func initIpfs() {
 	if err != nil {
 		logger.Error("init ipfs error:", err)
 	}
-	control := controller.NewController(api.IPFS, store)
+	control, err := controller.NewController(api.IPFS, store)
+	if err != nil {
+		logger.Error("get control error:", err)
+	}
 	handlerMap["ipfs"] = handler{controller: control}
 }

@@ -1,9 +1,12 @@
 package database
 
 import (
+	"os"
 	"time"
 
 	"github.com/memoio/backend/api"
+	"github.com/memoio/go-mefs-v2/lib/backend/kv"
+	"github.com/memoio/go-mefs-v2/lib/backend/wrap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -37,7 +40,24 @@ func init() {
 		logger.Panicf("Failed to ping database: %s", err.Error())
 	}
 
-	DataBase = &DataStore{db}
+	opt := kv.DefaultOptions
+	bpath := "./datastore/"
+	err = os.MkdirAll(bpath, os.ModePerm)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	ds, err := kv.NewBadgerStore(bpath, &opt)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	dss := wrap.NewKVStore("upload", ds)
+
+	up := NewUploaderPay(dss)
+
+	DataBase = &DataStore{db, up}
 
 	DataBase.AutoMigrate(&api.FileInfo{})
 }

@@ -13,7 +13,7 @@ import (
 
 func (c *Controller) PutObject(ctx context.Context, address, object string, r io.Reader, opts ObjectOptions) (PutObjectResult, error) {
 	result := PutObjectResult{}
-	err := canWrite()
+	err := c.canWrite(ctx, address, opts.Sign, uint64(opts.Size), opts.Message)
 	if err != nil {
 		return result, err
 	}
@@ -35,11 +35,10 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 		SType:      c.st,
 		Size:       oi.Size,
 		ModTime:    oi.ModTime,
-		Public:     opts.Public,
 		UserDefine: string(userdefine),
 	}
 
-	err = c.storeFileInfo(ctx, fi)
+	err = c.storeFileInfo(ctx, fi, opts.Sign, opts.Message.Size)
 	if err != nil {
 		c.store.DeleteObject(ctx, address, oi.Cid)
 		return result, err
