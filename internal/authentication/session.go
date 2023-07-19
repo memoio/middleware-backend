@@ -7,11 +7,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type Identity struct {
-	address string
-	chainID int
-}
-
 type Session struct {
 	randomToken string
 	lastLogin   int64
@@ -19,25 +14,20 @@ type Session struct {
 }
 
 type SessionStore struct {
-	sessions map[Identity]Session
+	sessions map[string]Session
 	mutex    sync.Mutex
 }
 
 var sessionStore = SessionStore{
-	sessions: make(map[Identity]Session),
+	sessions: make(map[string]Session),
 }
 
-func (s *SessionStore) AddSession(address, token string, chainID int, timestamp int64) error {
-	identity := Identity{
-		address: address,
-		chainID: chainID,
-	}
-
+func (s *SessionStore) AddSession(did, token string, timestamp int64) error {
 	if timestamp <= time.Now().Add(-1*time.Minute).Unix() {
 		return xerrors.Errorf("the request has timed out, please log in within one minute")
 	}
 
-	session, ok := s.sessions[identity]
+	session, ok := s.sessions[did]
 	if ok {
 		if timestamp <= session.lastLogin {
 			return xerrors.Errorf("the current request is later than the latest request")
@@ -46,7 +36,7 @@ func (s *SessionStore) AddSession(address, token string, chainID int, timestamp 
 
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	s.sessions[identity] = Session{
+	s.sessions[did] = Session{
 		randomToken: token,
 		lastLogin:   timestamp,
 		requestID:   0,
@@ -54,12 +44,8 @@ func (s *SessionStore) AddSession(address, token string, chainID int, timestamp 
 	return nil
 }
 
-func (s *SessionStore) VerifySession(address, token string, chainID int, requestID int64) error {
-	identity := Identity{
-		address: address,
-		chainID: chainID,
-	}
-	session, ok := s.sessions[identity]
+func (s *SessionStore) VerifySession(did, token string, requestID int64) error {
+	session, ok := s.sessions[did]
 	if !ok {
 		return xerrors.Errorf("cannot find session, please log in first")
 	}
@@ -73,7 +59,7 @@ func (s *SessionStore) VerifySession(address, token string, chainID int, request
 
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	s.sessions[identity] = Session{
+	s.sessions[did] = Session{
 		randomToken: session.randomToken,
 		lastLogin:   session.lastLogin,
 		requestID:   session.requestID + 1,
