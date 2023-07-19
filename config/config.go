@@ -13,12 +13,16 @@ import (
 
 const CONFIGPATH = "./config.json"
 
+var Cfg *Config
+
 type Config struct {
-	Storage     StorageConfig  `json:"storage"`
-	Contract    ContractConfig `json:"contract"`
-	SecurityKey string         `json:"securityKey"`
-	Domain      string         `json:"domain"`
-	LensAPIUrl  string         `json:"lensAPIUrl"`
+	Storage     StorageConfig          `json:"storage"`
+	Contracts   map[int]ContractConfig `json:"contracts"`
+	Contract    ContractConfig         `json:"contract"`
+	SecurityKey string                 `json:"securityKey"`
+	Domain      string                 `json:"domain"`
+	LensAPIUrl  string                 `json:"lensAPIUrl"`
+	EthDriveUrl string                 `json:"ethDriveUrl"`
 }
 
 type StorageConfig struct {
@@ -26,13 +30,6 @@ type StorageConfig struct {
 	Ipfs        IpfsConfig       `json:"ipfs"`
 	Prices      map[string]int64 `json:"prices"`
 	TrafficCost int64            `json:"traffic_cost"`
-}
-
-type ContractConfig struct {
-	Endpoint         string `json:"endpoint"`
-	ContractAddr     string `json:"caddr"`
-	GatewayAddr      string `json:"gaddr"`
-	GatewaySecretKey string `json:"gatewaysk"`
 }
 
 type MefsConfig struct {
@@ -66,12 +63,24 @@ func newDefaultStorageConfig() StorageConfig {
 	}
 }
 
+func newDefaultContractsConfig() map[int]ContractConfig {
+	cfg := map[int]ContractConfig{
+		985: {
+			Endpoint:     "https://chain.metamemo.one:8501",
+			ContractAddr: "0xA78b166947487d93EA0e87e68132FC4609B00fA1",
+			GatewayAddr:  "0x31e7829Ea2054fDF4BCB921eDD3a98a825242267",
+		},
+	}
+	return cfg
+}
+
 func newDefaultContractConfig() ContractConfig {
-	return ContractConfig{
+	cfg := ContractConfig{
 		Endpoint:     "https://chain.metamemo.one:8501",
 		ContractAddr: "0xA78b166947487d93EA0e87e68132FC4609B00fA1",
 		GatewayAddr:  "0x31e7829Ea2054fDF4BCB921eDD3a98a825242267",
 	}
+	return cfg
 }
 
 func newDefaultSecurityKeyConfig() string {
@@ -85,11 +94,21 @@ func newDefaultDomainConfig() string {
 func NewDefaultConfig() *Config {
 	return &Config{
 		Storage:     newDefaultStorageConfig(),
+		Contracts:   newDefaultContractsConfig(),
 		Contract:    newDefaultContractConfig(),
 		SecurityKey: newDefaultSecurityKeyConfig(),
 		Domain:      newDefaultDomainConfig(),
 		LensAPIUrl:  "https://api.lens.dev",
+		EthDriveUrl: "https://ethdrive.net",
 	}
+}
+
+func (cfg *Config) GetStore() interface{} {
+	return cfg.Storage
+}
+
+func (cfg *Config) GetContract() interface{} {
+	return cfg.Contract
 }
 
 func (cfg *Config) WriteFile(file string) error {
@@ -129,8 +148,8 @@ func ReadFile() (*Config, error) {
 }
 
 func init() {
-	cfg := NewDefaultConfig()
-	data, err := json.MarshalIndent(cfg, "", "	")
+	Cfg = NewDefaultConfig()
+	data, err := json.MarshalIndent(Cfg, "", "	")
 	if err != nil {
 		fmt.Println("Config load Failed, ", err)
 		return
@@ -138,6 +157,10 @@ func init() {
 	// Check if the file exists
 	_, err = os.Stat(CONFIGPATH)
 	if !os.IsNotExist(err) {
+		Cfg, err = ReadFile()
+		if err != nil {
+			fmt.Println("Load config error, ", err)
+		}
 		return
 	}
 

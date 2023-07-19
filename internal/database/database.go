@@ -1,180 +1,117 @@
 package database
 
 import (
-	"database/sql"
-	"fmt"
-	"time"
+	"context"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/storage"
+	"gorm.io/gorm"
 )
 
 var logger = logs.Logger("database")
 
-type FileInfo struct {
-	Id         int
-	Address    string
-	SType      storage.StorageType
-	Name       string
-	Mid        string
-	Size       int64
-	ModTime    time.Time
-	UserDefine string
+type DataStore struct {
+	*gorm.DB
 }
 
-func init() {
-	err := createTable()
+func (d *DataStore) ListObjects(ctx context.Context, address string, st api.StorageType) ([]interface{}, error) {
+	var fileInfos []api.FileInfo
+	var ifileInfos []interface{}
+	err := DataBase.Where("address = ? and stype = ?", address, st).Find(&fileInfos).Error
 	if err != nil {
-		logger.Error("init db failed")
+		lerr := logs.DataBaseError{Message: err.Error()}
+		logger.Error(lerr)
+		return nil, lerr
 	}
+
+	for _, v := range fileInfos {
+		ifileInfos = append(ifileInfos, v)
+	}
+
+	return ifileInfos, nil
 }
 
-func OpenDataBase() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "./backend.db")
+func (d *DataStore) GetObjectInfo(ctx context.Context, address, mid string, st api.StorageType) (interface{}, error) {
+	var result api.FileInfo
+	err := DataBase.Where("address = ? and mid = ? and stype = ?", address, mid, st).Find(&result).Error
 	if err != nil {
+		lerr := logs.DataBaseError{Message: err.Error()}
 		logger.Error(err)
-		return nil, err
+		return result, lerr
 	}
 
-	err = db.Ping()
-	if err != nil {
-		logger.Error(err)
-		return nil, err
-	}
-
-	return db, nil
+	return result, err
 }
 
-func createTable() error {
-	db, err := OpenDataBase()
+func (d *DataStore) GetObjectInfoById(ctx context.Context, id int) (interface{}, error) {
+	var result api.FileInfo
+	err := DataBase.Where("id = ?", id).Find(&result).Error
 	if err != nil {
+		lerr := logs.DataBaseError{Message: err.Error()}
 		logger.Error(err)
+		return result, lerr
+	}
+
+	return result, err
+}
+
+func (d *DataStore) DeleteObject(ctx context.Context, id int) error {
+	return DataBase.Delete(&api.FileInfo{}, "id = ?", id).Error
+}
+
+func (d *DataStore) PutObject(ctx context.Context, fi api.FileInfo) error {
+	if err := DataBase.Create(&fi).Error; err != nil {
 		return err
 	}
-	defer db.Close()
-
-	sqlMessage := `
-	CREATE TABLE IF NOT EXISTS fileinfo (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		address TEXT,
-		stype INTEGER,
-		name TEXT,
-		mid TEXT,
-		size INTEGER,
-		modtime DATETIME,
-		userdefine TEXT,
-		UNIQUE (address, stype, mid) ON CONFLICT IGNORE
-	);
-	`
-
-	_, err = db.Exec(sqlMessage)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
 	return nil
 }
 
-func Put(fi FileInfo) (bool, error) {
-	db, err := OpenDataBase()
-	if err != nil {
-		logger.Error(err)
+// func GetFileByUniqueIndex(address string, chainid int, mid string, stype storage.StorageType) *FileInfo {
+// 	var file FileInfo
+// 	if err := DataBase.Where("address = ? and chain_id = ? and mid = ? and s_type = ?", address, chainid, mid, stype).Find(&file).Error; err != nil {
+// 		return nil
+// 	}
+// 	return &file
+// }
+
+func Put(fi api.FileInfo) (bool, error) {
+	if err := DataBase.Create(&fi).Error; err != nil {
 		return false, err
 	}
-	defer db.Close()
-
-	logger.Info("put message: ", fi)
-	sqlStmt := `
-        INSERT INTO fileinfo (address, stype, name, mid, size, modtime, userdefine)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    `
-	_, err = db.Exec(sqlStmt, fi.Address, fi.SType, fi.Name, fi.Mid, fi.Size, fi.ModTime, fi.UserDefine)
-	if err != nil {
-		return false, err
-	}
-
 	return true, nil
 }
 
-func Get(address, mid string, st storage.StorageType) (FileInfo, error) {
-	db, err := OpenDataBase()
-	if err != nil {
-		logger.Error(err)
-		return FileInfo{}, err
-	}
-	defer db.Close()
-
-	sqlStmt := `
-	SELECT * FROM fileinfo
-	WHERE address=? AND mid=? AND stype=?
-`
-	var fi FileInfo
-	err = db.QueryRow(sqlStmt, address, mid, st).Scan(&fi.Id, &fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			lerr := logs.DataBaseError{Message: fmt.Sprintf("no such record: mid=%s, stype=%d", mid, st)}
-			logger.Errorf(lerr.Message)
-			return FileInfo{}, lerr
-		}
-		return FileInfo{}, err
-	}
-	return fi, nil
-}
-
-func List(address string, st storage.StorageType) ([]FileInfo, error) {
-	db, err := OpenDataBase()
-	if err != nil {
-		logger.Error(err)
-		return nil, err
-	}
-	defer db.Close()
-
-	sqlStmt := `
-        SELECT address, stype, name, mid, size, modtime, userdefine
-        FROM fileinfo
-        WHERE address=? AND stype=?
-    `
-	rows, err := db.Query(sqlStmt, address, st)
+func Get(chain int, mid string, st storage.StorageType) (map[string]api.FileInfo, error) {
+	var fileInfos []api.FileInfo
+	var result = make(map[string]api.FileInfo)
+	err := DataBase.Where("chainid = ? and mid = ? and stype = ?", chain, mid, st).Find(&fileInfos).Error
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	var fileList []FileInfo
-	for rows.Next() {
-		var fi FileInfo
-		err := rows.Scan(&fi.Address, &fi.SType, &fi.Name, &fi.Mid, &fi.Size, &fi.ModTime, &fi.UserDefine)
-		if err != nil {
-			return nil, err
-		}
-		fileList = append(fileList, fi)
+	if len(fileInfos) == 0 {
+		return nil, gorm.ErrRecordNotFound
 	}
 
-	return fileList, nil
+	for _, file := range fileInfos {
+		result[file.Address] = file
+	}
+
+	return result, err
 }
 
-func Delete(address, mid string, stype storage.StorageType) (bool, error) {
-	db, err := OpenDataBase()
+func List(chain int, address string, st storage.StorageType) ([]api.FileInfo, error) {
+	var fileInfos []api.FileInfo
+	err := DataBase.Where("chainid = ? and address = ? and stype = ?", chain, address, st).Find(&fileInfos).Error
 	if err != nil {
-		logger.Error(err)
-		return false, err
-	}
-	defer db.Close()
-
-	sqlStmt := `
-	DELETE FROM fileinfo
-	WHERE address=? AND mid=? AND stype=?
-`
-	res, err := db.Exec(sqlStmt, address, mid, stype)
-	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return false, err
-	}
-	return rowsAffected > 0, nil
+	return fileInfos, nil
+}
+
+func Delete(chain int, address, mid string, stype storage.StorageType) error {
+	return DataBase.Delete(&api.FileInfo{}, "chainid = ? and address = ? and stype = ?", chain, address, stype).Error
 }

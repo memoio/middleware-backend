@@ -7,14 +7,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/config"
 	auth "github.com/memoio/backend/internal/authentication"
-	"github.com/memoio/backend/internal/controller"
-	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/internal/share"
+	"github.com/memoio/backend/server/routes"
 )
 
 type Server struct {
-	Router     *gin.Engine
-	Config     *config.Config
-	Controller *controller.Controller
+	Router routes.Routes
+	Config *config.Config
 }
 
 type ServerOption struct {
@@ -22,10 +21,10 @@ type ServerOption struct {
 	CheckRegistered bool
 }
 
-type AuthenticationFaileMessage struct {
-	Nonce string
-	Error logs.APIError
-}
+// type AuthenticationFaileMessage struct {
+// 	Nonce string
+// 	Error logs.APIError
+// }
 
 func NewServer(opt ServerOption) *http.Server {
 	log.Println("Server Start")
@@ -33,18 +32,20 @@ func NewServer(opt ServerOption) *http.Server {
 
 	config, err := config.ReadFile()
 	if err != nil {
-		log.Fatal("config not right")
+		log.Fatal("config not right ", err)
 		return nil
 	}
 
-	router := gin.Default()
+	auth.InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
+
+	router := routes.RegistRoutes()
 
 	s := &Server{
 		Config: config,
 		Router: router,
 	}
 
-	s.registRoute()
+	s.registRoute(opt.CheckRegistered)
 
 	srv := &http.Server{
 		Addr:    opt.Endpoint,
@@ -54,30 +55,15 @@ func NewServer(opt ServerOption) *http.Server {
 	return srv
 }
 
-func (s Server) registRoute() {
-	// add storage routes
-
-	s.Router.Use(Cors())
-	s.Router.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Welcome Server")
-	})
-
-	s.registLogin()
-	s.registController()
+func (s Server) registRoute(checkRegistered bool) {
+	s.registLogin(checkRegistered)
+	s.registShare()
 }
 
-func (s Server) registLogin() {
-	auth.LoadAuthRouter(s.Router.Group("/"))
+func (s Server) registLogin(checkRegistered bool) {
+	auth.LoadAuthModule(s.Router.Group("/"), checkRegistered)
 }
 
-func (s Server) registController() {
-	for k := range controller.ApiMap {
-		r := s.Router.Group(k)
-		ct := controller.NewController(r.BasePath(), s.Config)
-		s.Controller = ct
-
-		go s.Controller.UploadToContract()
-		s.StorageRegistRoutes(r)
-		s.accountRegistRoutes(r)
-	}
+func (s Server) registShare() {
+	share.LoadAuthModule(s.Router.Group("/"))
 }

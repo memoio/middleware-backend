@@ -52,10 +52,12 @@ func (e EthError) Error() string {
 	return e.Message
 }
 
-type BalanceNotEnough struct{}
+type ContractError struct {
+	Message string
+}
 
-func (e BalanceNotEnough) Error() string {
-	return "balance not enough"
+func (e ContractError) Error() string {
+	return e.Message
 }
 
 type ServerError struct {
@@ -98,6 +100,14 @@ func (e ControllerError) Error() string {
 	return e.Message
 }
 
+type NoPermission struct {
+	Message string
+}
+
+func (e NoPermission) Error() string {
+	return e.Message
+}
+
 type APIError struct {
 	Code           string
 	Description    string
@@ -116,19 +126,20 @@ const (
 	ErrAddressError
 	ErrStorageNotSupport
 	ErrAuthenticationFailed
-	ErrBalanceNotEnough
+	ErrContractError
 	ErrEthError
 	ErrServerError
 	ErrGatewayError
 	ErrConfigError
 	ErrDataBaseError
 	ErrControllerError
+	ErrNoPermission
 )
 
 func (e errorCodeMap) ToAPIErrWithErr(errCode APIErrorCode, err error) APIError {
 	apiErr, ok := e[errCode]
 	if !ok {
-		apiErr = e[ErrInternalError]
+		apiErr = e[ErrAddressError]
 	}
 	if err != nil {
 		apiErr.Description = fmt.Sprintf("%s (%s)", apiErr.Description, err.Error())
@@ -171,9 +182,9 @@ var ErrorCodes = errorCodeMap{
 		Description:    "Authentication Failed",
 		HTTPStatusCode: 401,
 	},
-	ErrBalanceNotEnough: {
-		Code:           "Balance",
-		Description:    "Balance Error",
+	ErrContractError: {
+		Code:           "contract",
+		Description:    "contract Error",
 		HTTPStatusCode: 519,
 	},
 	ErrEthError: {
@@ -206,6 +217,11 @@ var ErrorCodes = errorCodeMap{
 		Description:    "Controller Error",
 		HTTPStatusCode: 525,
 	},
+	ErrNoPermission: {
+		Code:           "Permission",
+		Description:    "You don't have access to the resource",
+		HTTPStatusCode: 526,
+	},
 }
 
 func ToAPIErrorCode(err error) APIError {
@@ -225,10 +241,22 @@ func ToAPIErrorCode(err error) APIError {
 		apiErr = ErrStorageNotSupport
 	case AuthenticationFailed:
 		apiErr = ErrAuthenticationFailed
-	case BalanceNotEnough:
-		apiErr = ErrBalanceNotEnough
+	case ContractError:
+		apiErr = ErrContractError
 	case EthError:
 		apiErr = ErrEthError
+	case ServerError:
+		apiErr = ErrServerError
+	case GatewayError:
+		apiErr = ErrGatewayError
+	case ConfigError:
+		apiErr = ErrConfigError
+	case DataBaseError:
+		apiErr = ErrDataBaseError
+	case ControllerError:
+		apiErr = ErrControllerError
+	case NoPermission:
+		apiErr = ErrNoPermission
 	default:
 		apiErr = ErrInternalError
 	}
