@@ -36,7 +36,7 @@ func NewServer(opt ServerOption) *http.Server {
 		return nil
 	}
 
-	auth.InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
+	// auth.InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
 
 	router := routes.RegistRoutes()
 
@@ -61,9 +61,9 @@ func (s Server) registRoute(checkRegistered bool) {
 }
 
 func (s Server) registLogin(checkRegistered bool) {
-	auth.LoadAuthModule(s.Router.Group("/"), checkRegistered)
+	auth.LoadAuthModule(s.Router.Group("/"))
 }
 
 func (s Server) registShare() {
-	share.LoadAuthModule(s.Router.Group("/"))
+	share.LoadShareModule(s.Router.Group("/"))
 }

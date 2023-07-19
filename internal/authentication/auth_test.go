@@ -22,7 +22,7 @@ var token = "520"
 
 func TestAuth(t *testing.T) {
 	router := gin.Default()
-	LoadAuthRouter(router.Group("/"))
+	LoadAuthModule(router.Group("/"))
 
 	w := httptest.NewRecorder()
 	req, _ := GetLoginRequest(globalDID, globalKey1)

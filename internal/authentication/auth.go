@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func LoadAuthRouter(r *gin.RouterGroup) {
+func LoadAuthModule(r *gin.RouterGroup) {
 	r.POST("/login", LoginHandler)
 	r.GET("/identity", VerifyIdentityHandler, func(c *gin.Context) {
 		c.JSON(200, fmt.Sprintf("did:%s  payload:%s\n", c.GetString("did"), c.GetString("payload")))
