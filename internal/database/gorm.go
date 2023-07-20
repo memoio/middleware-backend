@@ -55,9 +55,12 @@ func init() {
 
 	dss := wrap.NewKVStore("upload", ds)
 
-	up := NewUploaderPay(dss)
+	up := NewCheckPay(dss)
 
-	DataBase = &DataStore{db, up}
+	dss = wrap.NewKVStore("download", ds)
+	down := NewCheckPay(dss)
+
+	DataBase = &DataStore{db, up, down}
 
 	DataBase.AutoMigrate(&api.FileInfo{})
 }

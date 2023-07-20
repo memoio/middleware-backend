@@ -19,7 +19,6 @@ type ObjectInfo struct {
 
 type ObjectOptions struct {
 	Size         int64
-	Sign         string
 	Message      SignMessage
 	MTime        time.Time
 	DeleteMarker bool
@@ -31,7 +30,17 @@ type SignMessage struct {
 	Seller       common.Address
 	Size         uint64
 	Nonce        *big.Int
+	Sign         string
 }
+
+type CheckInfo struct {
+	Buyer     common.Address
+	CheckSize *big.Int
+	FileSize  *big.Int
+	Nonce     *big.Int
+	Sign      []byte
+}
+
 type StorageInfo struct {
 	Storage string
 	Used    int64

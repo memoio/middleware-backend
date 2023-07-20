@@ -2,15 +2,15 @@ package database
 
 import (
 	"context"
-	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/go-mefs-v2/lib/types/store"
 )
 
-type UploadPay struct {
+type CheckPay struct {
 	lw sync.Mutex
 	ds store.KVStore
 
@@ -20,8 +20,8 @@ type UploadPay struct {
 	pool map[common.Address]*PayCheck
 }
 
-func NewUploaderPay(ds store.KVStore) *UploadPay {
-	return &UploadPay{
+func NewCheckPay(ds store.KVStore) *CheckPay {
+	return &CheckPay{
 		ds:           ds,
 		contractAddr: contractAddr,
 		sellerAddr:   sellerAddr,
@@ -29,8 +29,8 @@ func NewUploaderPay(ds store.KVStore) *UploadPay {
 	}
 }
 
-func (u *UploadPay) Upload(ctx context.Context, buyer common.Address, sign []byte, nonce, checksize, size *big.Int) error {
-	if size.Sign() <= 0 {
+func (u *CheckPay) Check(ctx context.Context, info api.CheckInfo) error {
+	if info.FileSize.Sign() <= 0 {
 		lerr := logs.DataBaseError{Message: "size should be lager than zero"}
 		logger.Error(lerr)
 		return lerr
@@ -39,28 +39,28 @@ func (u *UploadPay) Upload(ctx context.Context, buyer common.Address, sign []byt
 	u.lw.Lock()
 	defer u.lw.Unlock()
 
-	p, ok := u.pool[buyer]
+	p, ok := u.pool[info.Buyer]
 	if !ok {
 		var err error
-		p, err = u.loadPay(buyer)
+		p, err = u.loadPay(info.Buyer)
 		if err != nil {
 			return err
 		}
 	}
 
-	p.Sign = sign
+	p.Sign = info.Sign
 	p.Duration = 1
-	p.Nonce = nonce.Uint64()
-	p.Size = checksize.Uint64()
-	p.UploadSize += size.Uint64()
+	p.Nonce = info.Nonce.Uint64()
+	p.Size = info.CheckSize.Uint64()
+	p.UploadSize += info.FileSize.Uint64()
 
-	u.pool[buyer] = p
+	u.pool[info.Buyer] = p
 	p.Save(u.ds)
 
 	return nil
 }
 
-func (u *UploadPay) create(buyer common.Address) (*PayCheck, error) {
+func (u *CheckPay) create(buyer common.Address) (*PayCheck, error) {
 	chk, err := generateCheck(buyer)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (u *UploadPay) create(buyer common.Address) (*PayCheck, error) {
 	return p, p.Save(u.ds)
 }
 
-func (u *UploadPay) Size(buyer common.Address) uint64 {
+func (u *CheckPay) Size(buyer common.Address) uint64 {
 	p, ok := u.pool[buyer]
 	if !ok {
 		var err error
@@ -87,7 +87,7 @@ func (u *UploadPay) Size(buyer common.Address) uint64 {
 	return p.UploadSize
 }
 
-func (u *UploadPay) loadPay(buyer common.Address) (*PayCheck, error) {
+func (u *CheckPay) loadPay(buyer common.Address) (*PayCheck, error) {
 	key := store.NewKey(u.contractAddr.String(), buyer.String())
 	data, err := u.ds.Get(key)
 	if err != nil {

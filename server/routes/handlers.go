@@ -27,6 +27,7 @@ func handleStorage(r *gin.RouterGroup, h handler) {
 
 	// package
 	r.GET("/space", auth.VerifyIdentityHandler, h.getSpace)
+	r.GET("/traffic", auth.VerifyIdentityHandler, h.getTraffic)
 
 	r.GET("/receipt", h.checkReceipt)
 }

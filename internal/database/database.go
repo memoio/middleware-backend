@@ -13,9 +13,12 @@ import (
 
 var logger = logs.Logger("database")
 
+var _ api.IDataBase = (*DataStore)(nil)
+
 type DataStore struct {
 	*gorm.DB
-	Up *UploadPay
+	Up   *CheckPay
+	Down *CheckPay
 }
 
 func (d *DataStore) ListObjects(ctx context.Context, address string, st api.StorageType) ([]interface{}, error) {
@@ -70,9 +73,22 @@ func (d *DataStore) PutObject(ctx context.Context, fi api.FileInfo) error {
 	return nil
 }
 
-func (d *DataStore) GetSize(ctx context.Context, address string) (uint64, error) {
+func (d *DataStore) GetUpSize(ctx context.Context, address string) (uint64, error) {
 	buyer := common.HexToAddress(address)
 	return d.Up.Size(buyer), nil
+}
+
+func (d *DataStore) GetDownSize(ctx context.Context, address string) (uint64, error) {
+	buyer := common.HexToAddress(address)
+	return d.Down.Size(buyer), nil
+}
+
+func (d *DataStore) Upload(ctx context.Context, info api.CheckInfo) error {
+	return d.Up.Check(ctx, info)
+}
+
+func (d *DataStore) Download(ctx context.Context, info api.CheckInfo) error {
+	return d.Down.Check(ctx, info)
 }
 
 func Put(fi api.FileInfo) (bool, error) {

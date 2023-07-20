@@ -29,7 +29,10 @@ type IDataBase interface {
 	PutObject(context.Context, FileInfo) error
 	DeleteObject(context.Context, int) error
 
-	GetSize(context.Context, string) (uint64, error)
+	GetUpSize(context.Context, string) (uint64, error)
+	GetDownSize(context.Context, string) (uint64, error)
+	Upload(context.Context, CheckInfo) error
+	Download(context.Context, CheckInfo) error
 }
 
 type IConfig interface {

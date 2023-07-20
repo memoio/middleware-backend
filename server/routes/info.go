@@ -47,3 +47,14 @@ func (h handler) getSpace(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, space)
 }
+
+func (h handler) getTraffic(c *gin.Context) {
+	address := c.GetString("address")
+	space, err := h.controller.TrafficPayInfo(c.Request.Context(), address)
+	if err != nil {
+		errRes := logs.ToAPIErrorCode(err)
+		c.JSON(errRes.HTTPStatusCode, errRes)
+		return
+	}
+	c.JSON(http.StatusOK, space)
+}

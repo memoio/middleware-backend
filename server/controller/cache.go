@@ -2,14 +2,36 @@ package controller
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
 )
 
-func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo, sign string, checksize uint64) error {
+func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo, msg api.SignMessage) error {
+	signB, err := hex.DecodeString(msg.Sign)
+	if err != nil {
+		lerr := logs.ControllerError{Message: "sign not right"}
+		logger.Error(lerr)
+		return lerr
+	}
+
+	info := api.CheckInfo{
+		Sign:      signB,
+		Buyer:     common.HexToAddress(fi.Address),
+		Nonce:     msg.Nonce,
+		CheckSize: big.NewInt(int64(msg.Size)),
+		FileSize:  big.NewInt(fi.Size),
+	}
+
+	err = c.database.Upload(ctx, info)
+	if err != nil {
+		return err
+	}
 	return c.database.PutObject(ctx, fi)
 }
 
@@ -43,10 +65,6 @@ func (c *Controller) getObjectInfoById(ctx context.Context, id int) (api.FileInf
 		return result, lerr
 	}
 	return fi, nil
-}
-
-func storeFlowSize() error {
-	return nil
 }
 
 func (c *Controller) listobjects(ctx context.Context, address string) (ListObjectsResult, error) {
@@ -86,8 +104,4 @@ func (c *Controller) listobjects(ctx context.Context, address string) (ListObjec
 
 func (c *Controller) deleteObject(ctx context.Context, id int) error {
 	return c.database.DeleteObject(ctx, id)
-}
-
-func getCacheSize() {
-
 }

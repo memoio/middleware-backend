@@ -35,33 +35,6 @@ type ObjectInfoResult struct {
 	// UserDefined map[string]string
 }
 
-type packageInfo struct {
-	Time    uint64
-	Kind    uint8
-	Buysize *big.Int
-	Amount  *big.Int
-	State   uint8
-}
-
-type packageInfos struct {
-	Pkgid int
-	packageInfo
-}
-
-type userBuyPackage struct {
-	Starttime uint64
-	Endtime   uint64
-	Kind      uint8
-	Buysize   *big.Int
-	Amount    *big.Int
-	State     uint8
-}
-
-type flowSize struct {
-	Used *big.Int
-	Free *big.Int
-}
-
 type IPayPayment struct {
 	Nonce    *big.Int
 	Balance  *big.Int

@@ -13,7 +13,7 @@ import (
 
 func (c *Controller) PutObject(ctx context.Context, address, object string, r io.Reader, opts ObjectOptions) (PutObjectResult, error) {
 	result := PutObjectResult{}
-	err := c.canWrite(ctx, address, opts.Sign, uint64(opts.Size), opts.Message)
+	err := c.canWrite(ctx, address, uint64(opts.Size), opts.Message)
 	if err != nil {
 		return result, err
 	}
@@ -38,7 +38,7 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 		UserDefine: string(userdefine),
 	}
 
-	err = c.storeFileInfo(ctx, fi, opts.Sign, opts.Message.Size)
+	err = c.storeFileInfo(ctx, fi, opts.Message)
 	if err != nil {
 		c.store.DeleteObject(ctx, address, oi.Cid)
 		return result, err
@@ -52,22 +52,17 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
 	result := GetObjectResult{}
 
-	err := canRead()
-	if err != nil {
-		return result, err
-	}
-
 	ob, err := c.GetObjectInfo(ctx, address, mid)
 	if err != nil {
 		return result, err
 	}
 
-	err = c.store.GetObject(ctx, mid, w, api.ObjectOptions(opts))
+	err = c.canRead(ctx, address, uint64(ob.Size), opts.Message)
 	if err != nil {
 		return result, err
 	}
 
-	err = storeFlowSize()
+	err = c.store.GetObject(ctx, mid, w, api.ObjectOptions(opts))
 	if err != nil {
 		return result, err
 	}
