@@ -17,13 +17,18 @@ type Controller struct {
 	database api.IDataBase
 }
 
-func NewController(st api.StorageType, store api.IGateway) *Controller {
-	contract := contract.NewContract(config.Cfg.Contract)
+func NewController(st api.StorageType, store api.IGateway) (*Controller, error) {
+	contract, err := contract.NewContract(config.Cfg.Contract)
+	if err != nil {
+		return nil, err
+	}
+
 	database := database.DataBase
 	return &Controller{
 		st:       st,
 		store:    store,
 		contract: contract,
 		database: database,
-	}
+	}, nil
+
 }

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 
+	"github.com/ethereum/go-ethereum/common"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
@@ -12,8 +13,12 @@ import (
 
 var logger = logs.Logger("database")
 
+var _ api.IDataBase = (*DataStore)(nil)
+
 type DataStore struct {
 	*gorm.DB
+	Up   *CheckPay
+	Down *CheckPay
 }
 
 func (d *DataStore) ListObjects(ctx context.Context, address string, st api.StorageType) ([]interface{}, error) {
@@ -68,13 +73,23 @@ func (d *DataStore) PutObject(ctx context.Context, fi api.FileInfo) error {
 	return nil
 }
 
-// func GetFileByUniqueIndex(address string, chainid int, mid string, stype storage.StorageType) *FileInfo {
-// 	var file FileInfo
-// 	if err := DataBase.Where("address = ? and chain_id = ? and mid = ? and s_type = ?", address, chainid, mid, stype).Find(&file).Error; err != nil {
-// 		return nil
-// 	}
-// 	return &file
-// }
+func (d *DataStore) GetUpSize(ctx context.Context, address string) (uint64, error) {
+	buyer := common.HexToAddress(address)
+	return d.Up.Size(buyer), nil
+}
+
+func (d *DataStore) GetDownSize(ctx context.Context, address string) (uint64, error) {
+	buyer := common.HexToAddress(address)
+	return d.Down.Size(buyer), nil
+}
+
+func (d *DataStore) Upload(ctx context.Context, info api.CheckInfo) error {
+	return d.Up.Check(ctx, info)
+}
+
+func (d *DataStore) Download(ctx context.Context, info api.CheckInfo) error {
+	return d.Down.Check(ctx, info)
+}
 
 func Put(fi api.FileInfo) (bool, error) {
 	if err := DataBase.Create(&fi).Error; err != nil {

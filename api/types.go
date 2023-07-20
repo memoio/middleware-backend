@@ -3,6 +3,8 @@ package api
 import (
 	"math/big"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type ObjectInfo struct {
@@ -17,10 +19,26 @@ type ObjectInfo struct {
 
 type ObjectOptions struct {
 	Size         int64
-	Public       bool
+	Message      SignMessage
 	MTime        time.Time
 	DeleteMarker bool
 	UserDefined  map[string]string
+}
+
+type SignMessage struct {
+	StorePayAddr common.Address
+	Seller       common.Address
+	Size         uint64
+	Nonce        *big.Int
+	Sign         string
+}
+
+type CheckInfo struct {
+	Buyer     common.Address
+	CheckSize *big.Int
+	FileSize  *big.Int
+	Nonce     *big.Int
+	Sign      []byte
 }
 
 type StorageInfo struct {
