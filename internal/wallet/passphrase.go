@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 )
 
-var aesKey = []byte("")
+var aesKey = []byte("f1d4a0b37124c3a7")
 
 func encryptKey(key *Key) ([]byte, error) {
 	keyJSON, err := json.Marshal(key)
