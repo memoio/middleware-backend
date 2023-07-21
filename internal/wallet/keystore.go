@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -73,12 +72,7 @@ func (k *keyRepo) Get(name string) ([]byte, error) {
 		return res, fmt.Errorf("key content mismatch: have peer %x, want %x", key.Address, name)
 	}
 
-	err = json.Unmarshal(key.SecretValue, &res)
-	if err != nil {
-		return res, fmt.Errorf("decoding key '%s': %w", name, err)
-	}
-
-	return res, nil
+	return key.SecretValue, nil
 }
 
 func (k *keyRepo) List() ([]string, error) {

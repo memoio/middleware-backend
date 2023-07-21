@@ -65,13 +65,14 @@ func (w *LocalWallet) WalletNew(ctx context.Context) (common.Address, error) {
 		logger.Error(lerr)
 		return addr, lerr
 	}
+
 	privateKeyBytes := crypto.FromECDSA(privateKey)
 
 	addr, err = PrivateToAddr(privateKey)
 	if err != nil {
 		return addr, err
 	}
-
+	logger.Info(privateKeyBytes)
 	err = w.keystore.Put(addr.String(), privateKeyBytes)
 	if err != nil {
 		lerr := logs.WalletError{Message: err.Error()}

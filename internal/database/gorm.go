@@ -16,7 +16,7 @@ var DataBase *DataStore
 // var logger = logs.Logger("share")
 
 func init() {
-	logger.Info("Initializing database")
+	logger.Debug("Initializing database")
 
 	db, err := gorm.Open(sqlite.Open("backend.db"), &gorm.Config{})
 	if err != nil {
