@@ -102,6 +102,6 @@ func List(chain int, address string, st storage.StorageType) ([]FileInfo, error)
 	return fileInfos, nil
 }
 
-func Delete(chain int, address, mid string, stype storage.StorageType) error {
-	return DataBase.Delete(&FileInfo{}, "chainid = ? and address = ? and stype = ?", chain, address, stype).Error
+func Delete(id int) error {
+	return DataBase.Delete(&FileInfo{}, "id = ?", id).Error
 }

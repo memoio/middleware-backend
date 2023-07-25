@@ -121,7 +121,7 @@ func (c *Controller) DeleteObject(ctx context.Context, address string, id int) e
 		return err
 	}
 
-	err = database.Delete(fi.ChainID, address, fi.Mid, c.storageType)
+	err = database.Delete(id)
 	if err != nil {
 		return err
 	}
