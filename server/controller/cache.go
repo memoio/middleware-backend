@@ -12,7 +12,7 @@ import (
 	"github.com/memoio/backend/internal/logs"
 )
 
-func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo, msg api.SignMessage) error {
+func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo, msg api.SignMessage, nonce *big.Int) error {
 	signB, err := hex.DecodeString(msg.Sign)
 	if err != nil {
 		lerr := logs.ControllerError{Message: "sign not right"}
@@ -23,7 +23,7 @@ func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo, msg api
 	info := api.CheckInfo{
 		Sign:      signB,
 		Buyer:     common.HexToAddress(fi.Address),
-		Nonce:     msg.Nonce,
+		Nonce:     nonce,
 		CheckSize: big.NewInt(int64(msg.Size)),
 		FileSize:  big.NewInt(fi.Size),
 	}
@@ -104,4 +104,12 @@ func (c *Controller) listobjects(ctx context.Context, address string) (ListObjec
 
 func (c *Controller) deleteObject(ctx context.Context, id int) error {
 	return c.database.DeleteObject(ctx, id)
+}
+
+func (c *Controller) getSpaceCheck(ctx context.Context, buyer string) api.CheckInfo {
+	return c.database.SpaceCheck(ctx, buyer)
+}
+
+func (c *Controller) getTrafficCheck(ctx context.Context, buyer string) api.CheckInfo {
+	return c.database.TrafficCheck(ctx, buyer)
 }

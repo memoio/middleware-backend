@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var DataBase *DataStore
+var DataBase *gorm.DB
 
 // var logger = logs.Logger("share")
 
@@ -40,17 +40,25 @@ func init() {
 		logger.Panicf("Failed to ping database: %s", err.Error())
 	}
 
+	DataBase = db
+
+	DataBase.AutoMigrate(&api.FileInfo{})
+}
+
+func NewDataStore(st string) (*DataStore, error) {
+	res := &DataStore{}
+
 	opt := kv.DefaultOptions
-	bpath := "./datastore/"
-	err = os.MkdirAll(bpath, os.ModePerm)
+	bpath := "./datastore/" + st
+	err := os.MkdirAll(bpath, os.ModePerm)
 	if err != nil {
 		logger.Error(err)
-		return
+		return res, err
 	}
 	ds, err := kv.NewBadgerStore(bpath, &opt)
 	if err != nil {
 		logger.Error(err)
-		return
+		return res, err
 	}
 
 	dss := wrap.NewKVStore("upload", ds)
@@ -59,8 +67,5 @@ func init() {
 
 	dss = wrap.NewKVStore("download", ds)
 	down := NewCheckPay(dss)
-
-	DataBase = &DataStore{db, up, down}
-
-	DataBase.AutoMigrate(&api.FileInfo{})
+	return &DataStore{DataBase, up, down}, nil
 }

@@ -29,7 +29,7 @@ var WalletCmd = &cli.Command{
 var newCmd = &cli.Command{
 	Name:  "new",
 	Usage: "create a new address",
-	Action: func(ctx *cli.Context) error {
+	Action: func(_ *cli.Context) error {
 		ks, err := wallet.NewKeyRepo(ksp)
 		if err != nil {
 			return err
@@ -48,7 +48,7 @@ var newCmd = &cli.Command{
 var listCmd = &cli.Command{
 	Name:  "list",
 	Usage: "list all addresses",
-	Action: func(ctx *cli.Context) error {
+	Action: func(_ *cli.Context) error {
 		ks, err := wallet.NewKeyRepo(ksp)
 		if err != nil {
 			return err

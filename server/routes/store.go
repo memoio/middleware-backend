@@ -6,11 +6,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/server/controller"
 )
 
-func (h handler) putObjectHandle(c *gin.Context) {
+func (h handler)  putObjectHandle(c *gin.Context) {
 	address := c.GetString("address")
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -36,7 +37,16 @@ func (h handler) putObjectHandle(c *gin.Context) {
 		c.JSON(errRes.HTTPStatusCode, errRes)
 		return
 	}
-	result, err := h.controller.PutObject(c.Request.Context(), address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud})
+
+	checksize := c.PostForm("size")
+	sign := c.PostForm("sign")
+
+	msg := api.SignMessage{
+		Size: toUint64(checksize),
+		Sign: sign,
+	}
+
+	result, err := h.controller.PutObject(c.Request.Context(), address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud, Message: msg})
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)

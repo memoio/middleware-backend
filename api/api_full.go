@@ -16,10 +16,17 @@ type IGateway interface {
 
 type IContract interface {
 	Call(ctx context.Context, name, method string, args ...interface{}) ([]interface{}, error)
-	Send(ctx context.Context, name, method string, args ...interface{}) (string, error)
+	Send(ctx context.Context, sender, name, method string, args ...interface{}) (string, error)
 	BalanceOf(context.Context, string) (*big.Int, error)
-	StoreBuyPkg(context.Context, string, BuyPackage) (string, error)
 	CheckTrsaction(context.Context, string) error
+	GetStorePayHash(ctx context.Context, checksize uint64, nonce *big.Int) string
+	GetReadPayHash(ctx context.Context, checksize uint64, nonce *big.Int) string
+	GetStoreAddr(ctx context.Context) string
+	GetReadAddr(ctx context.Context) string
+	SendTx(ctx context.Context, hash string) error
+	BuySpace(ctx context.Context, buyer string, size uint64) (string, error)
+	Approve(ctx context.Context, buyer string, value *big.Int) (string, error)
+	Allowance(ctx context.Context, buyer string) (*big.Int, error)
 }
 
 type IDataBase interface {
@@ -33,6 +40,8 @@ type IDataBase interface {
 	GetDownSize(context.Context, string) (uint64, error)
 	Upload(context.Context, CheckInfo) error
 	Download(context.Context, CheckInfo) error
+	SpaceCheck(ctx context.Context, buyer string) CheckInfo
+	TrafficCheck(ctx context.Context, buyer string) CheckInfo
 }
 
 type IConfig interface {

@@ -2,18 +2,19 @@ package controller
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
+	"math/big"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
-	com "github.com/memoio/contractsv2/common"
 )
 
-func (c *Controller) canWrite(ctx context.Context, address string, size uint64, msg api.SignMessage) error {
-	err := verifySign(common.HexToAddress(address), msg)
+func (c *Controller) canWrite(ctx context.Context, address string, size uint64, msg api.SignMessage, nonce *big.Int) error {
+	err := c.verifySign(ctx, common.HexToAddress(address), msg, nonce)
 	if err != nil {
 		return err
 	}
@@ -22,7 +23,12 @@ func (c *Controller) canWrite(ctx context.Context, address string, size uint64, 
 }
 
 func (c *Controller) canRead(ctx context.Context, address string, size uint64, msg api.SignMessage) error {
-	err := verifySign(common.HexToAddress(address), msg)
+	pi, err := c.TrafficPayInfo(ctx, address)
+	if err != nil {
+		return err
+	}
+
+	err = c.verifySign(ctx, common.HexToAddress(address), msg, pi.Nonce)
 	if err != nil {
 		return err
 	}
@@ -90,31 +96,35 @@ func (c *Controller) getDownCacheInfo(ctx context.Context, address string) (uint
 	return c.database.GetDownSize(ctx, address)
 }
 
-func verifySign(buyer common.Address, msg api.SignMessage) error {
-	hash := com.GetCashCheckHash(msg.StorePayAddr, msg.Seller, msg.Size, msg.Nonce)
+func (c *Controller) verifySign(ctx context.Context, buyer common.Address, msg api.SignMessage, nonce *big.Int) error {
+	hashs := c.contract.GetStorePayHash(ctx, msg.Size, nonce)
 
-	publicKeyHash := buyer.Bytes()[1:]
-
-	publicKey, err := crypto.Ecrecover(nil, publicKeyHash)
+	hash, err := hexutil.Decode(hashs)
 	if err != nil {
 		lerr := logs.ControllerError{Message: err.Error()}
 		logger.Error(lerr)
 		return lerr
 	}
 
-	signB, err := hex.DecodeString(msg.Sign)
+	sig := hexutil.MustDecode(msg.Sign)
+	if sig[64] == 27 || sig[64] == 28 {
+		sig[64] -= 27
+	}
+
+	publicKey, err := crypto.SigToPub(hash, sig)
 	if err != nil {
 		lerr := logs.ControllerError{Message: err.Error()}
 		logger.Error(lerr)
 		return lerr
 	}
 
-	res := crypto.VerifySignature(publicKey, hash, signB)
+	addr := crypto.PubkeyToAddress(*publicKey)
 
-	if !res {
+	if strings.Compare(buyer.Hex(), addr.Hex()) != 0 {
 		lerr := logs.ControllerError{Message: "verify sign not success "}
 		logger.Error(lerr)
 		return lerr
 	}
+
 	return nil
 }

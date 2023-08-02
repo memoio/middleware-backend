@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -107,4 +108,23 @@ func (u *CheckPay) loadPay(buyer common.Address) (*PayCheck, error) {
 	u.pool[buyer] = pchk
 
 	return pchk, nil
+}
+
+func (u *CheckPay) getCheck(ctx context.Context, buyer common.Address) api.CheckInfo {
+	res := api.CheckInfo{}
+
+	p, ok := u.pool[buyer]
+	if !ok {
+		var err error
+		p, err = u.loadPay(buyer)
+		if err != nil {
+			return res
+		}
+	}
+
+	return api.CheckInfo{
+		CheckSize: big.NewInt(int64(p.Check.Size)),
+		Sign:      p.Check.Sign,
+		Nonce:     big.NewInt(int64(p.Check.Nonce)),
+	}
 }

@@ -13,7 +13,12 @@ import (
 
 func (c *Controller) PutObject(ctx context.Context, address, object string, r io.Reader, opts ObjectOptions) (PutObjectResult, error) {
 	result := PutObjectResult{}
-	err := c.canWrite(ctx, address, uint64(opts.Size), opts.Message)
+	pi, err := c.SpacePayInfo(ctx, address)
+	if err != nil {
+		return result, err
+	}
+
+	err = c.canWrite(ctx, address, uint64(opts.Size), opts.Message, pi.Nonce)
 	if err != nil {
 		return result, err
 	}
@@ -38,7 +43,7 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 		UserDefine: string(userdefine),
 	}
 
-	err = c.storeFileInfo(ctx, fi, opts.Message)
+	err = c.storeFileInfo(ctx, fi, opts.Message, pi.Nonce)
 	if err != nil {
 		c.store.DeleteObject(ctx, address, oi.Cid)
 		return result, err

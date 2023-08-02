@@ -74,7 +74,8 @@ func newDefaultContractsConfig() map[int]ContractConfig {
 
 func newDefaultContractConfig() ContractConfig {
 	cfg := ContractConfig{
-		Chain: "dev",
+		Chain:      "dev",
+		SellerAddr: "0xdFF2A42524df7574361A90aac9141DE3f4D8eA02",
 	}
 	return cfg
 }
