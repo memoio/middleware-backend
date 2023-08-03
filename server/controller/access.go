@@ -14,7 +14,7 @@ import (
 )
 
 func (c *Controller) canWrite(ctx context.Context, address string, size uint64, msg api.SignMessage, nonce *big.Int) error {
-	err := c.verifySign(ctx, common.HexToAddress(address), msg, nonce)
+	err := c.verifySign(ctx, "store", common.HexToAddress(address), msg, nonce)
 	if err != nil {
 		return err
 	}
@@ -22,13 +22,8 @@ func (c *Controller) canWrite(ctx context.Context, address string, size uint64, 
 	return c.checkUpSize(ctx, address, size, msg.Size)
 }
 
-func (c *Controller) canRead(ctx context.Context, address string, size uint64, msg api.SignMessage) error {
-	pi, err := c.TrafficPayInfo(ctx, address)
-	if err != nil {
-		return err
-	}
-
-	err = c.verifySign(ctx, common.HexToAddress(address), msg, pi.Nonce)
+func (c *Controller) canRead(ctx context.Context, address string, size uint64, msg api.SignMessage, nonce *big.Int) error {
+	err := c.verifySign(ctx, "read", common.HexToAddress(address), msg, nonce)
 	if err != nil {
 		return err
 	}
@@ -96,9 +91,14 @@ func (c *Controller) getDownCacheInfo(ctx context.Context, address string) (uint
 	return c.database.GetDownSize(ctx, address)
 }
 
-func (c *Controller) verifySign(ctx context.Context, buyer common.Address, msg api.SignMessage, nonce *big.Int) error {
-	hashs := c.contract.GetStorePayHash(ctx, msg.Size, nonce)
-
+func (c *Controller) verifySign(ctx context.Context, at string, buyer common.Address, msg api.SignMessage, nonce *big.Int) error {
+	var hashs string
+	if at == "store" {
+		hashs = c.contract.GetStorePayHash(ctx, msg.Size, nonce)
+	}
+	if at == "read" {
+		hashs = c.contract.GetReadPayHash(ctx, msg.Size, nonce)
+	}
 	hash, err := hexutil.Decode(hashs)
 	if err != nil {
 		lerr := logs.ControllerError{Message: err.Error()}
@@ -121,7 +121,7 @@ func (c *Controller) verifySign(ctx context.Context, buyer common.Address, msg a
 	addr := crypto.PubkeyToAddress(*publicKey)
 
 	if strings.Compare(buyer.Hex(), addr.Hex()) != 0 {
-		lerr := logs.ControllerError{Message: "verify sign not success "}
+		lerr := logs.ControllerError{Message: "verify sign not success"}
 		logger.Error(lerr)
 		return lerr
 	}

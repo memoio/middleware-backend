@@ -93,32 +93,6 @@ func (m *Mefs) GetBucketInfo(ctx context.Context, bucket string) (bi mtypes.Buck
 	return bi, nil
 }
 
-// func (m *Mefs) QueryPrice(ctx context.Context) (string, error) {
-// 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	defer closer()
-
-// 	res, err := napi.ConfigGet(ctx, "order.price")
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	bs, err := json.MarshalIndent(res, "", "\t")
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	var out bytes.Buffer
-// 	err = json.Indent(&out, bs, "", "\t")
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return out.String(), nil
-// }
-
 func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader, opts api.ObjectOptions) (objInfo api.ObjectInfo, err error) {
 	err = m.MakeBucketWithLocation(ctx, bucket)
 	if err != nil {

@@ -25,8 +25,9 @@ type IContract interface {
 	GetReadAddr(ctx context.Context) string
 	SendTx(ctx context.Context, hash string) error
 	BuySpace(ctx context.Context, buyer string, size uint64) (string, error)
-	Approve(ctx context.Context, buyer string, value *big.Int) (string, error)
-	Allowance(ctx context.Context, buyer string) (*big.Int, error)
+	BuyTraffic(ctx context.Context, buyer string, size uint64) (string, error)
+	Approve(ctx context.Context, at, sender string, buyValue *big.Int) (string, error)
+	Allowance(ctx context.Context, at, buyer string) (*big.Int, error)
 }
 
 type IDataBase interface {

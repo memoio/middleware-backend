@@ -11,7 +11,7 @@ import (
 	"github.com/memoio/backend/server/controller"
 )
 
-func (h handler)  putObjectHandle(c *gin.Context) {
+func (h handler) putObjectHandle(c *gin.Context) {
 	address := c.GetString("address")
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -41,6 +41,12 @@ func (h handler)  putObjectHandle(c *gin.Context) {
 	checksize := c.PostForm("size")
 	sign := c.PostForm("sign")
 
+	if sign == "" {
+		lerr := logs.ControllerError{Message: "sign is empty"}
+		errRes := logs.ToAPIErrorCode(lerr)
+		c.JSON(errRes.HTTPStatusCode, errRes)
+		return
+	}
 	msg := api.SignMessage{
 		Size: toUint64(checksize),
 		Sign: sign,
@@ -59,8 +65,23 @@ func (h handler)  putObjectHandle(c *gin.Context) {
 func (h handler) getObjectHandle(c *gin.Context) {
 	cid := c.Param("cid")
 	address := c.GetString("address")
+
+	checksize := c.Query("size")
+	sign := c.Query("sign")
+
+	if sign == "" {
+		lerr := logs.ControllerError{Message: "sign is empty"}
+		errRes := logs.ToAPIErrorCode(lerr)
+		c.JSON(errRes.HTTPStatusCode, errRes)
+		return
+	}
+	msg := api.SignMessage{
+		Size: toUint64(checksize),
+		Sign: sign,
+	}
+
 	var w bytes.Buffer
-	result, err := h.controller.GetObject(c.Request.Context(), address, cid, &w, controller.ObjectOptions{})
+	result, err := h.controller.GetObject(c.Request.Context(), address, cid, &w, controller.ObjectOptions{Message: msg})
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)

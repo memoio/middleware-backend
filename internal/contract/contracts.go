@@ -2,7 +2,6 @@ package contract
 
 import (
 	"context"
-	"encoding/hex"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -158,7 +157,7 @@ func (c *Contract) GetStorePayHash(ctx context.Context, checksize uint64, nonce 
 
 func (c *Contract) GetReadPayHash(ctx context.Context, checksize uint64, nonce *big.Int) string {
 	hash := com.GetCashCheckHash(c.readAddr, c.seller, checksize, nonce)
-	return hex.EncodeToString(hash)
+	return hexutil.Encode(hash)
 }
 
 func (c *Contract) GetStoreAddr(ctx context.Context) string {
@@ -167,25 +166,4 @@ func (c *Contract) GetStoreAddr(ctx context.Context) string {
 
 func (c *Contract) GetReadAddr(ctx context.Context) string {
 	return c.readAddr.String()
-}
-
-func (c *Contract) Allowance(ctx context.Context, buyer string) (*big.Int, error) {
-	var res *big.Int
-	client, err := ethclient.DialContext(ctx, c.endpoint)
-	if err != nil {
-		return res, err
-	}
-	defer client.Close()
-
-	erc20Ins, err := erc.NewERC20(c.erc20, client)
-	if err != nil {
-		return res, err
-	}
-
-	res, err = erc20Ins.Allowance(&bind.CallOpts{From: c.contractAddr}, common.HexToAddress(buyer), c.storeAddr)
-	if err != nil {
-		return res, err
-	}
-
-	return res, nil
 }

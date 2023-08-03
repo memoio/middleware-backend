@@ -24,8 +24,8 @@ func (c *Controller) SpacePayInfo(ctx context.Context, address string) (IPayPaym
 	return out0, err
 }
 
-func (c *Controller) Allowance(ctx context.Context, address string) (*big.Int, error) {
-	return c.contract.Allowance(ctx, address)
+func (c *Controller) Allowance(ctx context.Context, at, address string) (*big.Int, error) {
+	return c.contract.Allowance(ctx, at, address)
 }
 
 func (c *Controller) TrafficPayInfo(ctx context.Context, address string) (IPayPayment, error) {
@@ -83,6 +83,10 @@ func (c *Controller) BuySpace(ctx context.Context, address string, size uint64) 
 	return c.contract.BuySpace(ctx, address, size)
 }
 
-func (c *Controller) Approve(ctx context.Context, buyer string, value *big.Int) (string, error) {
-	return c.contract.Approve(ctx, buyer, value)
+func (c *Controller) BuyTraffic(ctx context.Context, address string, size uint64) (string, error) {
+	return c.contract.BuyTraffic(ctx, address, size)
+}
+
+func (c *Controller) Approve(ctx context.Context, at, buyer string, value *big.Int) (string, error) {
+	return c.contract.Approve(ctx, at, buyer, value)
 }

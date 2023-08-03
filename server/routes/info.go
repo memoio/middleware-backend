@@ -95,11 +95,25 @@ func (h handler) BuySpace(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+func (h handler) BuyTraffic(c *gin.Context) {
+	address := c.GetString("address")
+	checksize := c.Query("size")
+
+	res, err := h.controller.BuyTraffic(c.Request.Context(), address, toUint64(checksize))
+	if err != nil {
+		errRes := logs.ToAPIErrorCode(err)
+		c.JSON(errRes.HTTPStatusCode, errRes)
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
 func (h handler) Approve(c *gin.Context) {
 	address := c.GetString("address")
 	size := c.Query("size")
+	at := c.Query("type")
 
-	res, err := h.controller.Approve(c.Request.Context(), address, toBigInt(size))
+	res, err := h.controller.Approve(c.Request.Context(), at, address, toBigInt(size))
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)
@@ -110,8 +124,9 @@ func (h handler) Approve(c *gin.Context) {
 
 func (h handler) allowance(c *gin.Context) {
 	address := c.GetString("address")
+	at := c.Query("type")
 
-	res, err := h.controller.Allowance(c.Request.Context(), address)
+	res, err := h.controller.Allowance(c.Request.Context(), at, address)
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)

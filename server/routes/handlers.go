@@ -31,12 +31,13 @@ func handleStorage(r *gin.RouterGroup, h handler) {
 	r.GET("/spacehash", auth.VerifyIdentityHandler, h.spaceHash)
 	r.GET("/traffichash", auth.VerifyIdentityHandler, h.trafficHash)
 	r.GET("/buyspace", auth.VerifyIdentityHandler, h.BuySpace)
+	r.GET("/buytraffic", auth.VerifyIdentityHandler, h.BuyTraffic)
 	r.GET("/approve", auth.VerifyIdentityHandler, h.Approve)
-	r.GET("/allowance", auth.VerifyIdentityHandler,h.allowance)
+	r.GET("/allowance", auth.VerifyIdentityHandler, h.allowance)
 
 	r.GET("/cashspace", h.cashSpace)
 	r.GET("/cashtraffic", h.cashTraffic)
 	r.GET("/receipt", h.checkReceipt)
 	r.GET("/sendtx", h.sendTx)
-	
+
 }
