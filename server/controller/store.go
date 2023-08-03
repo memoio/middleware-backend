@@ -13,7 +13,12 @@ import (
 
 func (c *Controller) PutObject(ctx context.Context, address, object string, r io.Reader, opts ObjectOptions) (PutObjectResult, error) {
 	result := PutObjectResult{}
-	err := c.canWrite(ctx, address, uint64(opts.Size), opts.Message)
+	pi, err := c.SpacePayInfo(ctx, address)
+	if err != nil {
+		return result, err
+	}
+
+	err = c.canWrite(ctx, address, uint64(opts.Size), opts.Message, pi.Nonce)
 	if err != nil {
 		return result, err
 	}
@@ -38,9 +43,9 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 		UserDefine: string(userdefine),
 	}
 
-	err = c.storeFileInfo(ctx, fi, opts.Message)
+	err = c.storeFileInfo(ctx, fi, opts.Message, pi.Nonce)
 	if err != nil {
-		c.store.DeleteObject(ctx, address, oi.Cid)
+		c.store.DeleteObject(ctx, address, oi.Name)
 		return result, err
 	}
 
@@ -51,13 +56,16 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 
 func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
 	result := GetObjectResult{}
-
+	pi, err := c.TrafficPayInfo(ctx, address)
+	if err != nil {
+		return result, err
+	}
 	ob, err := c.GetObjectInfo(ctx, address, mid)
 	if err != nil {
 		return result, err
 	}
 
-	err = c.canRead(ctx, address, uint64(ob.Size), opts.Message)
+	err = c.canRead(ctx, address, uint64(ob.Size), opts.Message, pi.Nonce)
 	if err != nil {
 		return result, err
 	}
@@ -70,6 +78,11 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 	result.Name = ob.Name
 	result.CType = utils.TypeByExtension(ob.Name)
 	result.Size = ob.Size
+
+	err = c.storeCacheInfo(ctx, ob, opts.Message, pi.Nonce)
+	if err != nil {
+		return result, err
+	}
 
 	return result, nil
 }

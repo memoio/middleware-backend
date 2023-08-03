@@ -12,7 +12,6 @@ func main() {
 	local := make([]*cli.Command, 0, 1)
 	local = append(local, cmd.BackendCmd)
 	local = append(local, cmd.WalletCmd)
-	local = append(local, cmd.ContractCmd)
 	local = append(local, cmd.VersionCmd)
 	app := cli.App{
 		Commands: local,
@@ -23,7 +22,7 @@ func main() {
 				Usage:   "Show application version",
 			},
 		},
-		Action: func(ctx *cli.Context) error {
+		Action: func(_ *cli.Context) error {
 			fmt.Println(cmd.Version + "+" + cmd.BuildFlag)
 			return nil
 		},

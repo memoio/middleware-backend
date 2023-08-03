@@ -7,7 +7,7 @@ import (
 	"github.com/memoio/backend/server/controller"
 )
 
-func init() {
+func Init() {
 	handlerMap = make(map[string]handler)
 
 	initMefs()

@@ -26,11 +26,10 @@ type ObjectOptions struct {
 }
 
 type SignMessage struct {
-	StorePayAddr common.Address
-	Seller       common.Address
-	Size         uint64
-	Nonce        *big.Int
-	Sign         string
+	// StorePayAddr common.Address
+	Size uint64
+	// Nonce        *big.Int
+	Sign string
 }
 
 type CheckInfo struct {

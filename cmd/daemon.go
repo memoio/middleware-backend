@@ -95,7 +95,7 @@ var runCmd = &cli.Command{
 var stopCmd = &cli.Command{
 	Name:  "stop",
 	Usage: "stop server",
-	Action: func(ctx *cli.Context) error {
+	Action: func(_ *cli.Context) error {
 		pidpath, err := homedir.Expand("./")
 		if err != nil {
 			return nil

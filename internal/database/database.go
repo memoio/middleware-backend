@@ -91,6 +91,14 @@ func (d *DataStore) Download(ctx context.Context, info api.CheckInfo) error {
 	return d.Down.Check(ctx, info)
 }
 
+func (d *DataStore) SpaceCheck(ctx context.Context, buyer string) api.CheckInfo {
+	return d.Up.getCheck(ctx, common.HexToAddress(buyer))
+}
+
+func (d *DataStore) TrafficCheck(ctx context.Context, buyer string) api.CheckInfo {
+	return d.Down.getCheck(ctx, common.HexToAddress(buyer))
+}
+
 func Put(fi api.FileInfo) (bool, error) {
 	if err := DataBase.Create(&fi).Error; err != nil {
 		return false, err

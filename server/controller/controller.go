@@ -23,7 +23,10 @@ func NewController(st api.StorageType, store api.IGateway) (*Controller, error) 
 		return nil, err
 	}
 
-	database := database.DataBase
+	database, err := database.NewDataStore(st.String())
+	if err != nil {
+		return nil, err
+	}
 	return &Controller{
 		st:       st,
 		store:    store,
