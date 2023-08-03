@@ -38,6 +38,5 @@ func handleStorage(r *gin.RouterGroup, h handler) {
 	r.GET("/cashspace", h.cashSpace)
 	r.GET("/cashtraffic", h.cashTraffic)
 	r.GET("/receipt", h.checkReceipt)
-	r.GET("/sendtx", h.sendTx)
 
 }

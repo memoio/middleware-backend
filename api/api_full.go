@@ -21,13 +21,13 @@ type IContract interface {
 	CheckTrsaction(context.Context, string) error
 	GetStorePayHash(ctx context.Context, checksize uint64, nonce *big.Int) string
 	GetReadPayHash(ctx context.Context, checksize uint64, nonce *big.Int) string
-	GetStoreAddr(ctx context.Context) string
-	GetReadAddr(ctx context.Context) string
-	SendTx(ctx context.Context, hash string) error
+
 	BuySpace(ctx context.Context, buyer string, size uint64) (string, error)
 	BuyTraffic(ctx context.Context, buyer string, size uint64) (string, error)
 	Approve(ctx context.Context, at, sender string, buyValue *big.Int) (string, error)
 	Allowance(ctx context.Context, at, buyer string) (*big.Int, error)
+	CashTrafficCheck(ctx context.Context, sender string, nonce *big.Int, sizeByte uint64, sign []byte) (string, error)
+	CashSpaceCheck(ctx context.Context, sender string, nonce *big.Int, sizeByte uint64, durationDay uint64, sign []byte) (string, error)
 }
 
 type IDataBase interface {

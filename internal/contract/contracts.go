@@ -159,11 +159,3 @@ func (c *Contract) GetReadPayHash(ctx context.Context, checksize uint64, nonce *
 	hash := com.GetCashCheckHash(c.readAddr, c.seller, checksize, nonce)
 	return hexutil.Encode(hash)
 }
-
-func (c *Contract) GetStoreAddr(ctx context.Context) string {
-	return c.storeAddr.String()
-}
-
-func (c *Contract) GetReadAddr(ctx context.Context) string {
-	return c.readAddr.String()
-}

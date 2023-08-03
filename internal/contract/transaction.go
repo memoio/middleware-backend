@@ -16,7 +16,6 @@ import (
 )
 
 func (c *Contract) Send(ctx context.Context, sender, name, method string, args ...interface{}) (string, error) {
-	logger.Info(name, method, args)
 	return c.sendTransaction(ctx, sender, name, method, args...)
 }
 
@@ -85,24 +84,13 @@ func (c *Contract) sendTransaction(ctx context.Context, sender, name, method str
 		logger.Error(lerr)
 		return "", lerr
 	}
-	signByte, _ := signedTx.MarshalBinary()
-	signString := hex.EncodeToString(signByte)
-	txByte, _ := tx.MarshalBinary()
-	// txString := hex.EncodeToString(txByte)
 
-	logger.Info("TXDATA", hexutil.Encode(txByte))
-	logger.Info("SIGNData:", hexutil.Encode(signByte))
-
-	signByte2, _ := hex.DecodeString(signString)
-	var signedTx2 = new(types.Transaction)
-	_ = signedTx2.UnmarshalBinary(signByte2)
-
-	// err = client.SendTransaction(ctx, signedTx2)
-	// if err != nil {
-	// 	lerr := logs.ContractError{Message: fmt.Sprintf("Failed to send transaction: %v\n", err)}
-	// 	logger.Error(lerr)
-	// 	return "", lerr
-	// }
+	err = client.SendTransaction(ctx, signedTx)
+	if err != nil {
+		lerr := logs.ContractError{Message: fmt.Sprintf("Failed to send transaction: %v\n", err)}
+		logger.Error(lerr)
+		return "", lerr
+	}
 
 	return signedTx.Hash().String(), nil
 }
@@ -119,8 +107,9 @@ func (c *Contract) CheckTrsaction(ctx context.Context, hash string) error {
 
 	receipt, err := client.TransactionReceipt(ctx, signedTx)
 	if err != nil {
-		logger.Error("receipt:", err)
-		return err
+		lerr := logs.ContractError{Message: err.Error()}
+		logger.Error("receipt:", lerr)
+		return lerr
 	}
 
 	return checkResult(receipt)

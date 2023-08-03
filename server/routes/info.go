@@ -169,15 +169,3 @@ func (h handler) checkReceipt(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, "success")
 }
-
-func (h handler) sendTx(c *gin.Context) {
-	tx := c.Query("txhash")
-
-	err := h.controller.SendTx(c.Request.Context(), tx)
-	if err != nil {
-		errRes := logs.ToAPIErrorCode(err)
-		c.JSON(errRes.HTTPStatusCode, errRes)
-		return
-	}
-	c.JSON(http.StatusOK, "success")
-}

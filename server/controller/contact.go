@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/utils"
 )
 
@@ -45,7 +46,7 @@ func (c *Controller) CashSpace(ctx context.Context, buyer string) (string, error
 	if err != nil {
 		return "", err
 	}
-	return c.contract.Send(ctx, sender, "proxy", "cashSpaceCheck", check.Nonce, check.CheckSize.Uint64(), check.Sign)
+	return c.contract.CashSpaceCheck(ctx, sender, check.Nonce, check.CheckSize.Uint64(), api.DurationDay, check.Sign)
 }
 
 func (c *Controller) CashTraffic(ctx context.Context, buyer string) (string, error) {
@@ -54,7 +55,7 @@ func (c *Controller) CashTraffic(ctx context.Context, buyer string) (string, err
 	if err != nil {
 		return "", err
 	}
-	return c.contract.Send(ctx, sender, "proxy", "cashTrafficCheck", check.Nonce, check.CheckSize.Uint64(), check.Sign)
+	return c.contract.CashTrafficCheck(ctx, sender, check.Nonce, check.CheckSize.Uint64(), check.Sign)
 }
 
 func (c *Controller) GetStorePayHash(ctx context.Context, address string, checksize uint64) (string, error) {
@@ -73,10 +74,6 @@ func (c *Controller) GetReadPayHash(ctx context.Context, address string, checksi
 	}
 
 	return c.contract.GetReadPayHash(ctx, checksize, pi.Nonce), nil
-}
-
-func (c *Controller) SendTx(ctx context.Context, tx string) error {
-	return c.contract.SendTx(ctx, tx)
 }
 
 func (c *Controller) BuySpace(ctx context.Context, address string, size uint64) (string, error) {
