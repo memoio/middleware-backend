@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
 )
 
@@ -111,9 +112,9 @@ func (h handler) BuyTraffic(c *gin.Context) {
 func (h handler) Approve(c *gin.Context) {
 	address := c.GetString("address")
 	size := c.Query("size")
-	at := c.Query("type")
+	pt := c.Query("type")
 
-	res, err := h.controller.Approve(c.Request.Context(), at, address, toBigInt(size))
+	res, err := h.controller.Approve(c.Request.Context(), api.StringToPayType(pt), address, toBigInt(size))
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)
@@ -126,7 +127,7 @@ func (h handler) allowance(c *gin.Context) {
 	address := c.GetString("address")
 	at := c.Query("type")
 
-	res, err := h.controller.Allowance(c.Request.Context(), at, address)
+	res, err := h.controller.Allowance(c.Request.Context(), api.StringToPayType(at), address)
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)

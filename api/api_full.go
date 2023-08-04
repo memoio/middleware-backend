@@ -24,8 +24,8 @@ type IContract interface {
 
 	BuySpace(ctx context.Context, buyer string, size uint64) (string, error)
 	BuyTraffic(ctx context.Context, buyer string, size uint64) (string, error)
-	Approve(ctx context.Context, at, sender string, buyValue *big.Int) (string, error)
-	Allowance(ctx context.Context, at, buyer string) (*big.Int, error)
+	Approve(ctx context.Context, pt PayType, sender string, buyValue *big.Int) (string, error)
+	Allowance(ctx context.Context, pt PayType, buyer string) (*big.Int, error)
 	CashTrafficCheck(ctx context.Context, sender string, nonce *big.Int, sizeByte uint64, sign []byte) (string, error)
 	CashSpaceCheck(ctx context.Context, sender string, nonce *big.Int, sizeByte uint64, durationDay uint64, sign []byte) (string, error)
 }

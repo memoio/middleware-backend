@@ -102,3 +102,20 @@ type FileInfo struct {
 func (FileInfo) TableName() string {
 	return "fileinfo"
 }
+
+type PayType uint8
+
+const (
+	StorePay PayType = iota
+	ReadPay
+)
+
+func StringToPayType(s string) PayType {
+	switch s {
+	case "read":
+		return ReadPay
+	case "store":
+		return StorePay
+	}
+	return StorePay
+}

@@ -25,10 +25,6 @@ func (c *Controller) SpacePayInfo(ctx context.Context, address string) (IPayPaym
 	return out0, err
 }
 
-func (c *Controller) Allowance(ctx context.Context, at, address string) (*big.Int, error) {
-	return c.contract.Allowance(ctx, at, address)
-}
-
 func (c *Controller) TrafficPayInfo(ctx context.Context, address string) (IPayPayment, error) {
 	out, err := c.contract.Call(ctx, "proxy", "trafficPayInfo", common.HexToAddress(address))
 	if err != nil {
@@ -84,6 +80,10 @@ func (c *Controller) BuyTraffic(ctx context.Context, address string, size uint64
 	return c.contract.BuyTraffic(ctx, address, size)
 }
 
-func (c *Controller) Approve(ctx context.Context, at, buyer string, value *big.Int) (string, error) {
-	return c.contract.Approve(ctx, at, buyer, value)
+func (c *Controller) Approve(ctx context.Context, pt api.PayType, buyer string, value *big.Int) (string, error) {
+	return c.contract.Approve(ctx, pt, buyer, value)
+}
+
+func (c *Controller) Allowance(ctx context.Context, pt api.PayType, address string) (*big.Int, error) {
+	return c.contract.Allowance(ctx, pt, address)
 }
