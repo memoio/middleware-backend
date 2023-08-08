@@ -1,124 +1,130 @@
 package database
 
 import (
+	"context"
 	"math/big"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
-	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/go-mefs-v2/lib/types/store"
 )
 
-type SendPay struct {
-	lw   sync.Mutex
-	ds   store.KVStore
-	pool map[string]*PayCheck
+type CheckPay struct {
+	lw sync.Mutex
+	ds store.KVStore
+
+	contractAddr common.Address
+	sellerAddr   common.Address
+
+	pool map[common.Address]*PayCheck
 }
 
-func NewSenderPay(ds store.KVStore) *SendPay {
-	return &SendPay{
-		ds:   ds,
-		pool: make(map[string]*PayCheck),
+func NewCheckPay(ds store.KVStore) *CheckPay {
+	return &CheckPay{
+		ds:           ds,
+		contractAddr: contractAddr,
+		sellerAddr:   sellerAddr,
+		pool:         make(map[common.Address]*PayCheck),
 	}
 }
 
-func (s *SendPay) AddPay(chain int, address string, st storage.StorageType, size, value *big.Int, hashid string) error {
-	if size.Sign() <= 0 || value.Sign() <= 0 {
-		err := logs.DataBaseError{Message: "size or amount should be larger than zero"}
-		logger.Error(err)
-		return err
+func (u *CheckPay) Check(ctx context.Context, info api.CheckInfo) error {
+	if info.FileSize.Sign() <= 0 {
+		lerr := logs.DataBaseError{Message: "size should be lager than zero"}
+		logger.Error(lerr)
+		return lerr
 	}
 
-	pkey := string(getKey(payPrefix, address, st, chain))
+	u.lw.Lock()
+	defer u.lw.Unlock()
 
-	s.lw.Lock()
-	defer s.lw.Unlock()
-
-	p, ok := s.pool[pkey]
+	p, ok := u.pool[info.Buyer]
 	if !ok {
-		schk, err := s.loadPay(chain, address, st)
+		var err error
+		p, err = u.loadPay(info.Buyer)
 		if err != nil {
 			return err
 		}
-		p = schk
-		s.pool[pkey] = p
 	}
 
-	p.Add(hashid, size, value)
+	p.Sign = info.Sign
+	p.Duration = 1
+	p.Nonce = info.Nonce.Uint64()
+	p.Size = info.CheckSize.Uint64()
+	p.UploadSize += info.FileSize.Uint64()
 
-	data, err := p.Serialize()
-	if err != nil {
-		return logs.DataBaseError{Message: err.Error()}
-	}
-
-	key := getKey(payPrefix, address, st, chain)
-	s.ds.Put(key, data)
+	u.pool[info.Buyer] = p
+	p.Save(u.ds)
 
 	return nil
 }
 
-func (s *SendPay) loadPay(chain int, address string, st storage.StorageType) (*PayCheck, error) {
-	key := getKey(payPrefix, address, st, chain)
-	data, err := s.ds.Get(key)
+func (u *CheckPay) create(buyer common.Address) (*PayCheck, error) {
+	chk, err := generateCheck(buyer)
 	if err != nil {
-		schk, err := s.create(chain, address, st)
-		if err != nil {
-			logger.Error(err)
-			return nil, err
-		}
-
-		return schk, nil
+		return nil, err
 	}
 
-	schk := new(PayCheck)
-	err = schk.Deserialize(data)
-	if err != nil {
-		return nil, logs.DataBaseError{Message: err.Error()}
+	p := &PayCheck{
+		Check:      *chk,
+		UploadSize: 0,
 	}
 
-	s.pool[address] = schk
-	return schk, nil
+	return p, p.Save(u.ds)
 }
 
-func (s *SendPay) create(chain int, address string, st storage.StorageType) (*PayCheck, error) {
-	sc := newPayCheck(chain, address, st)
-
-	return sc, sc.Save(s.ds)
-}
-
-func (s *SendPay) GetAllStorage() []*PayCheck {
-	var res []*PayCheck
-
-	for _, sc := range s.pool {
-		res = append(res, sc)
-	}
-
-	return res
-}
-
-func (s *SendPay) ResetPay(chain int, address string, st storage.StorageType) error {
-	pchk, err := s.create(chain, address, st)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	s.pool[address] = pchk
-	return nil
-}
-
-func (s *SendPay) Size(chain int, address string, st storage.StorageType) (*big.Int, error) {
-	pkey := string(getKey(payPrefix, address, st, chain))
-	p, ok := s.pool[pkey]
+func (u *CheckPay) Size(buyer common.Address) uint64 {
+	p, ok := u.pool[buyer]
 	if !ok {
-		schk, err := s.loadPay(chain, address, st)
+		var err error
+		p, err = u.loadPay(buyer)
+		if err != nil {
+			return 0
+		}
+	}
+
+	return p.UploadSize
+}
+
+func (u *CheckPay) loadPay(buyer common.Address) (*PayCheck, error) {
+	key := store.NewKey(u.contractAddr.String(), buyer.String())
+	data, err := u.ds.Get(key)
+	if err != nil {
+		pchk, err := u.create(buyer)
 		if err != nil {
 			return nil, err
 		}
-
-		s.pool[pkey] = schk
-		return schk.Value, nil
+		u.pool[buyer] = pchk
+		return pchk, nil
 	}
 
-	return p.Value, nil
+	pchk := new(PayCheck)
+	err = pchk.Deserialize(data)
+	if err != nil {
+		return nil, err
+	}
+	u.pool[buyer] = pchk
+
+	return pchk, nil
+}
+
+func (u *CheckPay) getCheck(ctx context.Context, buyer common.Address) api.CheckInfo {
+	res := api.CheckInfo{}
+
+	p, ok := u.pool[buyer]
+	if !ok {
+		var err error
+		p, err = u.loadPay(buyer)
+		if err != nil {
+			return res
+		}
+	}
+
+	return api.CheckInfo{
+		CheckSize: big.NewInt(int64(p.Check.Size)),
+		Sign:      p.Check.Sign,
+		Nonce:     big.NewInt(int64(p.Check.Nonce)),
+	}
 }

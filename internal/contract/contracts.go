@@ -2,17 +2,19 @@ package contract
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/utils"
+	com "github.com/memoio/contractsv2/common"
 	"github.com/memoio/contractsv2/go_contracts/erc"
+	inst "github.com/memoio/contractsv2/go_contracts/instance"
+	"github.com/memoio/contractsv2/go_contracts/token"
 )
 
 type PackageInfo struct {
@@ -38,33 +40,80 @@ type FlowSize struct {
 }
 
 type Contract struct {
-	contractAddr     common.Address
-	endpoint         string
-	gatewayAddr      common.Address
-	gatewaySecretKey string
+	contractAddr common.Address
+	endpoint     string
+	seller       common.Address
+
+	erc20     common.Address
+	tokenAddr common.Address
+	proxyAddr common.Address
+	storeAddr common.Address
+	readAddr  common.Address
+	chainID   *big.Int
 }
 
-func NewContract(cfc config.ContractConfig) *Contract {
+func NewContract(cfc config.ContractConfig) (*Contract, error) {
+	instanceAddr, endPoint := com.GetInsEndPointByChain(cfc.Chain)
+
+	client, err := ethclient.DialContext(context.TODO(), endPoint)
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	chainID, err := client.NetworkID(context.Background())
+	if err != nil {
+		chainID = big.NewInt(666)
+	}
+
+	instanceIns, err := inst.NewInstance(instanceAddr, client)
+	if err != nil {
+		return nil, err
+	}
+
+	proxyAddr, err := instanceIns.Instances(&bind.CallOpts{From: instanceAddr}, com.TypeMiddlewareProxy)
+	if err != nil {
+		return nil, err
+	}
+	readPayAddr, err := instanceIns.Instances(&bind.CallOpts{From: instanceAddr}, com.TypeReadPay)
+	if err != nil {
+		return nil, err
+	}
+	storePayAddr, err := instanceIns.Instances(&bind.CallOpts{From: instanceAddr}, com.TypeStorePay)
+	if err != nil {
+		return nil, err
+	}
+
+	tokenAddr, err := instanceIns.Instances(&bind.CallOpts{From: instanceAddr}, com.TypeToken)
+	if err != nil {
+		return nil, err
+	}
+	tokenIns, err := token.NewToken(tokenAddr, client)
+	if err != nil {
+		return nil, err
+	}
+	erc20Addr, err := tokenIns.GetTA(&bind.CallOpts{From: com.AdminAddr}, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	seller, err := utils.GetSeller(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
 	return &Contract{
-		contractAddr:     common.HexToAddress(cfc.ContractAddr),
-		endpoint:         cfc.Endpoint,
-		gatewayAddr:      common.HexToAddress(cfc.GatewayAddr),
-		gatewaySecretKey: cfc.GatewaySecretKey,
-	}
-}
-func NewContracts(cfc map[int]config.ContractConfig) map[int]*Contract {
-	res := make(map[int]*Contract)
+		contractAddr: instanceAddr,
+		endpoint:     endPoint,
+		seller:       common.HexToAddress(seller),
 
-	for chainid, cfg := range cfc {
-		res[chainid] = &Contract{
-			contractAddr:     common.HexToAddress(cfg.ContractAddr),
-			endpoint:         cfg.Endpoint,
-			gatewayAddr:      common.HexToAddress(cfg.GatewayAddr),
-			gatewaySecretKey: cfg.GatewaySecretKey,
-		}
-	}
-
-	return res
+		erc20:     erc20Addr,
+		tokenAddr: tokenAddr,
+		chainID:   chainID,
+		proxyAddr: proxyAddr,
+		storeAddr: storePayAddr,
+		readAddr:  readPayAddr,
+	}, nil
 }
 
 func (c *Contract) BalanceOf(ctx context.Context, addr string) (*big.Int, error) {
@@ -75,13 +124,13 @@ func (c *Contract) BalanceOf(ctx context.Context, addr string) (*big.Int, error)
 	}
 	defer client.Close()
 
-	erc20Ins, err := erc.NewERC20(c.contractAddr, client)
+	erc20Ins, err := erc.NewERC20(c.erc20, client)
 	if err != nil {
 		return res, err
 	}
 
 	bal, err := erc20Ins.BalanceOf(&bind.CallOpts{
-		From: c.gatewayAddr,
+		From: c.proxyAddr,
 	}, common.HexToAddress(addr))
 	if err != nil {
 		return res, err
@@ -89,21 +138,9 @@ func (c *Contract) BalanceOf(ctx context.Context, addr string) (*big.Int, error)
 	return res.Set(bal), nil
 }
 
-// func (c *Contract) GetStoreAllSize() *big.Int {
-// 	var out []interface{}
-// 	err := c.CallContract(&out, "getStoreAllSize")
-// 	if err != nil {
-// 		logger.Error(err)
-// 		return nil
-// 	}
-
-// 	available := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-// 	return available
-// }
-
-func (c *Contract) Call(name string, args ...interface{}) ([]interface{}, error) {
+func (c *Contract) Call(ctx context.Context, name, method string, args ...interface{}) ([]interface{}, error) {
 	var out []interface{}
-	err := c.CallContract(&out, name, args...)
+	err := c.CallContract(ctx, &out, name, method, args...)
 	if err != nil {
 		lerr := logs.ContractError{Message: err.Error()}
 		logger.Error(lerr)
@@ -113,28 +150,12 @@ func (c *Contract) Call(name string, args ...interface{}) ([]interface{}, error)
 	return out, nil
 }
 
-func (c *Contract) CheckContract() error {
-	privateKey, err := crypto.HexToECDSA(c.gatewaySecretKey)
-	if err != nil {
-		lerr := logs.ContractError{Message: fmt.Sprintf("Failed to decode gateway sk: %v", err)}
-		logger.Error(lerr)
-		return lerr
-	}
+func (c *Contract) GetStorePayHash(ctx context.Context, checksize uint64, nonce *big.Int) string {
+	hash := com.GetCashCheckHash(c.storeAddr, c.seller, checksize, nonce)
+	return hexutil.Encode(hash)
+}
 
-	pk := privateKey.Public()
-	pubKeyECDSA, ok := pk.(*ecdsa.PublicKey)
-
-	if !ok {
-		lerr := logs.ContractError{Message: "error casting public key to ECDSA"}
-		logger.Error(lerr)
-		return lerr
-	}
-	gatewayaddr := crypto.PubkeyToAddress(*pubKeyECDSA)
-	if gatewayaddr != c.gatewayAddr {
-		lerr := logs.ContractError{Message: fmt.Sprintf("gateway address and private key do not match %s", gatewayaddr)}
-		logger.Error(lerr)
-		return lerr
-	}
-
-	return nil
+func (c *Contract) GetReadPayHash(ctx context.Context, checksize uint64, nonce *big.Int) string {
+	hash := com.GetCashCheckHash(c.readAddr, c.seller, checksize, nonce)
+	return hexutil.Encode(hash)
 }

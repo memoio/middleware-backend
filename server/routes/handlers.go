@@ -24,13 +24,19 @@ func handleStorage(r *gin.RouterGroup, h handler) {
 
 	// info
 	r.GET("/balance", auth.VerifyIdentityHandler, h.getBalanceHandle)
-	r.GET("/storageinfo", auth.VerifyIdentityHandler, h.getStorageInfoHandle)
-	r.GET("/flowsize", auth.VerifyIdentityHandler, h.getFlowSize)
 
 	// package
-	r.GET("/pkginfos", h.getPkgInfos)
-	r.GET("/getbuypkgs", h.getBuyPackages)
-	r.GET("/buypkg", h.buyPackage)
+	r.GET("/space", auth.VerifyIdentityHandler, h.getSpace)
+	r.GET("/traffic", auth.VerifyIdentityHandler, h.getTraffic)
+	r.GET("/spacehash", auth.VerifyIdentityHandler, h.spaceHash)
+	r.GET("/traffichash", auth.VerifyIdentityHandler, h.trafficHash)
+	r.GET("/buyspace", auth.VerifyIdentityHandler, h.BuySpace)
+	r.GET("/buytraffic", auth.VerifyIdentityHandler, h.BuyTraffic)
+	r.GET("/approve", auth.VerifyIdentityHandler, h.Approve)
+	r.GET("/allowance", auth.VerifyIdentityHandler, h.allowance)
 
+	r.GET("/cashspace", h.cashSpace)
+	r.GET("/cashtraffic", h.cashTraffic)
 	r.GET("/receipt", h.checkReceipt)
+
 }

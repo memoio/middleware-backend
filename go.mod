@@ -3,7 +3,7 @@ module github.com/memoio/backend
 go 1.18
 
 require (
-	github.com/dgraph-io/badger/v3 v3.2103.5
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.12.0
 	github.com/fxamacker/cbor/v2 v2.3.0
 	github.com/gin-gonic/gin v1.8.2
@@ -14,6 +14,7 @@ require (
 	github.com/memoio/did-solidity v0.0.0-00010101000000-000000000000
 	github.com/memoio/go-did v0.0.0-00010101000000-000000000000
 	github.com/memoio/go-mefs-v2 v0.0.0-00010101000000-000000000000
+	github.com/memoio/middleware-contracts v0.0.0-00010101000000-000000000000
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.8.1
@@ -61,7 +62,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
-	github.com/google/flatbuffers v1.12.1 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
@@ -145,6 +145,7 @@ replace (
 	github.com/memoio/did-solidity => ../did-solidity
 	github.com/memoio/go-did => ../go-did
 	github.com/memoio/go-mefs-v2 => ../go-mefs-v2
+	github.com/memoio/middleware-contracts => ../contracts
 	github.com/memoio/relay => ../relay
 	memoc => ../memo-go-contracts-v2
 )

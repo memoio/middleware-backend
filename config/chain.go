@@ -1,8 +1,8 @@
 package config
 
 type ContractConfig struct {
-	Endpoint         string `json:"endpoint"`
-	ContractAddr     string `json:"caddr"`
-	GatewayAddr      string `json:"gaddr"`
-	GatewaySecretKey string `json:"gatewaysk"`
+	Chain        string `json:"chain"`
+	ContractAddr string `json:"caddr"`
+	SellerAddr   string `json:"saddr"`
+	// GatewaySecretKey string `json:"gatewaysk"`
 }

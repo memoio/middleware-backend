@@ -4,13 +4,50 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
 )
 
-func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo) error {
+func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo, msg api.SignMessage, nonce *big.Int) error {
+	sig := hexutil.MustDecode(msg.Sign)
+	if sig[64] == 27 || sig[64] == 28 {
+		sig[64] -= 27
+	}
+
+	info := api.CheckInfo{
+		Sign:      sig,
+		Buyer:     common.HexToAddress(fi.Address),
+		Nonce:     nonce,
+		CheckSize: big.NewInt(int64(msg.Size)),
+		FileSize:  big.NewInt(fi.Size),
+	}
+
+	err := c.database.Upload(ctx, info)
+	if err != nil {
+		return err
+	}
 	return c.database.PutObject(ctx, fi)
+}
+
+func (c *Controller) storeCacheInfo(ctx context.Context, fi api.FileInfo, msg api.SignMessage, nonce *big.Int) error {
+	sig := hexutil.MustDecode(msg.Sign)
+	if sig[64] == 27 || sig[64] == 28 {
+		sig[64] -= 27
+	}
+
+	info := api.CheckInfo{
+		Sign:      sig,
+		Buyer:     common.HexToAddress(fi.Address),
+		Nonce:     nonce,
+		CheckSize: big.NewInt(int64(msg.Size)),
+		FileSize:  big.NewInt(fi.Size),
+	}
+
+	return c.database.Download(ctx, info)
 }
 
 func (c *Controller) getObjectInfo(ctx context.Context, address, mid string, st api.StorageType) (api.FileInfo, error) {
@@ -43,10 +80,6 @@ func (c *Controller) getObjectInfoById(ctx context.Context, id int) (api.FileInf
 		return result, lerr
 	}
 	return fi, nil
-}
-
-func storeFlowSize() error {
-	return nil
 }
 
 func (c *Controller) listobjects(ctx context.Context, address string) (ListObjectsResult, error) {
@@ -88,6 +121,10 @@ func (c *Controller) deleteObject(ctx context.Context, id int) error {
 	return c.database.DeleteObject(ctx, id)
 }
 
-func (c *Controller) getCacheStorageInfo(ctx context.Context, address string) (int64, error) {
-	return 0, logs.NotImplemented{}
+func (c *Controller) getSpaceCheck(ctx context.Context, buyer string) api.CheckInfo {
+	return c.database.SpaceCheck(ctx, buyer)
+}
+
+func (c *Controller) getTrafficCheck(ctx context.Context, buyer string) api.CheckInfo {
+	return c.database.TrafficCheck(ctx, buyer)
 }

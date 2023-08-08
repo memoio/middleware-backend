@@ -14,7 +14,7 @@ var VersionCmd = &cli.Command{
 	Name:    "version",
 	Usage:   "print version",
 	Aliases: []string{"V"},
-	Action: func(ctx *cli.Context) error {
+	Action: func(_ *cli.Context) error {
 		fmt.Println(Version + "+" + BuildFlag)
 		return nil
 	},

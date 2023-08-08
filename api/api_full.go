@@ -15,11 +15,19 @@ type IGateway interface {
 }
 
 type IContract interface {
-	Call(name string, args ...interface{}) ([]interface{}, error)
-	Send(name string, args ...interface{}) (string, error)
+	Call(ctx context.Context, name, method string, args ...interface{}) ([]interface{}, error)
+	Send(ctx context.Context, sender, name, method string, args ...interface{}) (string, error)
 	BalanceOf(context.Context, string) (*big.Int, error)
-	StoreBuyPkg(context.Context, string, BuyPackage) (string, error)
 	CheckTrsaction(context.Context, string) error
+	GetStorePayHash(ctx context.Context, checksize uint64, nonce *big.Int) string
+	GetReadPayHash(ctx context.Context, checksize uint64, nonce *big.Int) string
+
+	BuySpace(ctx context.Context, buyer string, size uint64) (string, error)
+	BuyTraffic(ctx context.Context, buyer string, size uint64) (string, error)
+	Approve(ctx context.Context, at, sender string, buyValue *big.Int) (string, error)
+	Allowance(ctx context.Context, at, buyer string) (*big.Int, error)
+	CashTrafficCheck(ctx context.Context, sender string, nonce *big.Int, sizeByte uint64, sign []byte) (string, error)
+	CashSpaceCheck(ctx context.Context, sender string, nonce *big.Int, sizeByte uint64, durationDay uint64, sign []byte) (string, error)
 }
 
 type IDataBase interface {
@@ -28,9 +36,23 @@ type IDataBase interface {
 	GetObjectInfoById(context.Context, int) (interface{}, error)
 	PutObject(context.Context, FileInfo) error
 	DeleteObject(context.Context, int) error
+
+	GetUpSize(context.Context, string) (uint64, error)
+	GetDownSize(context.Context, string) (uint64, error)
+	Upload(context.Context, CheckInfo) error
+	Download(context.Context, CheckInfo) error
+	SpaceCheck(ctx context.Context, buyer string) CheckInfo
+	TrafficCheck(ctx context.Context, buyer string) CheckInfo
 }
 
 type IConfig interface {
 	GetStore() interface{}
 	GetContract() interface{}
+}
+
+type Keystore interface {
+	Get(string) ([]byte, error)
+	Put(string, []byte) error
+	List() ([]string, error)
+	Delete(string) error
 }
