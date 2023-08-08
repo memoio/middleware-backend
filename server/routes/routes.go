@@ -35,7 +35,6 @@ func (r Routes) registLoginRoute() {
 }
 
 func (r Routes) registStorageRoute() {
-	Init()
-	handleStorage(r.Group("/mefs"), handlerMap["mefs"])
-	handleStorage(r.Group("/ipfs"), handlerMap["ipfs"])
+	handleStorage(r.Group("/mefs"), handlerMefs())
+	handleStorage(r.Group("/ipfs"), handlerIpfs())
 }

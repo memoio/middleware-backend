@@ -13,8 +13,6 @@ type handler struct {
 	controller *controller.Controller
 }
 
-var handlerMap map[string]handler
-
 func handleStorage(r *gin.RouterGroup, h handler) {
 	// store
 	r.POST("/", auth.VerifyIdentityHandler, h.putObjectHandle)

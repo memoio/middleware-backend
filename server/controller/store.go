@@ -56,11 +56,13 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 
 func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Writer, opts ObjectOptions) (GetObjectResult, error) {
 	result := GetObjectResult{}
-	pi, err := c.TrafficPayInfo(ctx, address)
+
+	ob, err := c.GetObjectInfo(ctx, address, mid)
 	if err != nil {
 		return result, err
 	}
-	ob, err := c.GetObjectInfo(ctx, address, mid)
+
+	pi, err := c.TrafficPayInfo(ctx, address)
 	if err != nil {
 		return result, err
 	}

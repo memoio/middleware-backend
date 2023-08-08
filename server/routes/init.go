@@ -7,14 +7,7 @@ import (
 	"github.com/memoio/backend/server/controller"
 )
 
-func Init() {
-	handlerMap = make(map[string]handler)
-
-	initMefs()
-	initIpfs()
-}
-
-func initMefs() {
+func handlerMefs() handler {
 	store, err := mefs.NewGateway()
 	if err != nil {
 		logger.Error("init mefs error:", err)
@@ -24,10 +17,10 @@ func initMefs() {
 	if err != nil {
 		logger.Error("get control error:", err)
 	}
-	handlerMap["mefs"] = handler{controller: control}
+	return handler{controller: control}
 }
 
-func initIpfs() {
+func handlerIpfs() handler {
 	store, err := ipfs.NewGateway()
 	if err != nil {
 		logger.Error("init ipfs error:", err)
@@ -36,5 +29,5 @@ func initIpfs() {
 	if err != nil {
 		logger.Error("get control error:", err)
 	}
-	handlerMap["ipfs"] = handler{controller: control}
+	return handler{controller: control}
 }
