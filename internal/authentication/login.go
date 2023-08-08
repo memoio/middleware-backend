@@ -15,7 +15,12 @@ type Request struct {
 }
 
 func Login(did, token string, timestamp int64, signature string) (bool, error) {
-	hash := crypto.Keccak256([]byte(did), []byte(token), int64ToBytes(timestamp))
+	tokenByte, err := hexutil.Decode(token)
+	if err != nil {
+		return false, err
+	}
+
+	hash := crypto.Keccak256([]byte(did), tokenByte, int64ToBytes(timestamp))
 	sig, err := hexutil.Decode(signature)
 	if err != nil {
 		return false, err
@@ -40,7 +45,12 @@ func Login(did, token string, timestamp int64, signature string) (bool, error) {
 }
 
 func VerifyIdentity(did, token, payload string, requestID int64, signature string) (bool, error) {
-	hash := crypto.Keccak256([]byte(did), []byte(token), int64ToBytes(requestID))
+	tokenByte, err := hexutil.Decode(token)
+	if err != nil {
+		return false, err
+	}
+
+	hash := crypto.Keccak256([]byte(did), tokenByte, int64ToBytes(requestID))
 	sig, err := hexutil.Decode(signature)
 	if err != nil {
 		return false, err

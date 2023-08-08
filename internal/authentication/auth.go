@@ -6,9 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func LoadAuthModule(r *gin.RouterGroup) {
-	r.POST("/login", LoginHandler)
-	r.GET("/identity", VerifyIdentityHandler, func(c *gin.Context) {
+func LoadAuthModule(g *gin.RouterGroup) {
+	g.POST("/login", LoginHandler)
+	g.GET("/login", GetSessionHandler)
+	g.GET("/identity", VerifyIdentityHandler, func(c *gin.Context) {
 		c.JSON(200, fmt.Sprintf("did:%s  payload:%s\n", c.GetString("did"), c.GetString("payload")))
 	})
 }
@@ -38,6 +39,17 @@ func LoginHandler(c *gin.Context) {
 	}
 
 	c.String(200, "Login success!")
+}
+
+func GetSessionHandler(c *gin.Context) {
+	did := c.Query("did")
+
+	session, err := sessionStore.GetSession(did)
+	if err != nil {
+		c.JSON(200, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(200, session)
 }
 
 func VerifyIdentityHandler(c *gin.Context) {

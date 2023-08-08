@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"sync"
 	"time"
 
@@ -42,6 +43,15 @@ func (s *SessionStore) AddSession(did, token string, timestamp int64) error {
 		requestID:   0,
 	}
 	return nil
+}
+
+func (s *SessionStore) GetSession(did string) (Session, error) {
+	session, ok := s.sessions[did]
+	if !ok {
+		return Session{}, errors.New("cannot find session, please log in first")
+	}
+
+	return session, nil
 }
 
 func (s *SessionStore) VerifySession(did, token string, requestID int64) error {
