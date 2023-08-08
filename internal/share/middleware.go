@@ -45,7 +45,7 @@ func loadApiMap() {
 	ApiMap["/ipfs"] = &Api{G: ipfs, T: storage.IPFS}
 }
 
-func LoadAuthModule(g *gin.RouterGroup) {
+func LoadShareModule(g *gin.RouterGroup) {
 	err := InitShareTable()
 	if err != nil {
 		panic(err.Error())
