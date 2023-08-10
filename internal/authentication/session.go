@@ -63,8 +63,14 @@ func (s *SessionStore) VerifySession(did, token string, requestID int64) error {
 	if token != session.randomToken {
 		return xerrors.Errorf("can't match the token, please check your input or log in again")
 	}
-	if requestID != session.requestID+1 {
-		return xerrors.Errorf("not a sequential request")
+
+	// 循环等待上一个request完成
+	for index := 0; index < 100; index += 1 {
+		session := s.sessions[did]
+		if requestID != session.requestID+1 {
+			return xerrors.Errorf("not a sequential request")
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
 
 	s.mutex.Lock()

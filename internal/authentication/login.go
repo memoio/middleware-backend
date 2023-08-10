@@ -45,12 +45,27 @@ func Login(did, token string, timestamp int64, signature string) (bool, error) {
 }
 
 func VerifyIdentity(did, token, payload string, requestID int64, signature string) (bool, error) {
+	err := sessionStore.VerifySession(did, token, requestID)
+	if err != nil {
+		return false, err
+	}
+
 	tokenByte, err := hexutil.Decode(token)
 	if err != nil {
 		return false, err
 	}
 
-	hash := crypto.Keccak256([]byte(did), tokenByte, int64ToBytes(requestID))
+	var hash []byte
+	if payload != "" {
+		payloadByte, err := hexutil.Decode(payload)
+		if err != nil {
+			return false, err
+		}
+		hash = crypto.Keccak256([]byte(did), tokenByte, payloadByte, int64ToBytes(requestID))
+	} else {
+		hash = crypto.Keccak256([]byte(did), tokenByte, int64ToBytes(requestID))
+	}
+
 	sig, err := hexutil.Decode(signature)
 	if err != nil {
 		return false, err
@@ -63,11 +78,6 @@ func VerifyIdentity(did, token, payload string, requestID int64, signature strin
 	ok, err := CheckAuthPermission(did, crypto.PubkeyToAddress(*publicKey).Hex())
 	if err != nil || !ok {
 		return ok, err
-	}
-
-	err = sessionStore.VerifySession(did, token, requestID)
-	if err != nil {
-		return false, err
 	}
 
 	return true, nil
