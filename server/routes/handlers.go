@@ -78,6 +78,7 @@ func handleStorage(r *gin.RouterGroup, h handler) {
 func (h handler) putObjectHandle(c *gin.Context) {
 	address := c.GetString("address")
 	chain := c.GetInt("chainid")
+	user := c.PostForm("user")
 	file, err := c.FormFile("file")
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(logs.ServerError{Message: err.Error()})
@@ -134,7 +135,7 @@ func (h handler) putObjectHandle(c *gin.Context) {
 		c.JSON(http.StatusOK, result)
 		return
 	}
-	result, err := h.controller.PutObject(c.Request.Context(), chain, address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud, Public: public})
+	result, err := h.controller.PutObject(c.Request.Context(), chain, address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud, Public: public, User: user})
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)
