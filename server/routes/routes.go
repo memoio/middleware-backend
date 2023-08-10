@@ -4,6 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	auth "github.com/memoio/backend/internal/authentication"
+	"github.com/memoio/backend/internal/filedns"
+	"github.com/memoio/backend/internal/share"
 )
 
 type Routes struct {
@@ -18,6 +21,8 @@ func RegistRoutes() Routes {
 
 	r.registRoute()
 	r.registLoginRoute()
+	r.registShareRoute()
+	r.registFileDnsRoute()
 	r.registStorageRoute()
 	return r
 }
@@ -31,7 +36,15 @@ func (r Routes) registRoute() {
 }
 
 func (r Routes) registLoginRoute() {
+	auth.LoadAuthModule(r.Group("/"))
+}
 
+func (r Routes) registShareRoute() {
+	share.LoadShareModule(r.Group("/"))
+}
+
+func (r Routes) registFileDnsRoute() {
+	filedns.LoadFileDnsModule(r.Group("/"))
 }
 
 func (r Routes) registStorageRoute() {
