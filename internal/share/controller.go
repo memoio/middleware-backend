@@ -12,6 +12,7 @@ import (
 type CreateShareRequest struct {
 	MID         string          `josn:"mid"`
 	Name        string          `json:"name"`
+	Key         string          `json:"key"`
 	SType       api.StorageType `json:"type"`
 	ExpiredTime int64           `josn:"expire"`
 }
@@ -45,6 +46,7 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 		MID:         request.MID,
 		SType:       request.SType,
 		FileName:    fileInfo.Name,
+		Key:         request.Key,
 		ExpiredTime: -1,
 	}
 
@@ -66,7 +68,7 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 	if err == nil {
 		baseUrl = config.EthDriveUrl
 	}
-	return baseUrl + "/s/" + id, nil
+	return baseUrl + "/share/" + id, nil
 }
 
 type UpdateShareRequest struct {

@@ -4,7 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/internal/share"
 )
 
 var logger = logs.Logger("routes")
@@ -13,13 +15,16 @@ type Routes struct {
 	*gin.Engine
 }
 
-func RegistRoutes() Routes {
+func RegistRoutes(checkRegistered bool) Routes {
 	router := gin.Default()
 	r := Routes{
 		router,
 	}
 
 	r.registRoute()
+
+	r.registLoginRoute(checkRegistered)
+	r.registShareRoute()
 
 	r.registStorageRoute()
 	return r
@@ -31,6 +36,14 @@ func (r Routes) registRoute() {
 	r.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Welcome Server")
 	})
+}
+
+func (r Routes) registLoginRoute(checkRegistered bool) {
+	auth.LoadAuthModule(r.Group("/"), checkRegistered)
+}
+
+func (r Routes) registShareRoute() {
+	share.LoadShareModule(r.Group("/"))
 }
 
 func (r Routes) registStorageRoute() {

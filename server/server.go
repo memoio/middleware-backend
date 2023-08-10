@@ -8,7 +8,6 @@ import (
 	"github.com/memoio/backend/config"
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/controller"
-	"github.com/memoio/backend/internal/share"
 	"github.com/memoio/backend/server/routes"
 )
 
@@ -40,14 +39,12 @@ func NewServer(opt ServerOption) *http.Server {
 
 	auth.InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
 
-	router := routes.RegistRoutes()
+	router := routes.RegistRoutes(opt.CheckRegistered)
 
 	s := &Server{
 		Config: config,
 		Router: router,
 	}
-
-	s.registRoute(opt.CheckRegistered)
 
 	srv := &http.Server{
 		Addr:    opt.Endpoint,
@@ -55,18 +52,4 @@ func NewServer(opt ServerOption) *http.Server {
 	}
 
 	return srv
-}
-
-func (s Server) registRoute(checkRegistered bool) {
-	s.registLogin(checkRegistered)
-	s.registShare()
-	// s.registController()
-}
-
-func (s Server) registLogin(checkRegistered bool) {
-	auth.LoadAuthModule(s.Router.Group("/"), checkRegistered)
-}
-
-func (s Server) registShare() {
-	share.LoadAuthModule(s.Router.Group("/"))
 }

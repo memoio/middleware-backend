@@ -46,7 +46,7 @@ func loadApiMap() {
 	ApiMap["/ipfs"] = &Api{G: ipfs, T: storage.IPFS}
 }
 
-func LoadAuthModule(g *gin.RouterGroup) {
+func LoadShareModule(g *gin.RouterGroup) {
 	err := InitShareTable()
 	if err != nil {
 		panic(err.Error())
@@ -135,6 +135,22 @@ func DownloadShareHandler() gin.HandlerFunc {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
 			return
+		}
+
+		if !file.Public {
+			if share.Key == "" {
+				share.Key = "f1d4a0b37124c3a7"
+			}
+			output := new(bytes.Buffer)
+			output.Write(w.Bytes())
+			w.Reset()
+			err = utils.DecryptFile(output, &w, []byte(share.Key))
+			if err != nil {
+				lerr := logs.ControllerError{Message: fmt.Sprint("encryt error", err)}
+				errRes := logs.ToAPIErrorCode(lerr)
+				c.JSON(errRes.HTTPStatusCode, errRes)
+				return
+			}
 		}
 
 		head := fmt.Sprintf("attachment; filename=\"%s\"", file.Name)

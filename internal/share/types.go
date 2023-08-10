@@ -18,6 +18,7 @@ type ShareObjectInfo struct {
 	MID         string          `json:"mid" gorm:"uniqueIndex:uni"`
 	SType       api.StorageType `json:"type" gorm:"uniqueIndex:uni"`
 	FileName    string          `json:"filename" gorm:"uniqueIndex:uni"`
+	Key         string          `json:"key"`
 	ExpiredTime int64           `json:"expire"`
 }
 
