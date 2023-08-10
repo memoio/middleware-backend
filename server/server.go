@@ -9,10 +9,11 @@ import (
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/controller"
 	"github.com/memoio/backend/internal/share"
+	"github.com/memoio/backend/server/routes"
 )
 
 type Server struct {
-	Router     *gin.Engine
+	Router     routes.Routes
 	Config     *config.Config
 	Controller *controller.Controller
 }
@@ -39,7 +40,7 @@ func NewServer(opt ServerOption) *http.Server {
 
 	auth.InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
 
-	router := gin.Default()
+	router := routes.RegistRoutes()
 
 	s := &Server{
 		Config: config,
@@ -57,14 +58,9 @@ func NewServer(opt ServerOption) *http.Server {
 }
 
 func (s Server) registRoute(checkRegistered bool) {
-	s.Router.Use(Cors())
-	s.Router.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Welcome Server")
-	})
-
 	s.registLogin(checkRegistered)
 	s.registShare()
-	s.registController()
+	// s.registController()
 }
 
 func (s Server) registLogin(checkRegistered bool) {
@@ -73,16 +69,4 @@ func (s Server) registLogin(checkRegistered bool) {
 
 func (s Server) registShare() {
 	share.LoadAuthModule(s.Router.Group("/"))
-}
-
-func (s Server) registController() {
-	for k := range controller.ApiMap {
-		r := s.Router.Group(k)
-		ct := controller.NewController(r.BasePath(), s.Config)
-		s.Controller = ct
-		ct.Start()
-		s.StorageRegistRoutes(r)
-		s.accountRegistRoutes(r)
-		s.packagesRegistRoutes(r)
-	}
 }

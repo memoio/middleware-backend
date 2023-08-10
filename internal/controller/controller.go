@@ -5,11 +5,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/contract"
 	"github.com/memoio/backend/internal/database"
-	"github.com/memoio/backend/internal/gateway"
-	"github.com/memoio/backend/internal/storage"
+	"github.com/memoio/backend/internal/gateway/mefs"
+	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/go-mefs-v2/lib/backend/kv"
 	"github.com/memoio/go-mefs-v2/lib/backend/wrap"
 )
@@ -19,36 +20,31 @@ const (
 )
 
 type Controller struct {
-	storageApi  gateway.IGateway
+	storageApi  api.IGateway
 	contracts   map[int]*contract.Contract
-	storageType storage.StorageType
+	storageType api.StorageType
 	cfg         *config.Config
 	is          *database.SendStorage
 	sp          *database.SendPay
 	stop        chan struct{}
 }
 
-func NewController(path string, cfg *config.Config) *Controller {
+func NewController(st api.StorageType, store api.IGateway, cfg *config.Config) (*Controller, error) {
 	logger.Info("new controller")
-	api, ok := ApiMap[path]
-	if !ok {
-		logger.Error("storage api not support")
-		return nil
-	}
 
 	ct := contract.NewContract(cfg.Contract)
 
 	opt := kv.DefaultOptions
-	bpath := "./datastore/" + api.T.String()
+	bpath := "./datastore/" + st.String()
 	err := os.MkdirAll(bpath, os.ModePerm)
 	if err != nil {
 		logger.Error(err)
-		return nil
+		return nil, logs.ControllerError{Message: err.Error()}
 	}
 	ds, err := kv.NewBadgerStore(bpath, &opt)
 	if err != nil {
 		logger.Error(err)
-		return nil
+		return nil, logs.ControllerError{Message: err.Error()}
 	}
 
 	dss := wrap.NewKVStore(metaStorePrefix, ds)
@@ -57,13 +53,32 @@ func NewController(path string, cfg *config.Config) *Controller {
 	sp := database.NewSenderPay(dss)
 
 	return &Controller{
-		storageApi:  api.G,
-		storageType: api.T,
+		storageApi:  store,
+		storageType: st,
 		contracts:   ct,
 		is:          is,
 		sp:          sp,
 		cfg:         cfg,
+	}, nil
+}
+
+func (c *Controller) ChangeUser(user string) error {
+	mefsc, ok := c.cfg.Storage.Mefs[user]
+	if !ok {
+		lerr := logs.ControllerError{Message: "change user error"}
+		logger.Info(lerr)
+		return lerr
 	}
+
+	store, err := mefs.NewGatewayApiAndToken(mefsc.Api, mefsc.Token)
+	if err != nil {
+		lerr := logs.ControllerError{Message: err.Error()}
+		logger.Info(lerr)
+		return lerr
+	}
+
+	c.storageApi = store
+	return nil
 }
 
 func (c *Controller) Start() {

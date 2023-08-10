@@ -23,16 +23,16 @@ type Config struct {
 }
 
 type StorageConfig struct {
-	Mefs        MefsConfig       `json:"mefs"`
-	Ipfs        IpfsConfig       `json:"ipfs"`
-	Prices      map[string]int64 `json:"prices"`
-	TrafficCost int64            `json:"traffic_cost"`
+	Mefs        map[string]MefsConfig `json:"mefs"`
+	Ipfs        IpfsConfig            `json:"ipfs"`
+	Prices      map[string]int64      `json:"prices"`
+	TrafficCost int64                 `json:"traffic_cost"`
 }
 
 type MefsConfig struct {
-	Api          string `json:"api"`
-	Token        string `json:"token"`
-	ContractAddr string `json:"contractaddr"`
+	Api   string `json:"api"`
+	Token string `json:"token"`
+	// ContractAddr string `json:"contractaddr"`
 }
 
 type IpfsConfig struct {
@@ -45,9 +45,9 @@ func newDefaultIpfsConfig() IpfsConfig {
 	}
 }
 
-func newDefaultMefsConfig() MefsConfig {
-	return MefsConfig{
-		Api: "/ip4/127.0.0.1/tcp/5001",
+func newDefaultMefsConfig() map[string]MefsConfig {
+	return map[string]MefsConfig{
+		"u1": {Api: "/ip4/127.0.0.1/tcp/5001"},
 	}
 }
 

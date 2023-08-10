@@ -4,8 +4,8 @@ import (
 	"math/big"
 	"sync"
 
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
-	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/go-mefs-v2/lib/types/store"
 )
 
@@ -22,7 +22,7 @@ func NewSenderPay(ds store.KVStore) *SendPay {
 	}
 }
 
-func (s *SendPay) AddPay(chain int, address string, st storage.StorageType, size, value *big.Int, hashid string) error {
+func (s *SendPay) AddPay(chain int, address string, st api.StorageType, size, value *big.Int, hashid string) error {
 	if size.Sign() <= 0 || value.Sign() <= 0 {
 		err := logs.DataBaseError{Message: "size or amount should be larger than zero"}
 		logger.Error(err)
@@ -57,7 +57,7 @@ func (s *SendPay) AddPay(chain int, address string, st storage.StorageType, size
 	return nil
 }
 
-func (s *SendPay) loadPay(chain int, address string, st storage.StorageType) (*PayCheck, error) {
+func (s *SendPay) loadPay(chain int, address string, st api.StorageType) (*PayCheck, error) {
 	key := getKey(payPrefix, address, st, chain)
 	data, err := s.ds.Get(key)
 	if err != nil {
@@ -80,7 +80,7 @@ func (s *SendPay) loadPay(chain int, address string, st storage.StorageType) (*P
 	return schk, nil
 }
 
-func (s *SendPay) create(chain int, address string, st storage.StorageType) (*PayCheck, error) {
+func (s *SendPay) create(chain int, address string, st api.StorageType) (*PayCheck, error) {
 	sc := newPayCheck(chain, address, st)
 
 	return sc, sc.Save(s.ds)
@@ -96,7 +96,7 @@ func (s *SendPay) GetAllStorage() []*PayCheck {
 	return res
 }
 
-func (s *SendPay) ResetPay(chain int, address string, st storage.StorageType) error {
+func (s *SendPay) ResetPay(chain int, address string, st api.StorageType) error {
 	pchk, err := s.create(chain, address, st)
 	if err != nil {
 		logger.Error(err)
@@ -107,7 +107,7 @@ func (s *SendPay) ResetPay(chain int, address string, st storage.StorageType) er
 	return nil
 }
 
-func (s *SendPay) Size(chain int, address string, st storage.StorageType) (*big.Int, error) {
+func (s *SendPay) Size(chain int, address string, st api.StorageType) (*big.Int, error) {
 	pkey := string(getKey(payPrefix, address, st, chain))
 	p, ok := s.pool[pkey]
 	if !ok {

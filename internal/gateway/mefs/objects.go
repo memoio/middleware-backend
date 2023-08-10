@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/memoio/backend/internal/gateway"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/utils"
 	mclient "github.com/memoio/go-mefs-v2/api/client"
 	"github.com/memoio/go-mefs-v2/build"
@@ -18,16 +18,37 @@ import (
 	mtypes "github.com/memoio/go-mefs-v2/lib/types"
 )
 
-var _ gateway.IGateway = (*Mefs)(nil)
+var _ api.IGateway = (*Mefs)(nil)
 
 type Mefs struct {
 	addr    string
 	headers http.Header
 }
 
-func NewGateway() (gateway.IGateway, error) {
+func NewGateway() (api.IGateway, error) {
 	repoDir := os.Getenv("MEFS_PATH")
 	addr, headers, err := mclient.GetMemoClientInfo(repoDir)
+	if err != nil {
+		return nil, err
+	}
+	napi, closer, err := mclient.NewUserNode(context.Background(), addr, headers)
+	if err != nil {
+		return nil, err
+	}
+	defer closer()
+	_, err = napi.ShowStorage(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	return &Mefs{
+		addr:    addr,
+		headers: headers,
+	}, nil
+}
+
+func NewGatewayApiAndToken(api, token string) (api.IGateway, error) {
+	addr, headers, err := mclient.CreateMemoClientInfo(api, token)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +123,7 @@ func (m *Mefs) GetBucketInfo(ctx context.Context, bucket string) (bi mtypes.Buck
 // 	return out.String(), nil
 // }
 
-func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader, opt gateway.ObjectOptions) (objInfo gateway.ObjectInfo, err error) {
+func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader, opt api.ObjectOptions) (objInfo api.ObjectInfo, err error) {
 	err = m.MakeBucketWithLocation(ctx, bucket)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
@@ -133,7 +154,7 @@ func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader
 
 	etag, _ := metag.ToString(moi.ETag)
 
-	return gateway.ObjectInfo{
+	return api.ObjectInfo{
 		Bucket:      bucket,
 		Name:        moi.Name,
 		Size:        int64(moi.Size),
@@ -143,7 +164,7 @@ func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader
 	}, nil
 }
 
-func (m *Mefs) GetObject(ctx context.Context, objectName string, writer io.Writer, opt gateway.ObjectOptions) error {
+func (m *Mefs) GetObject(ctx context.Context, objectName string, writer io.Writer, opt api.ObjectOptions) error {
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
 		return err
@@ -191,30 +212,30 @@ func (m *Mefs) GetObject(ctx context.Context, objectName string, writer io.Write
 	return nil
 }
 
-func (m *Mefs) GetObjectInfo(ctx context.Context, cid string) (gateway.ObjectInfo, error) {
+func (m *Mefs) GetObjectInfo(ctx context.Context, cid string) (api.ObjectInfo, error) {
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
-		return gateway.ObjectInfo{}, err
+		return api.ObjectInfo{}, err
 	}
 	defer closer()
 
 	objInfo, err := napi.HeadObject(ctx, "", cid)
 	if err != nil {
-		return gateway.ObjectInfo{}, err
+		return api.ObjectInfo{}, err
 	}
 	ctype := utils.TypeByExtension(objInfo.Name)
 	if objInfo.UserDefined["content-type"] != "" {
 		ctype = objInfo.UserDefined["content-type"]
 	}
-	return gateway.ObjectInfo{
+	return api.ObjectInfo{
 		Name:  objInfo.Name,
 		Size:  int64(objInfo.Size),
 		CType: ctype,
 	}, nil
 }
 
-func (m *Mefs) ListObjects(ctx context.Context, bucket string) ([]gateway.ObjectInfo, error) {
-	var loi []gateway.ObjectInfo
+func (m *Mefs) ListObjects(ctx context.Context, bucket string) ([]api.ObjectInfo, error) {
+	var loi []api.ObjectInfo
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
 		return loi, err
@@ -227,7 +248,7 @@ func (m *Mefs) ListObjects(ctx context.Context, bucket string) ([]gateway.Object
 
 	for _, oi := range mloi.Objects {
 		etag, _ := metag.ToString(oi.ETag)
-		loi = append(loi, gateway.ObjectInfo{
+		loi = append(loi, api.ObjectInfo{
 			Bucket:      bucket,
 			Name:        oi.GetName(),
 			ModTime:     time.Unix(oi.GetTime(), 0).UTC(),

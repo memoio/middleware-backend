@@ -3,23 +3,22 @@ package share
 import (
 	"time"
 
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/config"
-	"github.com/memoio/backend/internal/controller"
 	"github.com/memoio/backend/internal/database"
 	"github.com/memoio/backend/internal/logs"
-	"github.com/memoio/backend/internal/storage"
 )
 
 type CreateShareRequest struct {
-	MID         string              `josn:"mid"`
-	Name        string              `json:"name"`
-	SType       storage.StorageType `json:"type"`
-	ExpiredTime int64               `josn:"expire"`
+	MID         string          `josn:"mid"`
+	Name        string          `json:"name"`
+	SType       api.StorageType `json:"type"`
+	ExpiredTime int64           `josn:"expire"`
 }
 
 func CreateShare(address string, chainID int, request CreateShareRequest) (string, error) {
 	// 查看是否支持该存储模式
-	_, ok := controller.ApiMap["/"+request.SType.String()]
+	_, ok := ApiMap["/"+request.SType.String()]
 	if !ok {
 		return "", logs.StorageNotSupport{}
 	}
@@ -80,9 +79,9 @@ func UpdateShare(share *ShareObjectInfo, request UpdateShareRequest) error {
 }
 
 type DeleteShareRequest struct {
-	MID   string              `josn:"mid"`
-	Name  string              `json:"name"`
-	SType storage.StorageType `json:"type"`
+	MID   string          `josn:"mid"`
+	Name  string          `json:"name"`
+	SType api.StorageType `json:"type"`
 }
 
 func DeleteShare(address string, chainID int, share *ShareObjectInfo) error {

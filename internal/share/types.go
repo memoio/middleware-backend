@@ -5,20 +5,20 @@ import (
 	"sync"
 	"time"
 
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/database"
 	"github.com/memoio/backend/internal/logs"
-	"github.com/memoio/backend/internal/storage"
 	"github.com/segmentio/ksuid"
 )
 
 type ShareObjectInfo struct {
-	ShareID     string              `json:"shareid" gorm:"primaryKey"`
-	Address     string              `json:"address" gorm:"uniqueIndex:uni"`
-	ChainID     int                 `json:"chainid" gorm:"uniqueIndex:uni"`
-	MID         string              `json:"mid" gorm:"uniqueIndex:uni"`
-	SType       storage.StorageType `json:"type" gorm:"uniqueIndex:uni"`
-	FileName    string              `json:"filename" gorm:"uniqueIndex:uni"`
-	ExpiredTime int64               `json:"expire"`
+	ShareID     string          `json:"shareid" gorm:"primaryKey"`
+	Address     string          `json:"address" gorm:"uniqueIndex:uni"`
+	ChainID     int             `json:"chainid" gorm:"uniqueIndex:uni"`
+	MID         string          `json:"mid" gorm:"uniqueIndex:uni"`
+	SType       api.StorageType `json:"type" gorm:"uniqueIndex:uni"`
+	FileName    string          `json:"filename" gorm:"uniqueIndex:uni"`
+	ExpiredTime int64           `json:"expire"`
 }
 
 var MemoCache = new(sync.Map)
@@ -42,7 +42,7 @@ func (s *ShareObjectInfo) CreateShare() (string, error) {
 	return s.ShareID, nil
 }
 
-func GetShareByUniqueIndex(address string, chainid int, mid string, stype storage.StorageType, name string) *ShareObjectInfo {
+func GetShareByUniqueIndex(address string, chainid int, mid string, stype api.StorageType, name string) *ShareObjectInfo {
 	var share ShareObjectInfo
 	if name != "" {
 		if err := database.DataBase.Where("address = ? and chain_id = ? and m_id = ? and s_type = ? and file_name = ?", address, chainid, mid, stype, name).Find(&share).Error; err != nil {
@@ -120,7 +120,7 @@ func (s *ShareObjectInfo) DeleteShare() error {
 	return nil
 }
 
-func GetFileInfo(address string, chainID int, mid string, stype storage.StorageType, name string) (database.FileInfo, error) {
+func GetFileInfo(address string, chainID int, mid string, stype api.StorageType, name string) (database.FileInfo, error) {
 	var fileinfos []database.FileInfo
 	var err error
 	if name != "" {
