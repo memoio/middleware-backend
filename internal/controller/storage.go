@@ -9,19 +9,24 @@ import (
 	"log"
 	"math/big"
 
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/database"
-	"github.com/memoio/backend/internal/gateway"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/utils"
 )
 
 var logger = logs.Logger("controller")
 
-type ObjectOptions gateway.ObjectOptions
+type ObjectOptions api.ObjectOptions
 
 func (c *Controller) PutObject(ctx context.Context, chain int, address, object string, r io.Reader, opts ObjectOptions) (PutObjectResult, error) {
 	result := PutObjectResult{}
-
+	if opts.User != "" {
+		err := c.ChangeUser(opts.User)
+		if err != nil {
+			return result, err
+		}
+	}
 	// Check if it is possible to write
 	err := c.CanWrite(ctx, chain, address, big.NewInt(opts.Size))
 	if err != nil {
@@ -30,7 +35,7 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 
 	// put obejct
 	bucket := address + fmt.Sprint(chain)
-	oi, err := c.storageApi.PutObject(ctx, bucket, object, r, gateway.ObjectOptions(opts))
+	oi, err := c.storageApi.PutObject(ctx, bucket, object, r, api.ObjectOptions(opts))
 	if err != nil {
 		return result, err
 	}
@@ -41,6 +46,7 @@ func (c *Controller) PutObject(ctx context.Context, chain int, address, object s
 	}
 	fi := database.FileInfo{
 		ChainID:    chain,
+		User:       opts.User,
 		Address:    address,
 		Name:       object,
 		Mid:        oi.Cid,
@@ -73,8 +79,14 @@ func (c *Controller) GetObject(ctx context.Context, chain int, address, mid stri
 	if err != nil {
 		return result, err
 	}
+	if obi.User != "" {
+		err := c.ChangeUser(obi.User)
+		if err != nil {
+			return result, err
+		}
+	}
 
-	err = c.storageApi.GetObject(ctx, mid, w, gateway.ObjectOptions(opts))
+	err = c.storageApi.GetObject(ctx, mid, w, api.ObjectOptions(opts))
 	if err != nil {
 		return result, err
 	}
@@ -93,7 +105,14 @@ func (c *Controller) GetObjectPublic(ctx context.Context, chain int, mid string,
 		return result, err
 	}
 
-	err = c.storageApi.GetObject(ctx, mid, w, gateway.ObjectOptions(opts))
+	if obi.User != "" {
+		err := c.ChangeUser(obi.User)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	err = c.storageApi.GetObject(ctx, mid, w, api.ObjectOptions(opts))
 	if err != nil {
 		return result, err
 	}
@@ -109,6 +128,13 @@ func (c *Controller) DeleteObject(ctx context.Context, address string, id int) e
 	fi, err := c.GetObjectById(ctx, id)
 	if err != nil {
 		return err
+	}
+
+	if fi.User != "" {
+		err := c.ChangeUser(fi.User)
+		if err != nil {
+			return err
+		}
 	}
 
 	if fi.Address != address {

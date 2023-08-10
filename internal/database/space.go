@@ -4,8 +4,8 @@ import (
 	"math/big"
 	"sync"
 
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
-	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/go-mefs-v2/lib/types/store"
 )
 
@@ -24,7 +24,7 @@ func NewSender(ds store.KVStore) *SendStorage {
 	return ss
 }
 
-func (s *SendStorage) AddStorage(chain int, address string, st storage.StorageType, size *big.Int, hashid string) error {
+func (s *SendStorage) AddStorage(chain int, address string, st api.StorageType, size *big.Int, hashid string) error {
 	if size.Sign() <= 0 {
 		err := logs.DataBaseError{Message: "size should be larger than zero"}
 		logger.Error(err)
@@ -59,7 +59,7 @@ func (s *SendStorage) AddStorage(chain int, address string, st storage.StorageTy
 	return nil
 }
 
-func (s *SendStorage) DelStorage(chain int, address string, st storage.StorageType, size *big.Int, hashid string) error {
+func (s *SendStorage) DelStorage(chain int, address string, st api.StorageType, size *big.Int, hashid string) error {
 	if size.Sign() <= 0 {
 		err := logs.DataBaseError{Message: "size should be larger than zero"}
 		logger.Error(err)
@@ -94,7 +94,7 @@ func (s *SendStorage) DelStorage(chain int, address string, st storage.StorageTy
 	return nil
 }
 
-func (s *SendStorage) GetStorage(chain int, address string, st storage.StorageType) (*big.Int, error) {
+func (s *SendStorage) GetStorage(chain int, address string, st api.StorageType) (*big.Int, error) {
 	pkey := string(getKey(storagePrefix, address, st, chain))
 	p, ok := s.pool[pkey]
 	if !ok {
@@ -110,7 +110,7 @@ func (s *SendStorage) GetStorage(chain int, address string, st storage.StorageTy
 	return p.Size(), nil
 }
 
-func (s *SendStorage) ResetStorage(chain int, address string, st storage.StorageType) error {
+func (s *SendStorage) ResetStorage(chain int, address string, st api.StorageType) error {
 	schk, err := s.create(chain, address, st)
 	if err != nil {
 		logger.Error(err)
@@ -121,7 +121,7 @@ func (s *SendStorage) ResetStorage(chain int, address string, st storage.Storage
 	return nil
 }
 
-func (s *SendStorage) loadStorage(chain int, address string, st storage.StorageType) (*StorageCheck, error) {
+func (s *SendStorage) loadStorage(chain int, address string, st api.StorageType) (*StorageCheck, error) {
 	key := getKey(storagePrefix, address, st, chain)
 	data, err := s.ds.Get(key)
 	if err != nil {
@@ -144,7 +144,7 @@ func (s *SendStorage) loadStorage(chain int, address string, st storage.StorageT
 	return schk, nil
 }
 
-func (s *SendStorage) create(chain int, address string, st storage.StorageType) (*StorageCheck, error) {
+func (s *SendStorage) create(chain int, address string, st api.StorageType) (*StorageCheck, error) {
 	sc := generateCheck(chain, address, st)
 
 	return sc, sc.Save(s.ds)

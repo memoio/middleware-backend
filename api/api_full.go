@@ -1,29 +1,9 @@
-package gateway
+package api
 
 import (
 	"context"
 	"io"
-	"time"
 )
-
-type ObjectInfo struct {
-	Bucket      string
-	Name        string
-	Size        int64
-	Cid         string
-	ModTime     time.Time
-	CType       string
-	UserDefined map[string]string
-}
-
-type ObjectOptions struct {
-	Key          []byte
-	Size         int64
-	Public       bool
-	MTime        time.Time
-	DeleteMarker bool
-	UserDefined  map[string]string
-}
 
 type IGateway interface {
 	PutObject(context.Context, string, string, io.Reader, ObjectOptions) (ObjectInfo, error)

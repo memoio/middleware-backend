@@ -4,10 +4,11 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/storage"
 )
 
-func (c *Contract) StoreOrderPkgExpiration(address, mid string, st storage.StorageType, size *big.Int) (string, error) {
+func (c *Contract) StoreOrderPkgExpiration(address, mid string, st api.StorageType, size *big.Int) (string, error) {
 	logger.Info("storeOrderPkgExpiration:", st, address, mid, size)
 	return c.sendTransaction("storeOrderPkgExpiration", common.HexToAddress(address), mid, uint8(st), size)
 }
@@ -28,17 +29,17 @@ func (c *Contract) AdminAddPkgInfo(time string, amount string, kind string, size
 	return c.sendTransaction("adminAddPkgInfo", t.Uint64(), a, uint8(k), s)
 }
 
-func (c *Contract) StoreOrderPkg(address, mid string, st storage.StorageType, size *big.Int) (string, error) {
+func (c *Contract) StoreOrderPkg(address, mid string, st api.StorageType, size *big.Int) (string, error) {
 	logger.Info("StoreOrderPkg:", st, address, mid, size)
 	return c.sendTransaction("storeOrderPkg", common.HexToAddress(address), mid, uint8(st), size)
 }
 
-func (c *Contract) StoreOrderPay(address, hash string, st storage.StorageType, amount *big.Int, size *big.Int) (string, error) {
+func (c *Contract) StoreOrderPay(address, hash string, st api.StorageType, amount *big.Int, size *big.Int) (string, error) {
 	logger.Info("StoreOrderPay:", address, hash, amount, size)
 	return c.sendTransaction("storeOrderpay", common.HexToAddress(address), hash, uint8(st), amount, size)
 }
 
-func (c *Contract) FlowOrderPay(address, hash string, st storage.StorageType, amount, size *big.Int) (string, error) {
+func (c *Contract) FlowOrderPay(address, hash string, st api.StorageType, amount, size *big.Int) (string, error) {
 	logger.Info("FlowOrderPay:", address, hash, amount, size)
 	return c.sendTransaction("flowOrderpay", common.HexToAddress(address), hash, uint8(st), amount, size)
 }

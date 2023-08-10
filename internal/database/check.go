@@ -6,8 +6,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/fxamacker/cbor/v2"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
-	"github.com/memoio/backend/internal/storage"
 	"github.com/memoio/go-mefs-v2/lib/types/store"
 )
 
@@ -19,7 +19,7 @@ const (
 type PayCheck struct {
 	ChainID int
 	Address common.Address
-	SType   storage.StorageType
+	SType   api.StorageType
 	Size    *big.Int
 	Value   *big.Int
 	hash    []string
@@ -34,7 +34,7 @@ func (p *PayCheck) Deserialize(b []byte) error {
 	return cbor.Unmarshal(b, p)
 }
 
-func newPayCheck(chain int, address string, st storage.StorageType) *PayCheck {
+func newPayCheck(chain int, address string, st api.StorageType) *PayCheck {
 	return &PayCheck{
 		ChainID: chain,
 		Address: common.HexToAddress(address),
@@ -82,7 +82,7 @@ func (s *PayCheck) Hash() string {
 type StorageCheck struct {
 	ChainID int
 	Address common.Address
-	SType   storage.StorageType
+	SType   api.StorageType
 	AddSize *big.Int
 	addhash []string
 	DelSize *big.Int
@@ -99,7 +99,7 @@ func (s *StorageCheck) Deserialize(b []byte) error {
 }
 
 // func (s *SendStorage) GetHash()
-func generateCheck(chain int, address string, st storage.StorageType) *StorageCheck {
+func generateCheck(chain int, address string, st api.StorageType) *StorageCheck {
 	return &StorageCheck{
 		ChainID: chain,
 		Address: common.HexToAddress(address),
@@ -167,6 +167,6 @@ func (s *StorageCheck) DelHash() string {
 	return res
 }
 
-func getKey(prefix, address string, st storage.StorageType, chain int) []byte {
+func getKey(prefix, address string, st api.StorageType, chain int) []byte {
 	return store.NewKey(prefix, address, st.String(), chain)
 }
