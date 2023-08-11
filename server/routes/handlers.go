@@ -60,7 +60,7 @@ func handlerIpfs() handler {
 
 func handleStorage(r *gin.RouterGroup, h handler) {
 	r.POST("/", auth.VerifyIdentityHandler, h.putObjectHandle)
-	r.POST("/:cid", auth.VerifyIdentityHandler, h.getObjectHandle)
+	r.GET("/:cid", auth.VerifyIdentityHandler, h.getObjectHandle)
 	r.GET("/listobjects", auth.VerifyIdentityHandler, h.listObjectsHandle)
 	r.GET("/delete", auth.VerifyIdentityHandler, h.deleteObjectHandle)
 	r.GET("/public/:cid", h.getPublicObjectHandle)
