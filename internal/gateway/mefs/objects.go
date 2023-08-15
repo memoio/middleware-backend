@@ -21,8 +21,10 @@ import (
 var _ api.IGateway = (*Mefs)(nil)
 
 type Mefs struct {
-	addr    string
-	headers http.Header
+	addr        string
+	headers     http.Header
+	DataCount   int
+	ParityCount int
 }
 
 func NewGateway() (api.IGateway, error) {
@@ -42,12 +44,14 @@ func NewGateway() (api.IGateway, error) {
 	}
 
 	return &Mefs{
-		addr:    addr,
-		headers: headers,
+		addr:        addr,
+		headers:     headers,
+		DataCount:   5,
+		ParityCount: 5,
 	}, nil
 }
 
-func NewGatewayApiAndToken(api, token string) (api.IGateway, error) {
+func NewGatewayApiAndToken(api, token string, dc, pc int) (api.IGateway, error) {
 	addr, headers, err := mclient.CreateMemoClientInfo(api, token)
 	if err != nil {
 		return nil, err
@@ -63,8 +67,10 @@ func NewGatewayApiAndToken(api, token string) (api.IGateway, error) {
 	}
 
 	return &Mefs{
-		addr:    addr,
-		headers: headers,
+		addr:        addr,
+		headers:     headers,
+		DataCount:   dc,
+		ParityCount: pc,
 	}, nil
 }
 
@@ -75,6 +81,9 @@ func (m *Mefs) MakeBucketWithLocation(ctx context.Context, bucket string) error 
 	}
 	defer closer()
 	opts := mcode.DefaultBucketOptions()
+
+	opts.DataCount = uint32(m.DataCount)
+	opts.ParityCount = uint32(m.ParityCount)
 
 	_, err = napi.CreateBucket(ctx, bucket, opts)
 	if err != nil {
