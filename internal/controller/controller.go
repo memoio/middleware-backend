@@ -70,7 +70,7 @@ func (c *Controller) ChangeUser(user string) error {
 		return lerr
 	}
 
-	store, err := mefs.NewGatewayApiAndToken(mefsc.Api, mefsc.Token)
+	store, err := mefs.NewGatewayApiAndToken(mefsc.Api, mefsc.Token, mefsc.DataCount, mefsc.ParityCount)
 	if err != nil {
 		lerr := logs.ControllerError{Message: err.Error()}
 		logger.Info(lerr)

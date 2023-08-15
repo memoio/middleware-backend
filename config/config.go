@@ -30,8 +30,10 @@ type StorageConfig struct {
 }
 
 type MefsConfig struct {
-	Api   string `json:"api"`
-	Token string `json:"token"`
+	Api         string `json:"api"`
+	Token       string `json:"token"`
+	DataCount   int    `json:"datacount"`
+	ParityCount int    `json:"paritycount"`
 	// ContractAddr string `json:"contractaddr"`
 }
 
