@@ -16,6 +16,10 @@ import (
 type EIP4361Request struct {
 	EIP191Message string `json:"message,omitempty"`
 	Signature     string `json:"signature,omitempty"`
+
+	// used for registe
+	Recommender string `json:"recommender"`
+	Source      string `json:"source"`
 }
 
 type profile struct {

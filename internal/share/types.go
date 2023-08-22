@@ -2,7 +2,6 @@ package share
 
 import (
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/memoio/backend/api"
@@ -21,8 +20,6 @@ type ShareObjectInfo struct {
 	Key         string          `json:"key"`
 	ExpiredTime int64           `json:"expire"`
 }
-
-var MemoCache = new(sync.Map)
 
 func InitShareTable() error {
 	return database.DataBase.AutoMigrate(&ShareObjectInfo{})

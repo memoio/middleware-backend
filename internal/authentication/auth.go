@@ -4,12 +4,15 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/internal/logs"
 )
 
 func LoadAuthModule(g *gin.RouterGroup, checkRegistered bool) {
+	InitRecommendTable()
+
 	g.GET("/challenge", ChallengeHandler())
 
 	g.POST("/login", LoginHandler())
@@ -24,6 +27,10 @@ func LoadAuthModule(g *gin.RouterGroup, checkRegistered bool) {
 			"chainid": c.GetInt("chainid"),
 		})
 	})
+
+	g.GET("/recommend", ListRecommendHandler())
+
+	g.GET("/recommend/:address", GetRecommendHandler())
 }
 
 func ChallengeHandler() gin.HandlerFunc {
@@ -69,17 +76,26 @@ func LoginHandler() gin.HandlerFunc {
 			c.JSON(errRes.HTTPStatusCode, errRes)
 			return
 		}
-		accessToken, refreshToken, _, err := Login(nonceManager, request)
+		accessToken, refreshToken, address, err := Login(nonceManager, request)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
 			return
 		}
 
-		// if address is new user in "memo.io" {
-		// 	init usr info
-		// }
-		// fmt.Println(address)
+		var recommend = Recommend{
+			Address:     address,
+			Recommender: request.Recommender,
+			Source:      request.Source,
+		}
+		err = recommend.CreateRecommend()
+		if err != nil {
+			if !strings.Contains(err.Error(), "UNIQUE constraint failed") || recommend.Recommender != "" || recommend.Source != "" {
+				errRes := logs.ToAPIErrorCode(err)
+				c.JSON(errRes.HTTPStatusCode, errRes)
+				return
+			}
+		}
 
 		c.JSON(http.StatusOK, map[string]string{
 			"accessToken":  accessToken,
@@ -148,4 +164,31 @@ func VerifyIdentityHandler(c *gin.Context) {
 
 	c.Set("address", address)
 	c.Set("chainid", chainid)
+}
+
+func ListRecommendHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		recommends, err := ListRecommend()
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.AbortWithStatusJSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		c.JSON(http.StatusOK, recommends)
+	}
+}
+
+func GetRecommendHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		address := c.Param("address")
+		recommend, err := GetRecommend(address)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.AbortWithStatusJSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		c.JSON(http.StatusOK, recommend)
+	}
 }
