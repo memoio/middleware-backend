@@ -4,9 +4,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/memoio/backend/docs"
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/filedns"
 	"github.com/memoio/backend/internal/share"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Routes struct {
@@ -14,7 +17,16 @@ type Routes struct {
 }
 
 func RegistRoutes() Routes {
+	docs.SwaggerInfo.Title = "MiddleWare API"
+	docs.SwaggerInfo.Description = "This is a middleware server."
+	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.Host = "localhost:8081"
+	docs.SwaggerInfo.BasePath = "/"
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
+
 	router := gin.Default()
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r := Routes{
 		router,
 	}

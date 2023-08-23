@@ -1,0 +1,114 @@
+basePath: /
+definitions:
+  logs.APIError:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      httpstatusCode:
+        type: integer
+    type: object
+host: localhost:8081/
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server Petstore server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Example API
+  version: "1.0"
+paths:
+  /ipfs/getSpacePrice/:
+    get:
+      consumes:
+      - application/json
+      description: get space price
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file id
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: get space price
+      tags:
+      - price
+  /ipfs/putOBJ/:
+    post:
+      consumes:
+      - application/json
+      description: put object
+      parameters:
+      - description: Object file to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file id
+          schema:
+            type: string
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: put object
+      tags:
+      - OBJ
+  /mefs/getSpacePrice/:
+    get:
+      consumes:
+      - application/json
+      description: get space price
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file id
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: get space price
+      tags:
+      - price
+  /mefs/putOBJ/:
+    post:
+      consumes:
+      - application/json
+      description: put object
+      parameters:
+      - description: Object file to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file id
+          schema:
+            type: string
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: put object
+      tags:
+      - OBJ
+swagger: "2.0"

@@ -70,6 +70,16 @@ func (h handler) cashTraffic(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// spacePrice godoc
+//	@Summary		get space price
+//	@Description	get space price
+//	@Tags			price
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	int	"file id"
+//	@Failure		521	{object}	logs.APIError
+//	@Router			/mefs/getSpacePrice/ [get]
+//	@Router			/ipfs/getSpacePrice/ [get]
 func (h handler) spacePrice(c *gin.Context) {
 	res, err := h.controller.SpacePrice(c.Request.Context())
 	if err != nil {

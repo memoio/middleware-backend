@@ -10,6 +10,17 @@ import (
 	"github.com/memoio/backend/server/controller"
 )
 
+//	putOBJ godoc
+//	@Summary		put object
+//	@Description	put object
+//	@Tags			OBJ
+//	@Accept			json
+//	@Produce		json
+//	@Param			file	formData	file	true	"Object file to upload"
+//	@Success		200		{object}	string	"file id"
+//	@Failure		521		{object}	logs.APIError
+//	@Router			/mefs/putOBJ/ [post]
+//	@Router			/ipfs/putOBJ/ [post]
 func (h handler) putObjectHandle(c *gin.Context) {
 	address := c.GetString("did")
 	file, err := c.FormFile("file")
