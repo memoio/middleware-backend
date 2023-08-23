@@ -43,6 +43,12 @@ type IDataBase interface {
 	Download(context.Context, CheckInfo) error
 	SpaceCheck(ctx context.Context, buyer string) CheckInfo
 	TrafficCheck(ctx context.Context, buyer string) CheckInfo
+
+	AddUser(context.Context, USerInfo) error
+	SelectUser(context.Context, string) (USerInfo, error)
+	DeleteUser(context.Context, int) error
+	ListUsers(context.Context) ([]USerInfo, error)
+	GetUser(context.Context, int) (USerInfo, error)
 }
 
 type IConfig interface {

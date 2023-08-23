@@ -19,7 +19,8 @@ type ObjectInfo struct {
 
 type ObjectOptions struct {
 	Size         int64
-	Message      SignMessage
+	Sign         string
+	Area         string
 	MTime        time.Time
 	DeleteMarker bool
 	UserDefined  map[string]string
@@ -97,10 +98,22 @@ type FileInfo struct {
 	ModTime    time.Time `gorm:"column:modtime"`
 	Public     bool
 	UserDefine string `gorm:"column:userdefine"`
+	UserID     int    `gorm:"column:userid"`
 }
 
 func (FileInfo) TableName() string {
 	return "fileinfo"
+}
+
+type USerInfo struct {
+	ID    int    `gorm:"primarykey"`
+	Area  string `gorm:"uniqueIndex:composite;column:area"`
+	Api   string `gorm:"uniqueIndex:composite;column:api"`
+	Token string `gorm:"uniqueIndex:composite;column:token"`
+}
+
+func (USerInfo) TableName() string {
+	return "userinfo"
 }
 
 type PayType uint8

@@ -52,8 +52,8 @@ func (u *CheckPay) Check(ctx context.Context, info api.CheckInfo) error {
 	p.Sign = info.Sign
 	p.Duration = 1
 	p.Nonce = info.Nonce.Uint64()
-	p.Size = info.CheckSize.Uint64()
 	p.UploadSize += info.FileSize.Uint64()
+	p.Size = p.UploadSize
 
 	u.pool[info.Buyer] = p
 	p.Save(u.ds)

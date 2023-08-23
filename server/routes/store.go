@@ -6,13 +6,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/server/controller"
 )
 
 func (h handler) putObjectHandle(c *gin.Context) {
-	address := c.GetString("address")
+	address := c.GetString("did")
 	file, err := c.FormFile("file")
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(logs.ServerError{Message: err.Error()})
@@ -38,8 +37,8 @@ func (h handler) putObjectHandle(c *gin.Context) {
 		return
 	}
 
-	checksize := c.PostForm("size")
 	sign := c.PostForm("sign")
+	area := c.PostForm("area")
 
 	if sign == "" {
 		lerr := logs.ControllerError{Message: "sign is empty"}
@@ -47,12 +46,8 @@ func (h handler) putObjectHandle(c *gin.Context) {
 		c.JSON(errRes.HTTPStatusCode, errRes)
 		return
 	}
-	msg := api.SignMessage{
-		Size: toUint64(checksize),
-		Sign: sign,
-	}
 
-	result, err := h.controller.PutObject(c.Request.Context(), address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud, Message: msg})
+	result, err := h.controller.PutObject(c.Request.Context(), address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud, Sign: sign, Area: area})
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)
@@ -64,9 +59,8 @@ func (h handler) putObjectHandle(c *gin.Context) {
 
 func (h handler) getObjectHandle(c *gin.Context) {
 	cid := c.Param("cid")
-	address := c.GetString("address")
+	address := c.GetString("did")
 
-	checksize := c.Query("size")
 	sign := c.Query("sign")
 
 	if sign == "" {
@@ -75,13 +69,9 @@ func (h handler) getObjectHandle(c *gin.Context) {
 		c.JSON(errRes.HTTPStatusCode, errRes)
 		return
 	}
-	msg := api.SignMessage{
-		Size: toUint64(checksize),
-		Sign: sign,
-	}
 
 	var w bytes.Buffer
-	result, err := h.controller.GetObject(c.Request.Context(), address, cid, &w, controller.ObjectOptions{Message: msg})
+	result, err := h.controller.GetObject(c.Request.Context(), address, cid, &w, controller.ObjectOptions{Sign: sign})
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)
@@ -97,7 +87,7 @@ func (h handler) getObjectHandle(c *gin.Context) {
 }
 
 func (h handler) listObjectsHandle(c *gin.Context) {
-	address := c.GetString("address")
+	address := c.GetString("did")
 
 	result, err := h.controller.ListObjects(c.Request.Context(), address)
 	if err != nil {
@@ -110,7 +100,7 @@ func (h handler) listObjectsHandle(c *gin.Context) {
 }
 
 func (h handler) deleteObjectHandle(c *gin.Context) {
-	address := c.GetString("address")
+	address := c.GetString("did")
 	id := c.Query("id")
 
 	err := h.controller.DeleteObject(c.Request.Context(), address, int(toInt64(id)))

@@ -36,6 +36,28 @@ func (c *Controller) TrafficPayInfo(ctx context.Context, address string) (IPayPa
 	return out0, err
 }
 
+func (c *Controller) SpacePrice(ctx context.Context) (uint64, error) {
+	out, err := c.contract.Call(ctx, "proxy", "spacePrice")
+	if err != nil {
+		return 0, err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint64)).(*uint64)
+
+	return out0, err
+}
+
+func (c *Controller) TrafficPrice(ctx context.Context) (uint64, error) {
+	out, err := c.contract.Call(ctx, "proxy", "trafficPrice")
+	if err != nil {
+		return 0, err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint64)).(*uint64)
+
+	return out0, err
+}
+
 func (c *Controller) CashSpace(ctx context.Context, buyer string) (string, error) {
 	check := c.getSpaceCheck(ctx, buyer)
 	sender, err := utils.GetSeller(ctx)
@@ -54,11 +76,18 @@ func (c *Controller) CashTraffic(ctx context.Context, buyer string) (string, err
 	return c.contract.CashTrafficCheck(ctx, sender, check.Nonce, check.CheckSize.Uint64(), check.Sign)
 }
 
-func (c *Controller) GetStorePayHash(ctx context.Context, address string, checksize uint64) (string, error) {
+func (c *Controller) GetStorePayHash(ctx context.Context, address string, size uint64) (string, error) {
 	pi, err := c.SpacePayInfo(ctx, address)
 	if err != nil {
 		return "", err
 	}
+
+	ci, err := c.getUpCacheInfo(ctx, address)
+	if err != nil {
+		return "", err
+	}
+
+	checksize := ci + size
 
 	return c.contract.GetStorePayHash(ctx, checksize, pi.Nonce), nil
 }

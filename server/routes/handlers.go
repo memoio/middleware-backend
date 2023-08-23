@@ -14,27 +14,29 @@ type handler struct {
 }
 
 func handleStorage(r *gin.RouterGroup, h handler) {
-	// store
-	r.POST("/", auth.VerifyIdentityHandler, h.putObjectHandle)
-	r.GET("/:cid", auth.VerifyIdentityHandler, h.getObjectHandle)
-	r.GET("/listobjects", auth.VerifyIdentityHandler, h.listObjectsHandle)
-	r.GET("/delete", auth.VerifyIdentityHandler, h.deleteObjectHandle)
+	// OBJ
+	r.POST("/putOBJ/", auth.VerifyIdentityHandler, h.putObjectHandle)
+	r.GET("/getOBJ/:cid", auth.VerifyIdentityHandler, h.getObjectHandle)
+	r.GET("/listOBJ", auth.VerifyIdentityHandler, h.listObjectsHandle)
+	r.GET("/deleteOBJ", auth.VerifyIdentityHandler, h.deleteObjectHandle)
 
 	// info
-	r.GET("/balance", auth.VerifyIdentityHandler, h.getBalanceHandle)
+	r.GET("/getBalance", auth.VerifyIdentityHandler, h.getBalanceHandle)
 
 	// package
-	r.GET("/space", auth.VerifyIdentityHandler, h.getSpace)
-	r.GET("/traffic", auth.VerifyIdentityHandler, h.getTraffic)
-	r.GET("/spacehash", auth.VerifyIdentityHandler, h.spaceHash)
-	r.GET("/traffichash", auth.VerifyIdentityHandler, h.trafficHash)
-	r.GET("/buyspace", auth.VerifyIdentityHandler, h.BuySpace)
-	r.GET("/buytraffic", auth.VerifyIdentityHandler, h.BuyTraffic)
-	r.GET("/approve", auth.VerifyIdentityHandler, h.Approve)
-	r.GET("/allowance", auth.VerifyIdentityHandler, h.allowance)
+	r.GET("/getSpace", auth.VerifyIdentityHandler, h.getSpace)
+	r.GET("/getTraffic", auth.VerifyIdentityHandler, h.getTraffic)
+	r.GET("/getSpaceHash", auth.VerifyIdentityHandler, h.spaceHash)
+	r.GET("/getTrafficHash", auth.VerifyIdentityHandler, h.trafficHash)
+	r.GET("/getSpacePrice", h.spacePrice)
+	r.GET("/getTrafficPrice", h.trafficPrice)
+	r.GET("/buySpace", auth.VerifyIdentityHandler, h.BuySpace)
+	r.GET("/buyTraffic", auth.VerifyIdentityHandler, h.BuyTraffic)
+	r.GET("/getApproveHash", auth.VerifyIdentityHandler, h.Approve)
+	r.GET("/getAllowance", auth.VerifyIdentityHandler, h.allowance)
 
-	r.GET("/cashspace", h.cashSpace)
-	r.GET("/cashtraffic", h.cashTraffic)
-	r.GET("/receipt", h.checkReceipt)
+	r.GET("/cashSpace", h.cashSpace)
+	r.GET("/cashTraffic", h.cashTraffic)
+	r.GET("/getReceipt", h.checkReceipt)
 
 }

@@ -18,7 +18,12 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 		return result, err
 	}
 
-	err = c.canWrite(ctx, address, uint64(opts.Size), opts.Message, pi.Nonce)
+	err = c.canWrite(ctx, address, uint64(opts.Size), opts.Sign, pi)
+	if err != nil {
+		return result, err
+	}
+
+	err = c.changeStore(ctx, opts.Area)
 	if err != nil {
 		return result, err
 	}
@@ -41,9 +46,10 @@ func (c *Controller) PutObject(ctx context.Context, address, object string, r io
 		Size:       oi.Size,
 		ModTime:    oi.ModTime,
 		UserDefine: string(userdefine),
+		UserID:     c.storeID,
 	}
 
-	err = c.storeFileInfo(ctx, fi, opts.Message, pi.Nonce)
+	err = c.storeFileInfo(ctx, fi, opts.Sign, pi.Nonce)
 	if err != nil {
 		c.store.DeleteObject(ctx, address, oi.Name)
 		return result, err
@@ -67,7 +73,12 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 		return result, err
 	}
 
-	err = c.canRead(ctx, address, uint64(ob.Size), opts.Message, pi.Nonce)
+	err = c.canRead(ctx, address, uint64(ob.Size), opts.Sign, pi)
+	if err != nil {
+		return result, err
+	}
+
+	err = c.changeStoreWithID(ctx, ob.UserID)
 	if err != nil {
 		return result, err
 	}
@@ -81,7 +92,7 @@ func (c *Controller) GetObject(ctx context.Context, address, mid string, w io.Wr
 	result.CType = utils.TypeByExtension(ob.Name)
 	result.Size = ob.Size
 
-	err = c.storeCacheInfo(ctx, ob, opts.Message, pi.Nonce)
+	err = c.storeCacheInfo(ctx, ob, opts.Sign, pi.Nonce)
 	if err != nil {
 		return result, err
 	}

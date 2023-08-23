@@ -27,7 +27,7 @@ func toBigInt(s string) *big.Int {
 	return b
 }
 func (h handler) getBalanceHandle(c *gin.Context) {
-	address := c.GetString("address")
+	address := c.GetString("did")
 	balance, err := h.controller.GetBalance(c.Request.Context(), address)
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
@@ -38,7 +38,7 @@ func (h handler) getBalanceHandle(c *gin.Context) {
 }
 
 func (h handler) getSpace(c *gin.Context) {
-	address := c.GetString("address")
+	address := c.GetString("did")
 	space, err := h.controller.SpacePayInfo(c.Request.Context(), address)
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
@@ -49,7 +49,7 @@ func (h handler) getSpace(c *gin.Context) {
 }
 
 func (h handler) getTraffic(c *gin.Context) {
-	address := c.GetString("address")
+	address := c.GetString("did")
 	space, err := h.controller.TrafficPayInfo(c.Request.Context(), address)
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
@@ -70,11 +70,18 @@ func (h handler) cashTraffic(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func (h handler) trafficHash(c *gin.Context) {
-	address := c.GetString("address")
-	checksize := c.Query("size")
+func (h handler) spacePrice(c *gin.Context) {
+	res, err := h.controller.SpacePrice(c.Request.Context())
+	if err != nil {
+		errRes := logs.ToAPIErrorCode(err)
+		c.JSON(errRes.HTTPStatusCode, errRes)
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
 
-	res, err := h.controller.GetReadPayHash(c.Request.Context(), address, toUint64(checksize))
+func (h handler) trafficPrice(c *gin.Context) {
+	res, err := h.controller.TrafficPrice(c.Request.Context())
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)
@@ -84,7 +91,7 @@ func (h handler) trafficHash(c *gin.Context) {
 }
 
 func (h handler) BuySpace(c *gin.Context) {
-	address := c.GetString("address")
+	address := c.GetString("did")
 	checksize := c.Query("size")
 
 	res, err := h.controller.BuySpace(c.Request.Context(), address, toUint64(checksize))
@@ -97,7 +104,7 @@ func (h handler) BuySpace(c *gin.Context) {
 }
 
 func (h handler) BuyTraffic(c *gin.Context) {
-	address := c.GetString("address")
+	address := c.GetString("did")
 	checksize := c.Query("size")
 
 	res, err := h.controller.BuyTraffic(c.Request.Context(), address, toUint64(checksize))
@@ -110,11 +117,11 @@ func (h handler) BuyTraffic(c *gin.Context) {
 }
 
 func (h handler) Approve(c *gin.Context) {
-	address := c.GetString("address")
-	size := c.Query("size")
+	address := c.GetString("did")
+	value := c.Query("value")
 	pt := c.Query("type")
 
-	res, err := h.controller.Approve(c.Request.Context(), api.StringToPayType(pt), address, toBigInt(size))
+	res, err := h.controller.Approve(c.Request.Context(), api.StringToPayType(pt), address, toBigInt(value))
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)
@@ -124,7 +131,7 @@ func (h handler) Approve(c *gin.Context) {
 }
 
 func (h handler) allowance(c *gin.Context) {
-	address := c.GetString("address")
+	address := c.GetString("did")
 	at := c.Query("type")
 
 	res, err := h.controller.Allowance(c.Request.Context(), api.StringToPayType(at), address)
@@ -147,10 +154,23 @@ func (h handler) cashSpace(c *gin.Context) {
 }
 
 func (h handler) spaceHash(c *gin.Context) {
-	address := c.GetString("address")
-	checksize := c.Query("size")
+	address := c.GetString("did")
+	filesize := c.Query("size")
 
-	res, err := h.controller.GetStorePayHash(c.Request.Context(), address, toUint64(checksize))
+	res, err := h.controller.GetStorePayHash(c.Request.Context(), address, toUint64(filesize))
+	if err != nil {
+		errRes := logs.ToAPIErrorCode(err)
+		c.JSON(errRes.HTTPStatusCode, errRes)
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func (h handler) trafficHash(c *gin.Context) {
+	address := c.GetString("did")
+	filesize := c.Query("size")
+
+	res, err := h.controller.GetReadPayHash(c.Request.Context(), address, toUint64(filesize))
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.JSON(errRes.HTTPStatusCode, errRes)

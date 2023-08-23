@@ -12,18 +12,17 @@ import (
 	"github.com/memoio/backend/internal/logs"
 )
 
-func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo, msg api.SignMessage, nonce *big.Int) error {
-	sig := hexutil.MustDecode(msg.Sign)
+func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo, sign string, nonce *big.Int) error {
+	sig := hexutil.MustDecode(sign)
 	if sig[64] == 27 || sig[64] == 28 {
 		sig[64] -= 27
 	}
 
 	info := api.CheckInfo{
-		Sign:      sig,
-		Buyer:     common.HexToAddress(fi.Address),
-		Nonce:     nonce,
-		CheckSize: big.NewInt(int64(msg.Size)),
-		FileSize:  big.NewInt(fi.Size),
+		Sign:     sig,
+		Buyer:    common.HexToAddress(fi.Address),
+		Nonce:    nonce,
+		FileSize: big.NewInt(fi.Size),
 	}
 
 	err := c.database.Upload(ctx, info)
@@ -33,18 +32,17 @@ func (c *Controller) storeFileInfo(ctx context.Context, fi api.FileInfo, msg api
 	return c.database.PutObject(ctx, fi)
 }
 
-func (c *Controller) storeCacheInfo(ctx context.Context, fi api.FileInfo, msg api.SignMessage, nonce *big.Int) error {
-	sig := hexutil.MustDecode(msg.Sign)
+func (c *Controller) storeCacheInfo(ctx context.Context, fi api.FileInfo, sign string, nonce *big.Int) error {
+	sig := hexutil.MustDecode(sign)
 	if sig[64] == 27 || sig[64] == 28 {
 		sig[64] -= 27
 	}
 
 	info := api.CheckInfo{
-		Sign:      sig,
-		Buyer:     common.HexToAddress(fi.Address),
-		Nonce:     nonce,
-		CheckSize: big.NewInt(int64(msg.Size)),
-		FileSize:  big.NewInt(fi.Size),
+		Sign:     sig,
+		Buyer:    common.HexToAddress(fi.Address),
+		Nonce:    nonce,
+		FileSize: big.NewInt(fi.Size),
 	}
 
 	return c.database.Download(ctx, info)

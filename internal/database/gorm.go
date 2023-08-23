@@ -42,7 +42,7 @@ func init() {
 
 	DataBase = db
 
-	DataBase.AutoMigrate(&api.FileInfo{})
+	DataBase.AutoMigrate(&api.FileInfo{}, &api.USerInfo{})
 }
 
 func NewDataStore(st string) (*DataStore, error) {

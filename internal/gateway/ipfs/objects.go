@@ -85,26 +85,3 @@ func (i *Ipfs) GetObjectInfo(ctx context.Context, cid string) (api.ObjectInfo, e
 func (i *Ipfs) DeleteObject(ctx context.Context, address, mid string) error {
 	return logs.StorageError{Message: "ipfs not support delete option"}
 }
-
-// func (i *Ipfs) ListObjects(ctx context.Context, address string) ([]gateway.ObjectInfo, error) {
-// 	ob, err := db.ListObjects(address)
-// 	if err != nil {
-// 		return []gateway.ObjectInfo{}, err
-// 	}
-
-// 	var objects []gateway.ObjectInfo
-
-// 	for _, oj := range ob {
-// 		objects = append(objects, toObjectInfo(oj))
-// 	}
-// 	return objects, nil
-// }
-
-// func toObjectInfo(o db.ObjectInfo) gateway.ObjectInfo {
-// 	return gateway.ObjectInfo{
-// 		Address: o.Address,
-// 		Name:    o.Name,
-// 		Cid:     o.Cid,
-// 		Size:    o.Size,
-// 	}
-// }

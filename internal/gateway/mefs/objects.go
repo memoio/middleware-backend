@@ -56,6 +56,33 @@ func NewGateway() (api.IGateway, error) {
 	}, nil
 }
 
+func NewGatewayWith(api, token string) (api.IGateway, error) {
+	addr, headers, err := mclient.CreateMemoClientInfo(api, token)
+	if err != nil {
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return nil, lerr
+	}
+	napi, closer, err := mclient.NewUserNode(context.Background(), addr, headers)
+	if err != nil {
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return nil, lerr
+	}
+	defer closer()
+	_, err = napi.ShowStorage(context.Background())
+	if err != nil {
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return nil, lerr
+	}
+
+	return &Mefs{
+		addr:    addr,
+		headers: headers,
+	}, nil
+}
+
 func (m *Mefs) MakeBucketWithLocation(ctx context.Context, bucket string) error {
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
 	if err != nil {
