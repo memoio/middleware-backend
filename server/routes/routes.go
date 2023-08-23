@@ -17,11 +17,6 @@ type Routes struct {
 }
 
 func RegistRoutes() Routes {
-	docs.SwaggerInfo.Title = "MiddleWare API"
-	docs.SwaggerInfo.Description = "This is a middleware server."
-	docs.SwaggerInfo.Version = "1.0"
-	docs.SwaggerInfo.Host = "localhost:8081"
-	docs.SwaggerInfo.BasePath = "/"
 	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 
 	router := gin.Default()

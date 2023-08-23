@@ -6,3 +6,4 @@ config.json
 internal/repo/*/
 internal/*/test/*
 **/*_test.go
+app/
