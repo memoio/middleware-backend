@@ -18,8 +18,10 @@ type EIP4361Request struct {
 	Signature     string `json:"signature,omitempty"`
 
 	// used for registe
-	Recommender string `json:"recommender"`
-	Source      string `json:"source"`
+	Recommender string `json:"recommender,omitempty"`
+	Source      string `json:"source,omitempty"`
+	// used for choose user
+	UserID int `json:"userID,omitempty"`
 }
 
 type profile struct {
@@ -136,12 +138,12 @@ func LoginWithLens(request EIP4361Request, required bool) (string, string, strin
 		return "", "", "", false, logs.AuthenticationFailed{Message: "Got wrong address/signature"}
 	}
 
-	accessToken, err := genAccessTokenWithFlag(message.GetAddress().Hex(), message.GetChainID(), isRegistered)
+	accessToken, err := genAccessTokenWithFlag(message.GetAddress().Hex(), message.GetChainID(), request.UserID, isRegistered)
 	if err != nil {
 		return "", "", "", false, err
 	}
 
-	refreshToken, err := genRefreshTokenWithFlag(message.GetAddress().Hex(), message.GetChainID(), isRegistered)
+	refreshToken, err := genRefreshTokenWithFlag(message.GetAddress().Hex(), message.GetChainID(), request.UserID, isRegistered)
 
 	return accessToken, refreshToken, message.GetAddress().Hex(), isRegistered, err
 }
@@ -176,12 +178,12 @@ func loginWithEth(nonceManager *NonceManager, request EIP4361Request) (string, s
 		return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
 	}
 
-	accessToken, err := genAccessToken(message.GetAddress().Hex(), message.GetChainID())
+	accessToken, err := genAccessToken(message.GetAddress().Hex(), message.GetChainID(), request.UserID)
 	if err != nil {
 		return "", "", "", err
 	}
 
-	refreshToken, err := genRefreshToken(message.GetAddress().Hex(), message.GetChainID())
+	refreshToken, err := genRefreshToken(message.GetAddress().Hex(), message.GetChainID(), request.UserID)
 
 	return accessToken, refreshToken, message.GetAddress().Hex(), err
 }

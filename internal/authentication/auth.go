@@ -83,6 +83,7 @@ func LoginHandler() gin.HandlerFunc {
 			return
 		}
 
+		var newAccount = true
 		var recommend = Recommend{
 			Address:     address,
 			Recommender: request.Recommender,
@@ -90,16 +91,19 @@ func LoginHandler() gin.HandlerFunc {
 		}
 		err = recommend.CreateRecommend()
 		if err != nil {
-			if !strings.Contains(err.Error(), "UNIQUE constraint failed") || recommend.Recommender != "" || recommend.Source != "" {
+			if !strings.Contains(err.Error(), "UNIQUE constraint failed") {
 				errRes := logs.ToAPIErrorCode(err)
 				c.JSON(errRes.HTTPStatusCode, errRes)
 				return
+			} else {
+				newAccount = false
 			}
 		}
 
-		c.JSON(http.StatusOK, map[string]string{
+		c.JSON(http.StatusOK, gin.H{
 			"accessToken":  accessToken,
 			"refreshToken": refreshToken,
+			"newAccount":   newAccount,
 		})
 	}
 }
@@ -155,7 +159,7 @@ func VerifyIdentityHandler(c *gin.Context) {
 		tokenString = "Bearer " + c.Query("token")
 	}
 
-	address, chainid, err := VerifyAccessToken(tokenString)
+	address, chainid, userID, err := VerifyAccessToken(tokenString)
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
 		c.AbortWithStatusJSON(errRes.HTTPStatusCode, errRes)
@@ -164,11 +168,13 @@ func VerifyIdentityHandler(c *gin.Context) {
 
 	c.Set("address", address)
 	c.Set("chainid", chainid)
+	c.Set("userid", userID)
 }
 
 func ListRecommendHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		recommends, err := ListRecommend()
+		recommender := c.Query("recommender")
+		recommends, err := ListRecommend(recommender)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.AbortWithStatusJSON(errRes.HTTPStatusCode, errRes)

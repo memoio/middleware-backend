@@ -20,11 +20,18 @@ func GetRecommend(address string) (*Recommend, error) {
 	return &recommend, nil
 }
 
-func ListRecommend() ([]Recommend, error) {
+func ListRecommend(recommender string) ([]Recommend, error) {
 	var recommends []Recommend
-	err := database.DataBase.Model(&Recommend{}).Find(&recommends).Error
-	if err != nil {
-		return nil, err
+	if recommender == "" {
+		err := database.DataBase.Model(&Recommend{}).Find(&recommends).Error
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err := database.DataBase.Model(&Recommend{}).Where("recommender = ?", recommender).Find(&recommends).Error
+		if err != nil {
+			return nil, err
+		}
 	}
 	return recommends, nil
 }
