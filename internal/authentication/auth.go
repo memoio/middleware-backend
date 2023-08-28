@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/memoio/go-did/memo"
 )
 
 func LoadAuthModule(g *gin.RouterGroup) {
@@ -79,7 +80,10 @@ func VerifyIdentityHandler(c *gin.Context) {
 		return
 	}
 
-	// c.Set("address", address)
+	resolver, _ := memo.NewMemoDIDResolver("dev")
+	address, _ := resolver.GetMasterKey(did)
+
+	c.Set("address", address)
 	c.Set("did", did)
 	c.Set("payload", payload)
 }
