@@ -40,7 +40,7 @@ func Login(did, nonce string, timestamp int64, signature string) (string, string
 
 	refreshToken, err := genRefreshToken(did)
 
-	return accessToken, refreshToken, nil
+	return accessToken, refreshToken, err
 }
 
 func VerifyIdentity(did, nonce, hash string, requestID int64, signature string) (bool, error) {
