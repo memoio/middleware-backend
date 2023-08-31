@@ -9,9 +9,9 @@ import (
 )
 
 type Session struct {
-	randomToken string
-	lastLogin   int64
-	requestID   int64
+	Nonce     string
+	LastLogin int64
+	RequestID int64
 }
 
 type SessionStore struct {
@@ -23,14 +23,14 @@ var sessionStore = SessionStore{
 	sessions: make(map[string]Session),
 }
 
-func (s *SessionStore) AddSession(did, token string, timestamp int64) error {
+func (s *SessionStore) AddSession(did, nonce string, timestamp int64) error {
 	if timestamp <= time.Now().Add(-1*time.Minute).Unix() {
 		return xerrors.Errorf("the request has timed out, please log in within one minute")
 	}
 
 	session, ok := s.sessions[did]
 	if ok {
-		if timestamp <= session.lastLogin {
+		if timestamp <= session.LastLogin {
 			return xerrors.Errorf("the current request is later than the latest request")
 		}
 	}
@@ -38,9 +38,9 @@ func (s *SessionStore) AddSession(did, token string, timestamp int64) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.sessions[did] = Session{
-		randomToken: token,
-		lastLogin:   timestamp,
-		requestID:   0,
+		Nonce:     nonce,
+		LastLogin: timestamp,
+		RequestID: 1,
 	}
 	return nil
 }
@@ -54,31 +54,26 @@ func (s *SessionStore) GetSession(did string) (Session, error) {
 	return session, nil
 }
 
-func (s *SessionStore) VerifySession(did, token string, requestID int64) error {
+func (s *SessionStore) VerifySession(did, nonce string, requestID int64) error {
 	session, ok := s.sessions[did]
 	if !ok {
 		return xerrors.Errorf("cannot find session, please log in first")
 	}
 
-	if token != session.randomToken {
-		return xerrors.Errorf("can't match the token, please check your input or log in again")
+	if nonce != session.Nonce {
+		return xerrors.Errorf("can't match the nonce, please check your input or log in again")
 	}
 
-	// 循环等待上一个request完成
-	for index := 0; index < 100; index += 1 {
-		session := s.sessions[did]
-		if requestID != session.requestID+1 {
-			return xerrors.Errorf("not a sequential request")
-		}
-		time.Sleep(10 * time.Millisecond)
+	if requestID != session.RequestID {
+		return xerrors.Errorf("not a sequential request")
 	}
 
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.sessions[did] = Session{
-		randomToken: session.randomToken,
-		lastLogin:   session.lastLogin,
-		requestID:   session.requestID + 1,
+		Nonce:     session.Nonce,
+		LastLogin: session.LastLogin,
+		RequestID: session.RequestID + 1,
 	}
 	return nil
 }
