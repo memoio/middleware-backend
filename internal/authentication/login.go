@@ -2,78 +2,83 @@ package auth
 
 import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/memoio/go-did/memo"
-	"github.com/memoio/go-did/types"
 )
 
 type Request struct {
 	Address     string `json:"address"`
-	RandomToken string `josn:"token"`
+	RandomNonce string `josn:"nonce"`
 	Timestamp   int64  `json:"timestamp"`
 	Signature   string `json:"signature"`
 }
 
-func Login(did, token string, timestamp int64, signature string) (bool, error) {
-	tokenByte, err := hexutil.Decode(token)
+func Login(did, nonce string, timestamp int64, signature string) (string, string, error) {
+	nonceBytes, err := hexutil.Decode(nonce)
+	if err != nil {
+		return "", "", err
+	}
+
+	sig, err := hexutil.Decode(signature)
+	if err != nil {
+		return "", "", err
+	}
+
+	ok, err := CheckAuthPermission(did, sig, []byte(did), nonceBytes, int64ToBytes(timestamp))
+	if err != nil || !ok {
+		return "", "", err
+	}
+
+	err = sessionStore.AddSession(did, nonce, timestamp)
+	if err != nil {
+		return "", "", err
+	}
+
+	accessToken, err := genAccessToken(did)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err := genRefreshToken(did)
+
+	return accessToken, refreshToken, err
+}
+
+func VerifyIdentity(did, nonce, hash string, requestID int64, signature string) (bool, error) {
+	err := sessionStore.VerifySession(did, nonce, requestID)
 	if err != nil {
 		return false, err
 	}
 
-	hash := crypto.Keccak256([]byte(did), tokenByte, int64ToBytes(timestamp))
+	nonceBytes, err := hexutil.Decode(nonce)
+	if err != nil {
+		return false, err
+	}
+
+	var message [][]byte
+	if hash != "" {
+		hashBytes, err := hexutil.Decode(hash)
+		if err != nil {
+			return false, err
+		}
+		message = [][]byte{[]byte(did), nonceBytes, hashBytes, int64ToBytes(requestID)}
+	} else {
+		message = [][]byte{[]byte(did), nonceBytes, int64ToBytes(requestID)}
+	}
+
 	sig, err := hexutil.Decode(signature)
 	if err != nil {
 		return false, err
 	}
 
-	publicKey, err := crypto.SigToPub(hash, sig)
-	if err != nil {
-		return false, err
-	}
-
-	ok, err := CheckAuthPermission(did, crypto.PubkeyToAddress(*publicKey).Hex())
+	ok, err := CheckAuthPermission(did, sig, message...)
 	if err != nil || !ok {
 		return ok, err
-	}
-
-	err = sessionStore.AddSession(did, token, timestamp)
-	if err != nil {
-		return false, err
 	}
 
 	return true, nil
 }
 
-func VerifyIdentity(did, token, payload string, requestID int64, signature string) (bool, error) {
-	tokenByte, err := hexutil.Decode(token)
-	if err != nil {
-		return false, err
-	}
-
-	hash := crypto.Keccak256([]byte(did), tokenByte, int64ToBytes(requestID))
-	sig, err := hexutil.Decode(signature)
-	if err != nil {
-		return false, err
-	}
-	publicKey, err := crypto.SigToPub(hash, sig)
-	if err != nil {
-		return false, err
-	}
-
-	ok, err := CheckAuthPermission(did, crypto.PubkeyToAddress(*publicKey).Hex())
-	if err != nil || !ok {
-		return ok, err
-	}
-
-	err = sessionStore.VerifySession(did, token, requestID)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-func CheckAuthPermission(did, address string) (bool, error) {
+func CheckAuthPermission(did string, sig []byte, message ...[]byte) (bool, error) {
 	resolver, err := memo.NewMemoDIDResolver("dev")
 	if err != nil {
 		return false, err
@@ -84,19 +89,14 @@ func CheckAuthPermission(did, address string) (bool, error) {
 		return false, err
 	}
 
-	var permission = false
 	for _, key := range keys {
-		permitAddr, err := types.PublicKeyToAddress(key)
-		if err != nil {
-			continue
-		}
-
-		if address == permitAddr.Hex() {
-			permission = true
+		ok, _ := key.VerifySignature(sig, message...)
+		if ok {
+			return true, nil
 		}
 	}
 
-	return permission, nil
+	return false, nil
 }
 
 func int64ToBytes(v int64) []byte {

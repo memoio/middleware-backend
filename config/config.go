@@ -21,8 +21,8 @@ type Config struct {
 	Contract    ContractConfig         `json:"contract"`
 	SecurityKey string                 `json:"securityKey"`
 	Domain      string                 `json:"domain"`
-	LensAPIUrl  string                 `json:"lensAPIUrl"`
 	EthDriveUrl string                 `json:"ethDriveUrl"`
+	// LensAPIUrl  string                 `json:"lensAPIUrl"`
 }
 
 type StorageConfig struct {
@@ -95,8 +95,8 @@ func NewDefaultConfig() *Config {
 		Contract:    newDefaultContractConfig(),
 		SecurityKey: newDefaultSecurityKeyConfig(),
 		Domain:      newDefaultDomainConfig(),
-		LensAPIUrl:  "https://api.lens.dev",
 		EthDriveUrl: "https://ethdrive.net",
+		// LensAPIUrl:  "https://api.lens.dev",
 	}
 }
 

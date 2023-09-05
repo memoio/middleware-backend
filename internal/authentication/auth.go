@@ -4,13 +4,23 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/go-did/memo"
 )
 
 func LoadAuthModule(g *gin.RouterGroup) {
+	initJWTConfig()
+
 	g.POST("/login", LoginHandler)
 	g.GET("/login", GetSessionHandler)
-	g.GET("/identity", VerifyIdentityHandler, func(c *gin.Context) {
+	g.POST("/refresh", RefreshHandler)
+
+	// test API
+	g.GET("/test/identity", VerifyIdentityHandler, func(c *gin.Context) {
 		c.JSON(200, fmt.Sprintf("did:%s  payload:%s\n", c.GetString("did"), c.GetString("payload")))
+	})
+	g.GET("/test/accesstoken", VerifyAccessTokenHandler, func(c *gin.Context) {
+		c.JSON(200, fmt.Sprintf("did:%s  address:%s\n", c.GetString("did"), c.GetString("address")))
 	})
 }
 
@@ -20,7 +30,7 @@ func LoginHandler(c *gin.Context) {
 	c.BindJSON(&body)
 
 	did, ok1 := body["did"].(string)
-	token, ok2 := body["token"].(string)
+	nonce, ok2 := body["nonce"].(string)
 	timestamp, ok3 := body["timestamp"].(float64)
 	signature, ok4 := body["signature"].(string)
 	if !ok1 || !ok2 || !ok3 || !ok4 {
@@ -28,17 +38,17 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	ok, err := Login(did, token, int64(timestamp), signature)
+	accessToken, refreshToken, err := Login(did, nonce, int64(timestamp), signature)
 	if err != nil {
 		c.JSON(401, gin.H{"error": err.Error()})
 		return
 	}
-	if !ok {
-		c.JSON(401, gin.H{"error": fmt.Sprintf("can't log in as %s", did)})
-		return
-	}
 
-	c.String(200, "Login success!")
+	c.JSON(200, gin.H{
+		"accessToken":  accessToken,
+		"refreshToken": refreshToken,
+	})
+
 }
 
 func GetSessionHandler(c *gin.Context) {
@@ -47,9 +57,43 @@ func GetSessionHandler(c *gin.Context) {
 	session, err := sessionStore.GetSession(did)
 	if err != nil {
 		c.JSON(200, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(200, session)
+}
+
+func RefreshHandler(c *gin.Context) {
+	tokenString := c.GetHeader("Authorization")
+
+	accessToken, err := VerifyRefreshToken(tokenString)
+	if err != nil {
+		errRes := logs.ToAPIErrorCode(err)
+		c.AbortWithStatusJSON(errRes.HTTPStatusCode, errRes)
+		return
+	}
+
+	c.JSON(200, map[string]string{
+		"accessToken": accessToken,
+	})
+
+}
+
+func VerifyAccessTokenHandler(c *gin.Context) {
+	tokenString := c.GetHeader("Authorization")
+
+	did, err := VerifyAccessToken(tokenString)
+	if err != nil {
+		errRes := logs.ToAPIErrorCode(err)
+		c.AbortWithStatusJSON(errRes.HTTPStatusCode, errRes)
+		return
+	}
+
+	resolver, _ := memo.NewMemoDIDResolver("dev")
+	address, _ := resolver.GetMasterKey(did)
+
+	c.Set("address", address)
+	c.Set("did", did)
 }
 
 func VerifyIdentityHandler(c *gin.Context) {
@@ -65,11 +109,11 @@ func VerifyIdentityHandler(c *gin.Context) {
 		return
 	}
 
-	var payload string
-	if body["payload"] != nil {
-		payload = body["payload"].(string)
+	var hash string
+	if body["hash"] != nil {
+		hash = body["hash"].(string)
 	}
-	ok, err := VerifyIdentity(did, token, payload, int64(requestID), signature)
+	ok, err := VerifyIdentity(did, token, hash, int64(requestID), signature)
 	if err != nil {
 		c.AbortWithStatusJSON(401, gin.H{"error": err.Error()})
 		return
@@ -79,7 +123,10 @@ func VerifyIdentityHandler(c *gin.Context) {
 		return
 	}
 
-	// c.Set("address", address)
+	resolver, _ := memo.NewMemoDIDResolver("dev")
+	address, _ := resolver.GetMasterKey(did)
+
+	c.Set("address", address)
 	c.Set("did", did)
-	c.Set("payload", payload)
+	c.Set("hash", hash)
 }
