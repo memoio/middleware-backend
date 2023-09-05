@@ -14,6 +14,7 @@ import (
 
 type Routes struct {
 	*gin.Engine
+	handler *handler
 }
 
 func RegistRoutes() Routes {
@@ -22,14 +23,20 @@ func RegistRoutes() Routes {
 	router := gin.Default()
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	handler := newHandler()
+
 	r := Routes{
 		router,
+		handler,
 	}
 
 	r.registRoute()
 	r.registLoginRoute()
 	r.registShareRoute()
 	r.registFileDnsRoute()
+	r.registAccount()
+	r.registAdmin()
 	r.registStorageRoute()
 	return r
 }
@@ -37,6 +44,7 @@ func RegistRoutes() Routes {
 func (r Routes) registRoute() {
 	r.MaxMultipartMemory = 8 << 20 // 8 MiB
 	r.Use(Cors())
+	r.Use(ErrorHandler())
 	r.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Welcome Server")
 	})
@@ -54,7 +62,15 @@ func (r Routes) registFileDnsRoute() {
 	filedns.LoadFileDnsModule(r.Group("/"))
 }
 
+func (r Routes) registAccount() {
+	r.handler.handleAccount(r.Group("/account"))
+}
+
+func (r Routes) registAdmin() {
+	r.handler.handleAdmin(r.Group("/admin"))
+}
+
 func (r Routes) registStorageRoute() {
-	handleStorage(r.Group("/mefs"), handlerMefs())
-	handleStorage(r.Group("/ipfs"), handlerIpfs())
+	r.handler.handleStorage(r.Group("/mefs"), handlerMefs())
+	r.handler.handleStorage(r.Group("/ipfs"), handlerIpfs())
 }

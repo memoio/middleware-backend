@@ -4,10 +4,15 @@ import (
 	"math/big"
 	"time"
 
+	bls12377 "github.com/consensys/gnark-crypto/ecc/bls12-377"
+	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr"
+	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr/kzg"
 	"github.com/ethereum/go-ethereum/common"
 )
 
 type ObjectInfo struct {
+	SType       StorageType
+	USerID      int
 	Bucket      string
 	Name        string
 	Size        int64
@@ -34,11 +39,10 @@ type SignMessage struct {
 }
 
 type CheckInfo struct {
-	Buyer     common.Address
-	CheckSize *big.Int
-	FileSize  *big.Int
-	Nonce     *big.Int
-	Sign      []byte
+	Buyer    common.Address
+	FileSize *big.Int
+	Nonce    *big.Int
+	Sign     []byte
 }
 
 type StorageInfo struct {
@@ -125,10 +129,17 @@ const (
 
 func StringToPayType(s string) PayType {
 	switch s {
-	case "read":
+	case "space":
 		return ReadPay
-	case "store":
+	case "traffic":
 		return StorePay
 	}
 	return StorePay
 }
+
+type G1 = bls12377.G1Affine
+type G2 = bls12377.G2Affine
+type GT = bls12377.GT
+type Fr = fr.Element
+
+type Proof = kzg.OpeningProof

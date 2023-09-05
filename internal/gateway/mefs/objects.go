@@ -24,6 +24,8 @@ var logger = logs.Logger("mefs")
 var _ api.IGateway = (*Mefs)(nil)
 
 type Mefs struct {
+	UserID  int
+	st      api.StorageType
 	addr    string
 	headers http.Header
 }
@@ -51,13 +53,15 @@ func NewGateway() (api.IGateway, error) {
 	}
 
 	return &Mefs{
+		UserID:  -1,
+		st:      api.MEFS,
 		addr:    addr,
 		headers: headers,
 	}, nil
 }
 
-func NewGatewayWith(api, token string) (api.IGateway, error) {
-	addr, headers, err := mclient.CreateMemoClientInfo(api, token)
+func NewGatewayWith(ui api.USerInfo) (api.IGateway, error) {
+	addr, headers, err := mclient.CreateMemoClientInfo(ui.Api, ui.Token)
 	if err != nil {
 		lerr := logs.StorageError{Message: err.Error()}
 		logger.Error(lerr)
@@ -78,9 +82,15 @@ func NewGatewayWith(api, token string) (api.IGateway, error) {
 	}
 
 	return &Mefs{
+		UserID:  ui.ID,
+		st:      api.MEFS,
 		addr:    addr,
 		headers: headers,
 	}, nil
+}
+
+func (m *Mefs) GetStoreType(ctx context.Context) api.StorageType {
+	return m.st
 }
 
 func (m *Mefs) MakeBucketWithLocation(ctx context.Context, bucket string) error {
@@ -163,6 +173,8 @@ func (m *Mefs) PutObject(ctx context.Context, bucket, object string, r io.Reader
 		Cid:         etag,
 		ModTime:     time.Unix(moi.GetTime(), 0),
 		UserDefined: moi.UserDefined,
+		SType:       m.st,
+		USerID:      m.UserID,
 	}, nil
 }
 

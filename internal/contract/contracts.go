@@ -150,12 +150,12 @@ func (c *Contract) Call(ctx context.Context, name, method string, args ...interf
 	return out, nil
 }
 
-func (c *Contract) GetStorePayHash(ctx context.Context, checksize uint64, nonce *big.Int) string {
+func (c *Contract) GetSapceCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) string {
 	hash := com.GetCashCheckHash(c.storeAddr, c.seller, checksize, nonce)
 	return hexutil.Encode(hash)
 }
 
-func (c *Contract) GetReadPayHash(ctx context.Context, checksize uint64, nonce *big.Int) string {
+func (c *Contract) GetTrafficCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) string {
 	hash := com.GetCashCheckHash(c.readAddr, c.seller, checksize, nonce)
 	return hexutil.Encode(hash)
 }

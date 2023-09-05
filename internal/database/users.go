@@ -8,17 +8,17 @@ import (
 	"github.com/memoio/backend/internal/logs"
 )
 
-func (d *DataStore) AddUser(ctx context.Context, ui api.USerInfo) error {
-	if err := DataBase.Create(&ui).Error; err != nil {
+func (d *DataBase) AddUser(ctx context.Context, ui api.USerInfo) error {
+	if err := d.Create(&ui).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (d *DataStore) SelectUser(ctx context.Context, area string) (api.USerInfo, error) {
+func (d *DataBase) SelectUser(ctx context.Context, area string) (api.USerInfo, error) {
 	var result api.USerInfo
 	var userInfos []api.USerInfo
-	err := DataBase.Where("area = ?", area).Find(&userInfos).Error
+	err := d.Where("area = ?", area).Find(&userInfos).Error
 	if err != nil {
 		lerr := logs.DataBaseError{Message: err.Error()}
 		logger.Error(lerr)
@@ -30,13 +30,13 @@ func (d *DataStore) SelectUser(ctx context.Context, area string) (api.USerInfo, 
 	return userInfos[index], nil
 }
 
-func (d *DataStore) DeleteUser(ctx context.Context, id int) error {
-	return DataBase.Delete(&api.USerInfo{}, "id = ?", id).Error
+func (d *DataBase) DeleteUser(ctx context.Context, id int) error {
+	return d.Delete(&api.USerInfo{}, "id = ?", id).Error
 }
 
-func (d *DataStore) ListUsers(ctx context.Context) ([]api.USerInfo, error) {
+func (d *DataBase) ListUsers(ctx context.Context) ([]api.USerInfo, error) {
 	var userInfos []api.USerInfo
-	err := DataBase.Find(&userInfos).Error
+	err := d.Find(&userInfos).Error
 	if err != nil {
 		lerr := logs.DataBaseError{Message: err.Error()}
 		logger.Error(lerr)
@@ -46,9 +46,9 @@ func (d *DataStore) ListUsers(ctx context.Context) ([]api.USerInfo, error) {
 	return userInfos, nil
 }
 
-func (d *DataStore) GetUser(ctx context.Context, id int) (api.USerInfo, error) {
+func (d *DataBase) GetUser(ctx context.Context, id int) (api.USerInfo, error) {
 	var result api.USerInfo
-	err := DataBase.Where("id = ?", id).Find(&result).Error
+	err := d.Where("id = ?", id).Find(&result).Error
 	if err != nil {
 		lerr := logs.DataBaseError{Message: err.Error()}
 		logger.Error(err)

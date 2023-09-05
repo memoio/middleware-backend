@@ -23,6 +23,7 @@ func ChunkerSize(size string) shapi.AddOpts {
 }
 
 type Ipfs struct {
+	st   api.StorageType
 	host string
 }
 
@@ -34,7 +35,11 @@ func NewGateway() (api.IGateway, error) {
 
 	return &Ipfs{
 		host: cf.Storage.Ipfs.Host,
+		st:   api.IPFS,
 	}, nil
+}
+func (i *Ipfs) GetStoreType(ctx context.Context) api.StorageType {
+	return i.st
 }
 
 func (i *Ipfs) PutObject(ctx context.Context, bucket, object string, r io.Reader, opts api.ObjectOptions) (objInfo api.ObjectInfo, err error) {
@@ -53,6 +58,7 @@ func (i *Ipfs) PutObject(ctx context.Context, bucket, object string, r io.Reader
 		Cid:         hash,
 		ModTime:     time.Now(),
 		UserDefined: opts.UserDefined,
+		SType:       i.st,
 	}, nil
 }
 

@@ -12,7 +12,7 @@ import (
 	"github.com/memoio/contractsv2/go_contracts/erc"
 )
 
-func (c *Contract) Approve(ctx context.Context, pt api.PayType, sender string, buyValue *big.Int) (string, error) {
+func (c *Contract) ApproveTsHash(ctx context.Context, pt api.PayType, sender string, buyValue *big.Int) (string, error) {
 	var approveAddr common.Address
 
 	switch pt {

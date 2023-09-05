@@ -97,7 +97,7 @@ func ShareAvailableHandler() gin.HandlerFunc {
 func BeforeDownloadHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// password := c.Query("password")
-		address := c.GetString("did")
+		address := c.GetString("address")
 		chainID := c.GetInt("chainid")
 
 		shareObj, _ := c.Get("share")
@@ -146,7 +146,7 @@ func DownloadShareHandler() gin.HandlerFunc {
 
 func CreateShareHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		address := c.GetString("did")
+		address := c.GetString("address")
 		chainID := c.GetInt("chainid")
 
 		var request CreateShareRequest
@@ -170,7 +170,7 @@ func CreateShareHandler() gin.HandlerFunc {
 func GetShareHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// password := c.Query("password")
-		address := c.GetString("did")
+		address := c.GetString("address")
 		chainID := c.GetInt("chainid")
 
 		shareObj, _ := c.Get("share")
@@ -189,7 +189,7 @@ func GetShareHandler() gin.HandlerFunc {
 
 func SaveShareHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		address := c.GetString("did")
+		address := c.GetString("address")
 		chainID := c.GetInt("chainid")
 
 		shareObj, _ := c.Get("share")
@@ -208,7 +208,7 @@ func SaveShareHandler() gin.HandlerFunc {
 
 func DeleteShareHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		address := c.GetString("did")
+		address := c.GetString("address")
 		chainID := c.GetInt("chainid")
 
 		shareObj, _ := c.Get("share")
@@ -227,7 +227,7 @@ func DeleteShareHandler() gin.HandlerFunc {
 
 func ListSharesHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		address := c.GetString("did")
+		address := c.GetString("address")
 		chainID := c.GetInt("chainid")
 
 		shares, err := ListShares(address, chainID)

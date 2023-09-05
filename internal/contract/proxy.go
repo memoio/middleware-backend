@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -23,7 +22,7 @@ func (c *Contract) BuyTraffic(ctx context.Context, buyer string, size uint64) (s
 	return c.GetTrasaction(ctx, c.proxyAddr, buyer, "proxy", "buyTraffic", size, common.HexToAddress(buyer))
 }
 
-func (c *Contract) CashSpaceCheck(ctx context.Context, sender string, nonce *big.Int, sizeByte uint64, durationDay uint64, sign []byte) (string, error) {
+func (c *Contract) CashSpaceCheck(ctx context.Context, check api.CheckInfo) (string, error) {
 	client, err := ethclient.DialContext(ctx, c.endpoint)
 	if err != nil {
 		return "", err
@@ -41,7 +40,7 @@ func (c *Contract) CashSpaceCheck(ctx context.Context, sender string, nonce *big
 	}
 	logger.Debug("chainID: ", chainID)
 
-	sk, err := getSk(ctx, sender)
+	sk, err := getSk(ctx, c.seller.String())
 	if err != nil {
 		lerr := logs.ContractError{Message: err.Error()}
 		logger.Error(lerr)
@@ -53,7 +52,7 @@ func (c *Contract) CashSpaceCheck(ctx context.Context, sender string, nonce *big
 		logger.Error(lerr)
 		return "", lerr
 	}
-	tx, err := proxyIns.CashSpaceCheck(txAuth, nonce, sizeByte, durationDay, sign)
+	tx, err := proxyIns.CashSpaceCheck(txAuth, check.Nonce, check.FileSize.Uint64(), api.DurationDay, check.Sign)
 	if err != nil {
 		lerr := logs.ContractError{Message: err.Error()}
 		logger.Error(lerr)
@@ -62,7 +61,7 @@ func (c *Contract) CashSpaceCheck(ctx context.Context, sender string, nonce *big
 	return tx.Hash().String(), nil
 }
 
-func (c *Contract) CashTrafficCheck(ctx context.Context, sender string, nonce *big.Int, sizeByte uint64, sign []byte) (string, error) {
+func (c *Contract) CashTrafficCheck(ctx context.Context, check api.CheckInfo) (string, error) {
 	client, err := ethclient.DialContext(ctx, c.endpoint)
 	if err != nil {
 		return "", err
@@ -80,7 +79,7 @@ func (c *Contract) CashTrafficCheck(ctx context.Context, sender string, nonce *b
 	}
 	logger.Debug("chainID: ", chainID)
 
-	sk, err := getSk(ctx, sender)
+	sk, err := getSk(ctx, c.seller.String())
 	if err != nil {
 		lerr := logs.ContractError{Message: err.Error()}
 		logger.Error(lerr)
@@ -92,7 +91,7 @@ func (c *Contract) CashTrafficCheck(ctx context.Context, sender string, nonce *b
 		logger.Error(lerr)
 		return "", lerr
 	}
-	tx, err := proxyIns.CashTrafficCheck(txAuth, nonce, sizeByte, sign)
+	tx, err := proxyIns.CashTrafficCheck(txAuth, check.Nonce, check.FileSize.Uint64(), check.Sign)
 	if err != nil {
 		lerr := logs.ContractError{Message: err.Error()}
 		logger.Error(lerr)

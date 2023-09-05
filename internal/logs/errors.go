@@ -92,6 +92,14 @@ func (e DataBaseError) Error() string {
 	return e.Message
 }
 
+type DataStoreError struct {
+	Message string
+}
+
+func (e DataStoreError) Error() string {
+	return e.Message
+}
+
 type ControllerError struct {
 	Message string
 }
@@ -128,27 +136,28 @@ type errorCodeMap map[APIErrorCode]APIError
 
 const (
 	ErrNone APIErrorCode = iota
-	ErrInternalError
+	ErrInternal
 	ErrNotImplemented
 	ErrStorage
-	ErrAddressError
+	ErrAddress
 	ErrStorageNotSupport
 	ErrAuthenticationFailed
-	ErrContractError
-	ErrEthError
-	ErrServerError
-	ErrGatewayError
-	ErrConfigError
-	ErrDataBaseError
-	ErrControllerError
+	ErrContract
+	ErrEth
+	ErrServer
+	ErrGateway
+	ErrConfig
+	ErrDataBase
+	ErrDataStore
+	ErrController
 	ErrNoPermission
-	ErrWalletError
+	ErrWallet
 )
 
 func (e errorCodeMap) ToAPIErrWithErr(errCode APIErrorCode, err error) APIError {
 	apiErr, ok := e[errCode]
 	if !ok {
-		apiErr = e[ErrAddressError]
+		apiErr = e[ErrAddress]
 	}
 	if err != nil {
 		apiErr.Description = fmt.Sprintf("%s (%s)", apiErr.Description, err.Error())
@@ -161,7 +170,7 @@ func (e errorCodeMap) ToAPIErr(errCode APIErrorCode) APIError {
 }
 
 var ErrorCodes = errorCodeMap{
-	ErrInternalError: {
+	ErrInternal: {
 		Code:           "InternalError",
 		Description:    "We encountered an internal error, please try again.",
 		HTTPStatusCode: http.StatusInternalServerError,
@@ -176,7 +185,7 @@ var ErrorCodes = errorCodeMap{
 		Description:    "Error storing file",
 		HTTPStatusCode: 516,
 	},
-	ErrAddressError: {
+	ErrAddress: {
 		Code:           "Address",
 		Description:    "Address Error",
 		HTTPStatusCode: 517,
@@ -191,37 +200,37 @@ var ErrorCodes = errorCodeMap{
 		Description:    "Authentication Failed",
 		HTTPStatusCode: 401,
 	},
-	ErrContractError: {
+	ErrContract: {
 		Code:           "contract",
 		Description:    "contract Error",
 		HTTPStatusCode: 519,
 	},
-	ErrEthError: {
+	ErrEth: {
 		Code:           "Eth",
 		Description:    "Eth Error",
 		HTTPStatusCode: 520,
 	},
-	ErrServerError: {
+	ErrServer: {
 		Code:           "ServerError",
 		Description:    "Server Error",
 		HTTPStatusCode: 521,
 	},
-	ErrGatewayError: {
+	ErrGateway: {
 		Code:           "GatewayError",
 		Description:    "Gateway Error",
 		HTTPStatusCode: 522,
 	},
-	ErrConfigError: {
+	ErrConfig: {
 		Code:           "ConfigError",
 		Description:    "Config Error",
 		HTTPStatusCode: 523,
 	},
-	ErrDataBaseError: {
+	ErrDataBase: {
 		Code:           "DataBaseError",
 		Description:    "DataBase Error",
 		HTTPStatusCode: 524,
 	},
-	ErrControllerError: {
+	ErrController: {
 		Code:           "ControllerError",
 		Description:    "Controller Error",
 		HTTPStatusCode: 525,
@@ -231,10 +240,15 @@ var ErrorCodes = errorCodeMap{
 		Description:    "You don't have access to the resource",
 		HTTPStatusCode: 526,
 	},
-	ErrWalletError: {
+	ErrWallet: {
 		Code:           "Wallet",
 		Description:    "Wallet error",
 		HTTPStatusCode: 527,
+	},
+	ErrDataStore: {
+		Code:           "datastore",
+		Description:    "datastore error",
+		HTTPStatusCode: 528,
 	},
 }
 
@@ -250,31 +264,33 @@ func ToAPIErrorCode(err error) APIError {
 	case StorageError:
 		apiErr = ErrStorage
 	case AddressError:
-		apiErr = ErrAddressError
+		apiErr = ErrAddress
 	case StorageNotSupport:
 		apiErr = ErrStorageNotSupport
 	case AuthenticationFailed:
 		apiErr = ErrAuthenticationFailed
 	case ContractError:
-		apiErr = ErrContractError
+		apiErr = ErrContract
 	case EthError:
-		apiErr = ErrEthError
+		apiErr = ErrEth
 	case ServerError:
-		apiErr = ErrServerError
+		apiErr = ErrServer
 	case GatewayError:
-		apiErr = ErrGatewayError
+		apiErr = ErrGateway
 	case ConfigError:
-		apiErr = ErrConfigError
+		apiErr = ErrConfig
 	case DataBaseError:
-		apiErr = ErrDataBaseError
+		apiErr = ErrDataBase
 	case ControllerError:
-		apiErr = ErrControllerError
+		apiErr = ErrController
 	case NoPermission:
 		apiErr = ErrNoPermission
 	case WalletError:
-		apiErr = ErrWalletError
+		apiErr = ErrWallet
+	case *DataStoreError:
+		apiErr = ErrDataStore
 	default:
-		apiErr = ErrInternalError
+		apiErr = ErrInternal
 	}
 	return ErrorCodes.ToAPIErrWithErr(apiErr, err)
 }

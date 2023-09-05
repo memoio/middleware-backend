@@ -39,20 +39,12 @@ var runCmd = &cli.Command{
 			Usage:   "input your endpoint",
 			Value:   ":8080",
 		},
-		&cli.BoolFlag{
-			Name:    "checkRegistered",
-			Aliases: []string{"c"},
-			Usage:   "check address is registered on lens",
-			Value:   true,
-		},
 	},
 	Action: func(ctx *cli.Context) error {
 		endPoint := ctx.String("endpoint")
-		checkRegistered := ctx.Bool("checkRegistered")
 
 		opts := server.ServerOption{
-			Endpoint:        endPoint,
-			CheckRegistered: checkRegistered,
+			Endpoint: endPoint,
 		}
 
 		srv := server.NewServer(opts)
