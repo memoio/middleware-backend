@@ -106,12 +106,14 @@ func (u *CashCheck) getCheck(ctx context.Context, ct CheckType, buyer common.Add
 	}
 	if ct == SPACE {
 		return api.CheckInfo{
+			Buyer:    buyer,
 			FileSize: big.NewInt(int64(p.space.Size)),
 			Sign:     p.space.Sign,
 			Nonce:    big.NewInt(int64(p.space.Nonce)),
 		}, nil
 	} else {
 		return api.CheckInfo{
+			Buyer:    buyer,
 			FileSize: big.NewInt(int64(p.traffic.Size)),
 			Sign:     p.traffic.Sign,
 			Nonce:    big.NewInt(int64(p.traffic.Nonce)),

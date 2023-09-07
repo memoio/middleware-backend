@@ -15,7 +15,7 @@ func (c *Controller) canWrite(ctx context.Context, address, sign string, size ui
 	if err != nil {
 		return api.CheckInfo{}, err
 	}
-	if strings.HasPrefix(sign, "0x") {
+	if !strings.HasPrefix(sign, "0x") {
 		sign = "0x" + sign
 	}
 	sig, err := hexutil.Decode(sign)
@@ -55,6 +55,7 @@ func (c *Controller) verifySign(ctx context.Context, ct string, ci api.CheckInfo
 	var hashs string
 	if ct == "space" {
 		hashs = c.contract.GetSapceCheckHash(ctx, ci.FileSize.Uint64(), ci.Nonce)
+		logger.Info(hashs)
 	} else {
 		hashs = c.contract.GetTrafficCheckHash(ctx, ci.FileSize.Uint64(), ci.Nonce)
 	}
@@ -75,6 +76,7 @@ func (c *Controller) verifySign(ctx context.Context, ct string, ci api.CheckInfo
 	addr := crypto.PubkeyToAddress(*publicKey)
 
 	if strings.Compare(ci.Buyer.Hex(), addr.Hex()) != 0 {
+		logger.Info(ci.Buyer.Hex())
 		lerr := logs.ControllerError{Message: "verify sign not success"}
 		logger.Error(lerr)
 		return lerr
