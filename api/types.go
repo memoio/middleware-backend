@@ -130,9 +130,9 @@ const (
 func StringToPayType(s string) PayType {
 	switch s {
 	case "space":
-		return ReadPay
-	case "traffic":
 		return StorePay
+	case "traffic":
+		return ReadPay
 	}
 	return StorePay
 }
