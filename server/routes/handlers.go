@@ -16,8 +16,8 @@ type handler struct {
 	controller *controller.Controller
 }
 
-func newHandler() *handler {
-	controller, err := controller.NewController()
+func newHandler(store api.IGateway, path string) *handler {
+	controller, err := controller.NewController(store, path)
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -26,36 +26,32 @@ func newHandler() *handler {
 	}
 }
 
-func handlerMefs() api.IGateway {
+func handlerMefs() *handler {
 	store, err := mefs.NewGateway()
 	if err != nil {
 		logger.Error("init mefs error:", err)
 	}
 
-	return store
+	return newHandler(store, "mefs")
 }
 
-func handlerIpfs() api.IGateway {
+func handlerIpfs() *handler {
 	store, err := ipfs.NewGateway()
 	if err != nil {
 		logger.Error("init ipfs error:", err)
 	}
 
-	return store
+	return newHandler(store, "ipfs")
 }
 
-func (h *handler) handleStorage(r *gin.RouterGroup, store api.IGateway) {
-	h.controller.SetStore(store)
+func (ro Routes) handleStorage(r *gin.RouterGroup, h *handler) {
 
 	// OBJ
 	r.POST("/putObject/", auth.VerifyIdentityHandler, h.putObjectHandle)
 	r.GET("/getObject/:cid", auth.VerifyIdentityHandler, h.getObjectHandle)
 	r.GET("/listObject", auth.VerifyIdentityHandler, h.listObjectsHandle)
 	r.GET("/deleteObject", auth.VerifyIdentityHandler, h.deleteObjectHandle)
-}
 
-func (h *handler) handleAccount(r *gin.RouterGroup) {
-	// info
 	r.GET("/getBalance", auth.VerifyIdentityHandler, h.getBalanceHandle)
 
 	// package
@@ -71,9 +67,7 @@ func (h *handler) handleAccount(r *gin.RouterGroup) {
 	r.GET("/getAllowance", auth.VerifyIdentityHandler, h.getAllowanceHandle)
 
 	r.GET("/getReceipt", h.checkReceiptHandle)
-}
 
-func (h *handler) handleAdmin(r *gin.RouterGroup) {
 	r.GET("/cashSpace", h.cashSpaceHandle)
 	r.GET("/cashTraffic", h.cashTrafficHandle)
 }

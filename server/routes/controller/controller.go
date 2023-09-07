@@ -20,7 +20,7 @@ type Controller struct {
 	publickey api.IPublicKey
 }
 
-func NewController() (*Controller, error) {
+func NewController(store api.IGateway, path string) (*Controller, error) {
 	contract, err := contract.NewContract(config.Cfg.Contract)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func NewController() (*Controller, error) {
 
 	database := database.NewDataBase()
 
-	datastore, err := datastore.NewDataStore()
+	datastore, err := datastore.NewDataStore(path)
 	if err != nil {
 		return nil, err
 	}
@@ -41,5 +41,6 @@ func NewController() (*Controller, error) {
 		database:  database,
 		datastore: datastore,
 		publickey: publickey,
+		store:     store,
 	}, nil
 }
