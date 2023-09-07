@@ -24,8 +24,10 @@ func (d *DataBase) SelectUser(ctx context.Context, area string) (api.USerInfo, e
 		logger.Error(lerr)
 		return result, lerr
 	}
-
-	index := rand.Intn(len(userInfos))
+	var index = 0
+	if len(userInfos) != 0 {
+		index = rand.Intn(len(userInfos))
+	}
 
 	return userInfos[index], nil
 }
