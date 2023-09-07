@@ -62,8 +62,8 @@ func (u *CashCheck) check(ctx context.Context, ct CheckType, info api.CheckInfo)
 
 func (u *CashCheck) create(buyer common.Address) (*PayCheck, error) {
 	p := &PayCheck{
-		space:        new(Check),
-		traffic:      new(Check),
+		space:        &Check{Size: 0},
+		traffic:      &Check{Size: 0},
 		Buyer:        buyer,
 		ContractAddr: contractAddr,
 	}
