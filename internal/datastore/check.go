@@ -26,8 +26,8 @@ type Check struct {
 type PayCheck struct {
 	ContractAddr common.Address
 	Buyer        common.Address
-	space        *Check
-	traffic      *Check
+	space        Check
+	traffic      Check
 }
 
 func (p *PayCheck) Serialize() ([]byte, error) {
