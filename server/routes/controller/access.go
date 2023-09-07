@@ -15,7 +15,10 @@ func (c *Controller) canWrite(ctx context.Context, address, sign string, size ui
 	if err != nil {
 		return api.CheckInfo{}, err
 	}
-	sig := hexutil.MustDecode(sign)
+	sig, err := hexutil.Decode(sign)
+	if err != nil {
+		return api.CheckInfo{}, logs.ControllerError{Message: err.Error()}
+	}
 	if sig[64] == 27 || sig[64] == 28 {
 		sig[64] -= 27
 	}
