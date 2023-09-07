@@ -14,16 +14,17 @@ import (
 // storage
 
 // putOBJ godoc
-// @Summary		put object
-// @Description	put object
-// @Tags			OBJ
-// @Accept			json
-// @Produce		json
-// @Param			file	formData	file	true	"Object file to upload"
-// @Success		200		{object}	string	"file id"
-// @Failure		521		{object}	logs.APIError
-// @Router			/mefs/putOBJ/ [post]
-// @Router			/ipfs/putOBJ/ [post]
+//
+//	@Summary		put object
+//	@Description	put object
+//	@Tags			OBJ
+//	@Accept			json
+//	@Produce		json
+//	@Param			file	formData	file	true	"Object file to upload"
+//	@Success		200		{object}	string	"file id"
+//	@Failure		521		{object}	logs.APIError
+//	@Router			/mefs/putOBJ/ [post]
+//	@Router			/ipfs/putOBJ/ [post]
 func (h handler) putObjectHandle(c *gin.Context) {
 	address := c.GetString("address")
 	file, err := c.FormFile("file")
@@ -115,6 +116,17 @@ func (h handler) deleteObjectHandle(c *gin.Context) {
 
 // account
 
+// get balance godoc
+//
+//	@Summary		get balance
+//	@Description	get balance
+//	@Tags			balance
+//	@Accept			json
+//	@Produce		json
+//	@Param			b	body		string	true	"b"
+//	@Success		200	{object}	int		"balance"
+//	@Failure		521	{object}	logs.APIError
+//	@Router			/account/getBalance [post]
 func (h handler) getBalanceHandle(c *gin.Context) {
 	address := c.GetString("address")
 	balance, err := h.controller.GetBalance(c.Request.Context(), address)
@@ -124,6 +136,17 @@ func (h handler) getBalanceHandle(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"Address": address, "Balance": balance.String()})
 }
 
+// getSpaceInfo godoc
+//
+//	@Summary		getSpaceInfo
+//	@Description	getSpaceInfo
+//	@Tags			getSpaceInfo
+//	@Accept			json
+//	@Produce		json
+//	@Param			b	body		string	true	"b"
+//	@Success		200	{object}	int		"getSpaceInfo"
+//	@Failure		521	{object}	logs.APIError
+//	@Router			/account/getSpaceInfo [post]
 func (h handler) getSpaceInfoHandle(c *gin.Context) {
 	address := c.GetString("address")
 	space, err := h.controller.SpacePayInfo(c.Request.Context(), address)
@@ -134,6 +157,17 @@ func (h handler) getSpaceInfoHandle(c *gin.Context) {
 	c.JSON(http.StatusOK, space)
 }
 
+// getTrafficInfoHandle godoc
+//
+//	@Summary		getTrafficInfoHandle
+//	@Description	getTrafficInfoHandle
+//	@Tags			getTrafficInfoHandle
+//	@Accept			json
+//	@Produce		json
+//	@Param			b	body		string	true	"b"
+//	@Success		200	{object}	int		"getTrafficInfoHandle"
+//	@Failure		521	{object}	logs.APIError
+//	@Router			/account/getTrafficInfo [post]
 func (h handler) getTrafficInfoHandle(c *gin.Context) {
 	address := c.GetString("address")
 	pi, err := h.controller.TrafficPayInfo(c.Request.Context(), address)
@@ -144,6 +178,18 @@ func (h handler) getTrafficInfoHandle(c *gin.Context) {
 	c.JSON(http.StatusOK, pi)
 }
 
+// spaceHash godoc
+//
+//	@Summary		spaceHash
+//	@Description	spaceHash
+//	@Tags			spaceHash
+//	@Accept			json
+//	@Produce		json
+//	@Param			b		body		string	true	"b"
+//	@Param			size	query		string	true	"size"
+//	@Success		200		{object}	int		"spaceHash"
+//	@Failure		521		{object}	logs.APIError
+//	@Router			/account/getSpaceHash [post]
 func (h handler) getSpaceCheckHashHandle(c *gin.Context) {
 	address := c.GetString("address")
 	filesize := c.Query("size")
@@ -155,6 +201,18 @@ func (h handler) getSpaceCheckHashHandle(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// trafficHash godoc
+//
+//	@Summary		trafficHash
+//	@Description	trafficHash
+//	@Tags			trafficHash
+//	@Accept			json
+//	@Produce		json
+//	@Param			b		body		string	true	"b"
+//	@Param			size	query		string	true	"size"
+//	@Success		200		{object}	int		"trafficHash"
+//	@Failure		521		{object}	logs.APIError
+//	@Router			/account/getTrafficHash [post]
 func (h handler) getTrafficCheckHashHandle(c *gin.Context) {
 	address := c.GetString("address")
 	filesize := c.Query("size")
@@ -185,6 +243,16 @@ func (h handler) getSpacePriceHandle(c *gin.Context) {
 	c.JSON(http.StatusOK, price)
 }
 
+// trafficPrice godoc
+//
+//	@Summary		get trafficPrice
+//	@Description	get trafficPrice
+//	@Tags			traffic price
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	int	"getTrafficPrice"
+//	@Failure		521	{object}	logs.APIError
+//	@Router			/account/getTrafficPrice/ [get]
 func (h handler) getTrafficPriceHandle(c *gin.Context) {
 	res, err := h.controller.GetTrafficPrice(c.Request.Context())
 	if err != nil {
@@ -193,6 +261,18 @@ func (h handler) getTrafficPriceHandle(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// spaceHash godoc
+//
+//	@Summary		BuySpace
+//	@Description	BuySpace
+//	@Tags			BuySpace
+//	@Accept			json
+//	@Produce		json
+//	@Param			b		body		string	true	"b"
+//	@Param			size	query		string	true	"size"
+//	@Success		200		{object}	int		"BuySpace"
+//	@Failure		521		{object}	logs.APIError
+//	@Router			/account/buySpace [post]
 func (h handler) buySpaceHandle(c *gin.Context) {
 	address := c.GetString("address")
 	size := c.Query("size")
@@ -204,6 +284,18 @@ func (h handler) buySpaceHandle(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// BuyTraffic godoc
+//
+//	@Summary		BuyTraffic
+//	@Description	BuyTraffic
+//	@Tags			BuyTraffic
+//	@Accept			json
+//	@Produce		json
+//	@Param			b		body		string	true	"b"
+//	@Param			size	query		string	true	"size"
+//	@Success		200		{object}	int		"BuyTraffic"
+//	@Failure		521		{object}	logs.APIError
+//	@Router			/account/buyTraffic [post]
 func (h handler) buyTrafficHandle(c *gin.Context) {
 	address := c.GetString("address")
 	checksize := c.Query("size")
@@ -215,6 +307,19 @@ func (h handler) buyTrafficHandle(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// Approve godoc
+//
+//	@Summary		getApproveTsHash
+//	@Description	getApproveTsHash
+//	@Tags			getApproveTsHash
+//	@Accept			json
+//	@Produce		json
+//	@Param			b		body		string	true	"b"
+//	@Param			value	query		string	true	"value"
+//	@Param			type	query		string	true	"type"
+//	@Success		200		{object}	int		"getApproveTsHash"
+//	@Failure		521		{object}	logs.APIError
+//	@Router			/account/getApproveTsHash [post]
 func (h handler) getApproveTsHash(c *gin.Context) {
 	address := c.GetString("address")
 	value := c.Query("value")
@@ -227,6 +332,18 @@ func (h handler) getApproveTsHash(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// allowance godoc
+//
+//	@Summary		getAllowance
+//	@Description	getAllowance
+//	@Tags			getAllowance
+//	@Accept			json
+//	@Produce		json
+//	@Param			b		body		string	true	"b"
+//	@Param			type	query		string	true	"type"
+//	@Success		200		{object}	int		"getAllowance"
+//	@Failure		521		{object}	logs.APIError
+//	@Router			/account/getAllowance [post]
 func (h handler) getAllowanceHandle(c *gin.Context) {
 	address := c.GetString("address")
 	at := c.Query("type")
@@ -248,6 +365,17 @@ func (h handler) checkReceiptHandle(c *gin.Context) {
 	c.JSON(http.StatusOK, "success")
 }
 
+// cashSpace godoc
+//
+//	@Summary		cashSpace
+//	@Description	cashSpace
+//	@Tags			cashSpace
+//	@Accept			json
+//	@Produce		json
+//	@Param			address	query		string	true	"address"
+//	@Success		200		{object}	int		"cashSpace"
+//	@Failure		521		{object}	logs.APIError
+//	@Router			/admin/cashSpace [get]
 func (h handler) cashSpaceHandle(c *gin.Context) {
 	address := c.Query("address")
 

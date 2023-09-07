@@ -16,7 +16,219 @@ info:
   title: MiddleWare API
   version: "1.0"
 paths:
-  /ipfs/getSpacePrice/:
+  /account/buySpace:
+    post:
+      consumes:
+      - application/json
+      description: BuySpace
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: size
+        in: query
+        name: size
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: BuySpace
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: BuySpace
+      tags:
+      - BuySpace
+  /account/buyTraffic:
+    post:
+      consumes:
+      - application/json
+      description: BuyTraffic
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: size
+        in: query
+        name: size
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: BuyTraffic
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: BuyTraffic
+      tags:
+      - BuyTraffic
+  /account/getAllowance:
+    post:
+      consumes:
+      - application/json
+      description: getAllowance
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: type
+        in: query
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getAllowance
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getAllowance
+      tags:
+      - getAllowance
+  /account/getApproveTsHash:
+    post:
+      consumes:
+      - application/json
+      description: getApproveTsHash
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: value
+        in: query
+        name: value
+        required: true
+        type: string
+      - description: type
+        in: query
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getApproveTsHash
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getApproveTsHash
+      tags:
+      - getApproveTsHash
+  /account/getBalance:
+    post:
+      consumes:
+      - application/json
+      description: get balance
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: balance
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: get balance
+      tags:
+      - balance
+  /account/getSpaceHash:
+    post:
+      consumes:
+      - application/json
+      description: spaceHash
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: size
+        in: query
+        name: size
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: spaceHash
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: spaceHash
+      tags:
+      - spaceHash
+  /account/getSpaceInfo:
+    post:
+      consumes:
+      - application/json
+      description: getSpaceInfo
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getSpaceInfo
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getSpaceInfo
+      tags:
+      - getSpaceInfo
+  /account/getSpacePrice/:
     get:
       consumes:
       - application/json
@@ -35,6 +247,107 @@ paths:
       summary: get space price
       tags:
       - price
+  /account/getTrafficHash:
+    post:
+      consumes:
+      - application/json
+      description: trafficHash
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: size
+        in: query
+        name: size
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: trafficHash
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: trafficHash
+      tags:
+      - trafficHash
+  /account/getTrafficInfo:
+    post:
+      consumes:
+      - application/json
+      description: getTrafficInfoHandle
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getTrafficInfoHandle
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getTrafficInfoHandle
+      tags:
+      - getTrafficInfoHandle
+  /account/getTrafficPrice/:
+    get:
+      consumes:
+      - application/json
+      description: get trafficPrice
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getTrafficPrice
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: get trafficPrice
+      tags:
+      - traffic price
+  /admin/cashSpace:
+    get:
+      consumes:
+      - application/json
+      description: cashSpace
+      parameters:
+      - description: address
+        in: query
+        name: address
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: cashSpace
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: cashSpace
+      tags:
+      - cashSpace
   /ipfs/putOBJ/:
     post:
       consumes:
@@ -60,25 +373,6 @@ paths:
       summary: put object
       tags:
       - OBJ
-  /mefs/getSpacePrice/:
-    get:
-      consumes:
-      - application/json
-      description: get space price
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: file id
-          schema:
-            type: integer
-        "521":
-          description: ""
-          schema:
-            $ref: '#/definitions/logs.APIError'
-      summary: get space price
-      tags:
-      - price
   /mefs/putOBJ/:
     post:
       consumes:
