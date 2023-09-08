@@ -348,6 +348,106 @@ paths:
       summary: cashSpace
       tags:
       - cashSpace
+  /ipfs/deleteObject:
+    post:
+      consumes:
+      - application/json
+      description: deleteObjec
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: id
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file id
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: deleteObjec
+      tags:
+      - deleteObjec
+  /ipfs/getObject/{cid}:
+    post:
+      consumes:
+      - application/json
+      description: getObject
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: sign
+        in: query
+        name: sign
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file id
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getObject
+      tags:
+      - getObject
+  /ipfs/listObject/:
+    post:
+      consumes:
+      - application/json
+      description: listObjects
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: objs
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: listObjects
+      tags:
+      - listObjects
   /ipfs/putObject/:
     post:
       consumes:
@@ -406,6 +506,106 @@ paths:
       summary: put object
       tags:
       - PutObj
+  /mefs/deleteObject:
+    post:
+      consumes:
+      - application/json
+      description: deleteObjec
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: id
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file id
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: deleteObjec
+      tags:
+      - deleteObjec
+  /mefs/getObject/{cid}:
+    post:
+      consumes:
+      - application/json
+      description: getObject
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: sign
+        in: query
+        name: sign
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file id
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getObject
+      tags:
+      - getObject
+  /mefs/listObject/:
+    post:
+      consumes:
+      - application/json
+      description: listObjects
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: objs
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: listObjects
+      tags:
+      - listObjects
   /mefs/putObject/:
     post:
       consumes:

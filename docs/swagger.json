@@ -514,6 +514,158 @@
                 }
             }
         },
+        "/ipfs/deleteObject": {
+            "post": {
+                "description": "deleteObjec",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deleteObjec"
+                ],
+                "summary": "deleteObjec",
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "id",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "file id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/ipfs/getObject/{cid}": {
+            "post": {
+                "description": "getObject",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "getObject"
+                ],
+                "summary": "getObject",
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "sign",
+                        "name": "sign",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "file id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/ipfs/listObject/": {
+            "post": {
+                "description": "listObjects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "listObjects"
+                ],
+                "summary": "listObjects",
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "objs",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/ipfs/putObject/": {
             "post": {
                 "description": "put object",
@@ -580,6 +732,158 @@
                 "responses": {
                     "200": {
                         "description": "file id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/deleteObject": {
+            "post": {
+                "description": "deleteObjec",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deleteObjec"
+                ],
+                "summary": "deleteObjec",
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "id",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "file id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/getObject/{cid}": {
+            "post": {
+                "description": "getObject",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "getObject"
+                ],
+                "summary": "getObject",
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "sign",
+                        "name": "sign",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "file id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/listObject/": {
+            "post": {
+                "description": "listObjects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "listObjects"
+                ],
+                "summary": "listObjects",
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "objs",
                         "schema": {
                             "type": "string"
                         }

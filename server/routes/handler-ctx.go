@@ -73,6 +73,20 @@ func (h handler) putObjectHandle(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// putOBJ godoc
+//
+//	@Summary		getObject
+//	@Description	getObject
+//	@Tags			getObject
+//	@Accept			json
+//	@Produce		json
+//	@Param			b		body		string	true	"body"
+//	@Param			sign	query		string	true	"sign"
+//	@Success		200		{object}	string	"file id"
+//	@Failure		521		{object}	logs.APIError
+//	@Failure		400		{object}	logs.APIError
+//	@Router			/mefs/getObject/{cid} [post]
+//	@Router			/ipfs/getObject/{cid} [post]
 func (h handler) getObjectHandle(c *gin.Context) {
 	cid := c.Param("cid")
 	address := c.GetString("address")
@@ -98,6 +112,19 @@ func (h handler) getObjectHandle(c *gin.Context) {
 	c.DataFromReader(http.StatusOK, result.Size, result.CType, &w, extraHeaders)
 }
 
+// putOBJ godoc
+//
+//	@Summary		listObjects
+//	@Description	listObjects
+//	@Tags			listObjects
+//	@Accept			json
+//	@Produce		json
+//	@Param			b	body		string	true	"body"
+//	@Success		200	{object}	string	"objs"
+//	@Failure		521	{object}	logs.APIError
+//	@Failure		400	{object}	logs.APIError
+//	@Router			/mefs/listObject/ [post]
+//	@Router			/ipfs/listObject/ [post]
 func (h handler) listObjectsHandle(c *gin.Context) {
 	address := c.GetString("address")
 
@@ -109,6 +136,20 @@ func (h handler) listObjectsHandle(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// deleteObjec godoc
+//
+//	@Summary		deleteObjec
+//	@Description	deleteObjec
+//	@Tags			deleteObjec
+//	@Accept			json
+//	@Produce		json
+//	@Param			b	body		string	true	"body"
+//	@Param			id	query		string	true	"id"
+//	@Success		200	{object}	string	"file id"
+//	@Failure		521	{object}	logs.APIError
+//	@Failure		400	{object}	logs.APIError
+//	@Router			/mefs/deleteObject [post]
+//	@Router			/ipfs/deleteObject [post]
 func (h handler) deleteObjectHandle(c *gin.Context) {
 	address := c.GetString("address")
 	id := c.Query("id")
