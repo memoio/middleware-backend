@@ -16,36 +16,23 @@ info:
   title: MiddleWare API
   version: "1.0"
 paths:
-  /ipfs/getSpacePrice/:
-    get:
-      consumes:
-      - application/json
-      description: get space price
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: file id
-          schema:
-            type: integer
-        "521":
-          description: ""
-          schema:
-            $ref: '#/definitions/logs.APIError'
-      summary: get space price
-      tags:
-      - price
-  /ipfs/putOBJ/:
+  /ipfs/deleteObject:
     post:
       consumes:
       - application/json
-      description: put object
+      description: deleteObjec
       parameters:
-      - description: Object file to upload
-        in: formData
-        name: file
+      - description: body
+        in: body
+        name: b
         required: true
-        type: file
+        schema:
+          type: string
+      - description: id
+        in: query
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -53,18 +40,512 @@ paths:
           description: file id
           schema:
             type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: deleteObjec
+      tags:
+      - deleteObjec
+  /ipfs/getObject/{cid}:
+    post:
+      consumes:
+      - application/json
+      description: getObject
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: sign
+        in: query
+        name: sign
+        required: true
+        type: string
+      - description: cid
+        in: path
+        name: cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file id
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getObject
+      tags:
+      - getObject
+  /ipfs/listObject/:
+    post:
+      consumes:
+      - application/json
+      description: listObjects
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: objs
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: listObjects
+      tags:
+      - listObjects
+  /ipfs/putObject/:
+    post:
+      consumes:
+      - application/json
+      description: put object
+      parameters:
+      - description: did
+        in: formData
+        name: did
+        required: true
+        type: string
+      - description: token
+        in: formData
+        name: token
+        required: true
+        type: string
+      - description: requestID
+        in: formData
+        name: requestID
+        required: true
+        type: integer
+      - description: signature
+        in: formData
+        name: signature
+        required: true
+        type: string
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: sign
+        in: formData
+        name: sign
+        required: true
+        type: string
+      - description: area
+        in: formData
+        name: area
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file id
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
         "521":
           description: ""
           schema:
             $ref: '#/definitions/logs.APIError'
       summary: put object
       tags:
-      - OBJ
+      - PutObj
+  /mefs/buySpace:
+    post:
+      consumes:
+      - application/json
+      description: get buy space tx hash
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: size
+        in: query
+        name: size
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: BuySpace
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: BuySpace
+      tags:
+      - BuySpace
+  /mefs/buyTraffic:
+    post:
+      consumes:
+      - application/json
+      description: get buy traffic tx hash
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: size
+        in: query
+        name: size
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: BuyTraffic
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: BuyTraffic
+      tags:
+      - BuyTraffic
+  /mefs/cashSpace:
+    get:
+      consumes:
+      - application/json
+      description: cashSpace
+      parameters:
+      - description: address
+        in: query
+        name: address
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: cashSpace
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: cashSpace
+      tags:
+      - cashSpace
+  /mefs/cashTraffic:
+    get:
+      consumes:
+      - application/json
+      description: cashTraffic
+      parameters:
+      - description: address
+        in: query
+        name: address
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: cashTraffic
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: cashTraffic
+      tags:
+      - cashTraffic
+  /mefs/deleteObject:
+    post:
+      consumes:
+      - application/json
+      description: deleteObjec
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: id
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file id
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: deleteObjec
+      tags:
+      - deleteObjec
+  /mefs/getAllowance:
+    post:
+      consumes:
+      - application/json
+      description: getAllowance
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: type
+        in: query
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getAllowance
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getAllowance
+      tags:
+      - getAllowance
+  /mefs/getApproveTsHash:
+    post:
+      consumes:
+      - application/json
+      description: getApproveTsHash
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: value
+        in: query
+        name: value
+        required: true
+        type: string
+      - description: type
+        in: query
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getApproveTsHash
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getApproveTsHash
+      tags:
+      - getApproveTsHash
+  /mefs/getBalance:
+    post:
+      consumes:
+      - application/json
+      description: getBalance
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: balance
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getBalance
+      tags:
+      - getBalance
+  /mefs/getObject/{cid}:
+    post:
+      consumes:
+      - application/json
+      description: getObject
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: sign
+        in: query
+        name: sign
+        required: true
+        type: string
+      - description: cid
+        in: path
+        name: cid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file id
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getObject
+      tags:
+      - getObject
+  /mefs/getReceipt:
+    get:
+      consumes:
+      - application/json
+      description: checkReceipt
+      parameters:
+      - description: receipt
+        in: query
+        name: receipt
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: cashSpace
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: checkReceipt
+      tags:
+      - checkReceipt
+  /mefs/getSpaceCheckHash:
+    post:
+      consumes:
+      - application/json
+      description: getSpaceCheckHash
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: size
+        in: query
+        name: size
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getSpaceCheckHash
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getSpaceCheckHash
+      tags:
+      - getSpaceCheckHash
+  /mefs/getSpaceInfo:
+    post:
+      consumes:
+      - application/json
+      description: getSpaceInfo
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getSpaceInfo
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getSpaceInfo
+      tags:
+      - getSpaceInfo
   /mefs/getSpacePrice/:
     get:
       consumes:
       - application/json
-      description: get space price
+      description: getSpacePrice
       produces:
       - application/json
       responses:
@@ -76,20 +557,155 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/logs.APIError'
-      summary: get space price
+      summary: getSpacePrice
       tags:
-      - price
-  /mefs/putOBJ/:
+      - getSpacePrice
+  /mefs/getTrafficCheckHash:
+    post:
+      consumes:
+      - application/json
+      description: getTrafficCheckHash
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: size
+        in: query
+        name: size
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getTrafficCheckHash
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getTrafficCheckHash
+      tags:
+      - getTrafficCheckHash
+  /mefs/getTrafficInfo:
+    post:
+      consumes:
+      - application/json
+      description: getTrafficInfo
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getTrafficInfo
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getTrafficInfo
+      tags:
+      - getTrafficInfo
+  /mefs/getTrafficPrice/:
+    get:
+      consumes:
+      - application/json
+      description: getTrafficPrice
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getTrafficPrice
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: getTrafficPrice
+      tags:
+      - getTrafficPrice
+  /mefs/listObject/:
+    post:
+      consumes:
+      - application/json
+      description: listObjects
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: objs
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: listObjects
+      tags:
+      - listObjects
+  /mefs/putObject/:
     post:
       consumes:
       - application/json
       description: put object
       parameters:
-      - description: Object file to upload
+      - description: did
+        in: formData
+        name: did
+        required: true
+        type: string
+      - description: token
+        in: formData
+        name: token
+        required: true
+        type: string
+      - description: requestID
+        in: formData
+        name: requestID
+        required: true
+        type: integer
+      - description: signature
+        in: formData
+        name: signature
+        required: true
+        type: string
+      - description: file
         in: formData
         name: file
         required: true
         type: file
+      - description: sign
+        in: formData
+        name: sign
+        required: true
+        type: string
+      - description: area
+        in: formData
+        name: area
+        type: string
       produces:
       - application/json
       responses:
@@ -97,11 +713,15 @@ paths:
           description: file id
           schema:
             type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
         "521":
           description: ""
           schema:
             $ref: '#/definitions/logs.APIError'
       summary: put object
       tags:
-      - OBJ
+      - PutObj
 swagger: "2.0"
