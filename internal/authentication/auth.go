@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/internal/logs"
@@ -97,29 +98,47 @@ func VerifyAccessTokenHandler(c *gin.Context) {
 }
 
 func VerifyIdentityHandler(c *gin.Context) {
-	body := make(map[string]interface{})
-	c.BindJSON(&body)
+	ctype := c.GetHeader("Content-Type")
+	var did, token, signature, hash string
+	var requestID float64
+	if ctype == "application/json" {
+		body := make(map[string]interface{})
+		c.BindJSON(&body)
 
-	did, ok1 := body["did"].(string)
-	token, ok2 := body["token"].(string)
-	requestID, ok3 := body["requestID"].(float64)
-	signature, ok4 := body["signature"].(string)
-	if !ok1 || !ok2 || !ok3 || !ok4 {
+		did, _ = body["did"].(string)
+		token, _ = body["token"].(string)
+		requestID, _ = body["requestID"].(float64)
+		signature, _ = body["signature"].(string)
+		if body["hash"] != nil {
+			hash = body["hash"].(string)
+		}
+	} else {
+		did = c.PostForm("did")
+		token = c.PostForm("token")
+		requestIDStr := c.PostForm("requestID")
+		signature = c.PostForm("signature")
+		hash = c.PostForm("hash")
+
+		var err error
+		requestID, err = strconv.ParseFloat(requestIDStr, 64)
+		if err != nil {
+			c.AbortWithStatusJSON(401, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	if did == "" || token == "" || requestID == 0 || signature == "" {
 		c.AbortWithStatusJSON(401, gin.H{"error": "Missing parameters, please refer to the API documentation for details"})
 		return
 	}
 
-	var hash string
-	if body["hash"] != nil {
-		hash = body["hash"].(string)
-	}
 	ok, err := VerifyIdentity(did, token, hash, int64(requestID), signature)
 	if err != nil {
 		c.AbortWithStatusJSON(401, gin.H{"error": err.Error()})
 		return
 	}
 	if !ok {
-		c.JSON(401, gin.H{"error": fmt.Sprintf("failed to verify identity: %s", did)})
+		c.AbortWithStatusJSON(401, gin.H{"error": fmt.Sprintf("failed to verify identity: %s", did)})
 		return
 	}
 

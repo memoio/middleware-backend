@@ -171,7 +171,7 @@ paths:
       summary: get balance
       tags:
       - balance
-  /account/getSpaceHash:
+  /account/getSpaceCheckHash:
     post:
       consumes:
       - application/json
@@ -247,7 +247,7 @@ paths:
       summary: get space price
       tags:
       - price
-  /account/getTrafficHash:
+  /account/getTrafficCheckHash:
     post:
       consumes:
       - application/json
@@ -348,17 +348,46 @@ paths:
       summary: cashSpace
       tags:
       - cashSpace
-  /ipfs/putOBJ/:
+  /ipfs/putObject/:
     post:
       consumes:
       - application/json
       description: put object
       parameters:
-      - description: Object file to upload
+      - description: did
+        in: formData
+        name: did
+        required: true
+        type: string
+      - description: token
+        in: formData
+        name: token
+        required: true
+        type: string
+      - description: requestID
+        in: formData
+        name: requestID
+        required: true
+        type: integer
+      - description: signature
+        in: formData
+        name: signature
+        required: true
+        type: string
+      - description: file
         in: formData
         name: file
         required: true
         type: file
+      - description: sign
+        in: formData
+        name: sign
+        required: true
+        type: string
+      - description: area
+        in: formData
+        name: area
+        type: string
       produces:
       - application/json
       responses:
@@ -366,24 +395,57 @@ paths:
           description: file id
           schema:
             type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
         "521":
           description: ""
           schema:
             $ref: '#/definitions/logs.APIError'
       summary: put object
       tags:
-      - OBJ
-  /mefs/putOBJ/:
+      - PutObj
+  /mefs/putObject/:
     post:
       consumes:
       - application/json
       description: put object
       parameters:
-      - description: Object file to upload
+      - description: did
+        in: formData
+        name: did
+        required: true
+        type: string
+      - description: token
+        in: formData
+        name: token
+        required: true
+        type: string
+      - description: requestID
+        in: formData
+        name: requestID
+        required: true
+        type: integer
+      - description: signature
+        in: formData
+        name: signature
+        required: true
+        type: string
+      - description: file
         in: formData
         name: file
         required: true
         type: file
+      - description: sign
+        in: formData
+        name: sign
+        required: true
+        type: string
+      - description: area
+        in: formData
+        name: area
+        type: string
       produces:
       - application/json
       responses:
@@ -391,11 +453,15 @@ paths:
           description: file id
           schema:
             type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
         "521":
           description: ""
           schema:
             $ref: '#/definitions/logs.APIError'
       summary: put object
       tags:
-      - OBJ
+      - PutObj
 swagger: "2.0"

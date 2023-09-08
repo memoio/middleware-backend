@@ -17,14 +17,21 @@ import (
 //
 //	@Summary		put object
 //	@Description	put object
-//	@Tags			OBJ
+//	@Tags			PutObj
 //	@Accept			json
 //	@Produce		json
-//	@Param			file	formData	file	true	"Object file to upload"
-//	@Success		200		{object}	string	"file id"
-//	@Failure		521		{object}	logs.APIError
-//	@Router			/mefs/putOBJ/ [post]
-//	@Router			/ipfs/putOBJ/ [post]
+//	@Param			did			formData	string	true	"did"
+//	@Param			token		formData	string	true	"token"
+//	@Param			requestID	formData	uint64	true	"requestID"
+//	@Param			signature	formData	string	true	"signature"
+//	@Param			file		formData	file	true	"file"
+//	@Param			sign		formData	string	true	"sign"
+//	@Param			area		formData	string	false	"area"
+//	@Success		200			{object}	string	"file id"
+//	@Failure		521			{object}	logs.APIError
+//	@Failure		400			{object}	logs.APIError
+//	@Router			/mefs/putObject/ [post]
+//	@Router			/ipfs/putObject/ [post]
 func (h handler) putObjectHandle(c *gin.Context) {
 	address := c.GetString("address")
 	file, err := c.FormFile("file")
@@ -189,7 +196,7 @@ func (h handler) getTrafficInfoHandle(c *gin.Context) {
 //	@Param			size	query		string	true	"size"
 //	@Success		200		{object}	int		"spaceHash"
 //	@Failure		521		{object}	logs.APIError
-//	@Router			/account/getSpaceHash [post]
+//	@Router			/account/getSpaceCheckHash [post]
 func (h handler) getSpaceCheckHashHandle(c *gin.Context) {
 	address := c.GetString("address")
 	filesize := c.Query("size")
@@ -212,7 +219,7 @@ func (h handler) getSpaceCheckHashHandle(c *gin.Context) {
 //	@Param			size	query		string	true	"size"
 //	@Success		200		{object}	int		"trafficHash"
 //	@Failure		521		{object}	logs.APIError
-//	@Router			/account/getTrafficHash [post]
+//	@Router			/account/getTrafficCheckHash [post]
 func (h handler) getTrafficCheckHashHandle(c *gin.Context) {
 	address := c.GetString("address")
 	filesize := c.Query("size")

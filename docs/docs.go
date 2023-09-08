@@ -251,7 +251,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/getSpaceHash": {
+        "/account/getSpaceCheckHash": {
             "post": {
                 "description": "spaceHash",
                 "consumes": [
@@ -367,7 +367,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/account/getTrafficHash": {
+        "/account/getTrafficCheckHash": {
             "post": {
                 "description": "trafficHash",
                 "consumes": [
@@ -521,7 +521,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ipfs/putOBJ/": {
+        "/ipfs/putObject/": {
             "post": {
                 "description": "put object",
                 "consumes": [
@@ -531,16 +531,57 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "OBJ"
+                    "PutObj"
                 ],
                 "summary": "put object",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "did",
+                        "name": "did",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token",
+                        "name": "token",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "requestID",
+                        "name": "requestID",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "signature",
+                        "name": "signature",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
                         "type": "file",
-                        "description": "Object file to upload",
+                        "description": "file",
                         "name": "file",
                         "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "sign",
+                        "name": "sign",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "area",
+                        "name": "area",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -548,6 +589,12 @@ const docTemplate = `{
                         "description": "file id",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
                         }
                     },
                     "521": {
@@ -559,7 +606,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/mefs/putOBJ/": {
+        "/mefs/putObject/": {
             "post": {
                 "description": "put object",
                 "consumes": [
@@ -569,16 +616,57 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "OBJ"
+                    "PutObj"
                 ],
                 "summary": "put object",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "did",
+                        "name": "did",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token",
+                        "name": "token",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "requestID",
+                        "name": "requestID",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "signature",
+                        "name": "signature",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
                         "type": "file",
-                        "description": "Object file to upload",
+                        "description": "file",
                         "name": "file",
                         "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "sign",
+                        "name": "sign",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "area",
+                        "name": "area",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -586,6 +674,12 @@ const docTemplate = `{
                         "description": "file id",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
                         }
                     },
                     "521": {
