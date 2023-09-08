@@ -47,27 +47,24 @@ func handlerIpfs() *handler {
 func (ro Routes) handleStorage(r *gin.RouterGroup, h *handler) {
 
 	// OBJ
-	r.POST("/putObject/", auth.VerifyIdentityHandler, h.putObjectHandle) //
-	r.POST("/getObject/:cid", auth.VerifyIdentityHandler, h.getObjectHandle)
+	r.POST("/putObject/", auth.VerifyIdentityHandler, h.putObjectHandle)      //
+	r.POST("/getObject/:cid", auth.VerifyIdentityHandler, h.getObjectHandle)  //
 	r.POST("/listObject", auth.VerifyIdentityHandler, h.listObjectsHandle)    //
 	r.POST("/deleteObject", auth.VerifyIdentityHandler, h.deleteObjectHandle) //
-}
 
-func (h *handler) handleAccount(r *gin.RouterGroup) {
-	// info
-	r.POST("/getBalance", auth.VerifyIdentityHandler, h.getBalanceHandle)
+	r.POST("/getBalance", auth.VerifyIdentityHandler, h.getBalanceHandle) //
 
 	// package
-	r.POST("/getSpaceInfo", auth.VerifyIdentityHandler, h.getSpaceInfoHandle) //
-	r.POST("/getTrafficInfo", auth.VerifyIdentityHandler, h.getTrafficInfoHandle)
-	r.POST("/getSpaceCheckHash", auth.VerifyIdentityHandler, h.getSpaceCheckHashHandle) //
-	r.POST("/getTrafficCheckHash", auth.VerifyIdentityHandler, h.getTrafficCheckHashHandle)
-	r.GET("/getSpacePrice", h.getSpacePriceHandle)
-	r.GET("/getTrafficPrice", h.getTrafficPriceHandle)
-	r.POST("/buySpace", auth.VerifyIdentityHandler, h.buySpaceHandle) //
-	r.POST("/buyTraffic", auth.VerifyIdentityHandler, h.buyTrafficHandle)
-	r.POST("/getApproveTsHash", auth.VerifyIdentityHandler, h.getApproveTsHash) //
-	r.POST("/getAllowance", auth.VerifyIdentityHandler, h.getAllowanceHandle)   //
+	r.POST("/getSpaceInfo", auth.VerifyIdentityHandler, h.getSpaceInfoHandle)               //
+	r.POST("/getTrafficInfo", auth.VerifyIdentityHandler, h.getTrafficInfoHandle)           //
+	r.POST("/getSpaceCheckHash", auth.VerifyIdentityHandler, h.getSpaceCheckHashHandle)     //
+	r.POST("/getTrafficCheckHash", auth.VerifyIdentityHandler, h.getTrafficCheckHashHandle) //
+	r.GET("/getSpacePrice", h.getSpacePriceHandle)                                          //
+	r.GET("/getTrafficPrice", h.getTrafficPriceHandle)                                      //
+	r.POST("/buySpace", auth.VerifyIdentityHandler, h.buySpaceHandle)                       //
+	r.POST("/buyTraffic", auth.VerifyIdentityHandler, h.buyTrafficHandle)                   //
+	r.POST("/getApproveTsHash", auth.VerifyIdentityHandler, h.getApproveTsHash)             //
+	r.POST("/getAllowance", auth.VerifyIdentityHandler, h.getAllowanceHandle)               //
 
 	r.GET("/getReceipt", h.checkReceiptHandle)
 

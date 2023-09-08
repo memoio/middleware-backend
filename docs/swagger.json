@@ -9,511 +9,6 @@
     "host": "localhost:8081",
     "basePath": "/",
     "paths": {
-        "/account/buySpace": {
-            "post": {
-                "description": "BuySpace",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "BuySpace"
-                ],
-                "summary": "BuySpace",
-                "parameters": [
-                    {
-                        "description": "b",
-                        "name": "b",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "size",
-                        "name": "size",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "BuySpace",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/account/buyTraffic": {
-            "post": {
-                "description": "BuyTraffic",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "BuyTraffic"
-                ],
-                "summary": "BuyTraffic",
-                "parameters": [
-                    {
-                        "description": "b",
-                        "name": "b",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "size",
-                        "name": "size",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "BuyTraffic",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/account/getAllowance": {
-            "post": {
-                "description": "getAllowance",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "getAllowance"
-                ],
-                "summary": "getAllowance",
-                "parameters": [
-                    {
-                        "description": "b",
-                        "name": "b",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "type",
-                        "name": "type",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "getAllowance",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/account/getApproveTsHash": {
-            "post": {
-                "description": "getApproveTsHash",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "getApproveTsHash"
-                ],
-                "summary": "getApproveTsHash",
-                "parameters": [
-                    {
-                        "description": "b",
-                        "name": "b",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "value",
-                        "name": "value",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "type",
-                        "name": "type",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "getApproveTsHash",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/account/getBalance": {
-            "post": {
-                "description": "get balance",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "balance"
-                ],
-                "summary": "get balance",
-                "parameters": [
-                    {
-                        "description": "b",
-                        "name": "b",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "balance",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/account/getSpaceCheckHash": {
-            "post": {
-                "description": "spaceHash",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "spaceHash"
-                ],
-                "summary": "spaceHash",
-                "parameters": [
-                    {
-                        "description": "b",
-                        "name": "b",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "size",
-                        "name": "size",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "spaceHash",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/account/getSpaceInfo": {
-            "post": {
-                "description": "getSpaceInfo",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "getSpaceInfo"
-                ],
-                "summary": "getSpaceInfo",
-                "parameters": [
-                    {
-                        "description": "b",
-                        "name": "b",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "getSpaceInfo",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/account/getSpacePrice/": {
-            "get": {
-                "description": "get space price",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "price"
-                ],
-                "summary": "get space price",
-                "responses": {
-                    "200": {
-                        "description": "file id",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/account/getTrafficCheckHash": {
-            "post": {
-                "description": "trafficHash",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "trafficHash"
-                ],
-                "summary": "trafficHash",
-                "parameters": [
-                    {
-                        "description": "b",
-                        "name": "b",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "size",
-                        "name": "size",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "trafficHash",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/account/getTrafficInfo": {
-            "post": {
-                "description": "getTrafficInfoHandle",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "getTrafficInfoHandle"
-                ],
-                "summary": "getTrafficInfoHandle",
-                "parameters": [
-                    {
-                        "description": "b",
-                        "name": "b",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "getTrafficInfoHandle",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/account/getTrafficPrice/": {
-            "get": {
-                "description": "get trafficPrice",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "traffic price"
-                ],
-                "summary": "get trafficPrice",
-                "responses": {
-                    "200": {
-                        "description": "getTrafficPrice",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/cashSpace": {
-            "get": {
-                "description": "cashSpace",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cashSpace"
-                ],
-                "summary": "cashSpace",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "address",
-                        "name": "address",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "cashSpace",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
         "/ipfs/deleteObject": {
             "post": {
                 "description": "deleteObjec",
@@ -595,6 +90,13 @@
                         "description": "sign",
                         "name": "sign",
                         "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "cid",
+                        "name": "cid",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -751,6 +253,176 @@
                 }
             }
         },
+        "/mefs/buySpace": {
+            "post": {
+                "description": "get buy space tx hash",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BuySpace"
+                ],
+                "summary": "BuySpace",
+                "parameters": [
+                    {
+                        "description": "b",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "size",
+                        "name": "size",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "BuySpace",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/buyTraffic": {
+            "post": {
+                "description": "get buy traffic tx hash",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BuyTraffic"
+                ],
+                "summary": "BuyTraffic",
+                "parameters": [
+                    {
+                        "description": "b",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "size",
+                        "name": "size",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "BuyTraffic",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/cashSpace": {
+            "get": {
+                "description": "cashSpace",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cashSpace"
+                ],
+                "summary": "cashSpace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "cashSpace",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/cashTraffic": {
+            "get": {
+                "description": "cashTraffic",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cashTraffic"
+                ],
+                "summary": "cashTraffic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "cashTraffic",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/mefs/deleteObject": {
             "post": {
                 "description": "deleteObjec",
@@ -804,6 +476,147 @@
                 }
             }
         },
+        "/mefs/getAllowance": {
+            "post": {
+                "description": "getAllowance",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "getAllowance"
+                ],
+                "summary": "getAllowance",
+                "parameters": [
+                    {
+                        "description": "b",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "type",
+                        "name": "type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "getAllowance",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/getApproveTsHash": {
+            "post": {
+                "description": "getApproveTsHash",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "getApproveTsHash"
+                ],
+                "summary": "getApproveTsHash",
+                "parameters": [
+                    {
+                        "description": "b",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "value",
+                        "name": "value",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "type",
+                        "name": "type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "getApproveTsHash",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/getBalance": {
+            "post": {
+                "description": "getBalance",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "getBalance"
+                ],
+                "summary": "getBalance",
+                "parameters": [
+                    {
+                        "description": "b",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "balance",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/mefs/getObject/{cid}": {
             "post": {
                 "description": "getObject",
@@ -833,6 +646,13 @@
                         "name": "sign",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "cid",
+                        "name": "cid",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -846,6 +666,276 @@
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/getReceipt": {
+            "get": {
+                "description": "checkReceipt",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "checkReceipt"
+                ],
+                "summary": "checkReceipt",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "receipt",
+                        "name": "receipt",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "cashSpace",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/getSpaceCheckHash": {
+            "post": {
+                "description": "getSpaceCheckHash",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "getSpaceCheckHash"
+                ],
+                "summary": "getSpaceCheckHash",
+                "parameters": [
+                    {
+                        "description": "b",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "size",
+                        "name": "size",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "getSpaceCheckHash",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/getSpaceInfo": {
+            "post": {
+                "description": "getSpaceInfo",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "getSpaceInfo"
+                ],
+                "summary": "getSpaceInfo",
+                "parameters": [
+                    {
+                        "description": "b",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "getSpaceInfo",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/getSpacePrice/": {
+            "get": {
+                "description": "getSpacePrice",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "getSpacePrice"
+                ],
+                "summary": "getSpacePrice",
+                "responses": {
+                    "200": {
+                        "description": "file id",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/getTrafficCheckHash": {
+            "post": {
+                "description": "getTrafficCheckHash",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "getTrafficCheckHash"
+                ],
+                "summary": "getTrafficCheckHash",
+                "parameters": [
+                    {
+                        "description": "b",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "size",
+                        "name": "size",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "getTrafficCheckHash",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/getTrafficInfo": {
+            "post": {
+                "description": "getTrafficInfo",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "getTrafficInfo"
+                ],
+                "summary": "getTrafficInfo",
+                "parameters": [
+                    {
+                        "description": "b",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "getTrafficInfo",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/getTrafficPrice/": {
+            "get": {
+                "description": "getTrafficPrice",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "getTrafficPrice"
+                ],
+                "summary": "getTrafficPrice",
+                "responses": {
+                    "200": {
+                        "description": "getTrafficPrice",
+                        "schema": {
+                            "type": "integer"
                         }
                     },
                     "521": {
