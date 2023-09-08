@@ -14,7 +14,6 @@ import (
 
 type Routes struct {
 	*gin.Engine
-	handler *handler
 }
 
 func RegistRoutes() Routes {
@@ -24,19 +23,14 @@ func RegistRoutes() Routes {
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	handler := newHandler()
-
 	r := Routes{
 		router,
-		handler,
 	}
 
 	r.registRoute()
 	r.registLoginRoute()
 	r.registShareRoute()
 	r.registFileDnsRoute()
-	r.registAccount()
-	r.registAdmin()
 	r.registStorageRoute()
 	return r
 }
@@ -62,15 +56,7 @@ func (r Routes) registFileDnsRoute() {
 	filedns.LoadFileDnsModule(r.Group("/"))
 }
 
-func (r Routes) registAccount() {
-	r.handler.handleAccount(r.Group("/account"))
-}
-
-func (r Routes) registAdmin() {
-	r.handler.handleAdmin(r.Group("/admin"))
-}
-
 func (r Routes) registStorageRoute() {
-	r.handler.handleStorage(r.Group("/mefs"), handlerMefs())
-	r.handler.handleStorage(r.Group("/ipfs"), handlerIpfs())
+	r.handleStorage(r.Group("/mefs"), handlerMefs())
+	r.handleStorage(r.Group("/ipfs"), handlerIpfs())
 }
