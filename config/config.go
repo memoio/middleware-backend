@@ -50,7 +50,8 @@ func newDefaultIpfsConfig() IpfsConfig {
 
 func newDefaultMefsConfig() MefsConfig {
 	return MefsConfig{
-		Api: "/ip4/127.0.0.1/tcp/5001",
+		Api:   "/ip4/192.168.1.46/tcp/26812",
+		Token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJBbGxvdyI6WyJyZWFkIiwid3JpdGUiLCJzaWduIiwiYWRtaW4iXX0.OzYt9dIYMEuUoaEQeXah2wkPUZ1O6Yya7mwuuIAP89s",
 	}
 }
 

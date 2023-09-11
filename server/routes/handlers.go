@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/api"
+	"github.com/memoio/backend/config"
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/gateway/ipfs"
 	"github.com/memoio/backend/internal/gateway/mefs"
@@ -27,7 +28,11 @@ func newHandler(store api.IGateway, path string) *handler {
 }
 
 func handlerMefs() *handler {
-	store, err := mefs.NewGateway()
+	ui := api.USerInfo{
+		Api:   config.Cfg.Storage.Mefs.Api,
+		Token: config.Cfg.Storage.Mefs.Token,
+	}
+	store, err := mefs.NewGatewayWith(ui)
 	if err != nil {
 		logger.Error("init mefs error:", err)
 	}

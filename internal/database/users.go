@@ -5,6 +5,7 @@ import (
 	"math/rand"
 
 	"github.com/memoio/backend/api"
+	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/logs"
 )
 
@@ -27,6 +28,11 @@ func (d *DataBase) SelectUser(ctx context.Context, area string) (api.USerInfo, e
 	var index = 0
 	if len(userInfos) != 0 {
 		index = rand.Intn(len(userInfos))
+	} else {
+		userInfos = append(userInfos, api.USerInfo{
+			Api:   config.Cfg.Storage.Mefs.Api,
+			Token: config.Cfg.Storage.Mefs.Token,
+		})
 	}
 
 	return userInfos[index], nil
