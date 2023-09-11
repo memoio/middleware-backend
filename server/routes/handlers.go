@@ -2,9 +2,12 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/memoio/backend/api"
 	auth "github.com/memoio/backend/internal/authentication"
+	"github.com/memoio/backend/internal/gateway/ipfs"
+	"github.com/memoio/backend/internal/gateway/mefs"
 	"github.com/memoio/backend/internal/logs"
-	"github.com/memoio/backend/server/controller"
+	"github.com/memoio/backend/server/routes/controller"
 )
 
 var logger = logs.Logger("routes")
@@ -13,30 +16,58 @@ type handler struct {
 	controller *controller.Controller
 }
 
-var handlerMap map[string]handler
+func newHandler(store api.IGateway, path string) *handler {
+	controller, err := controller.NewController(store, path)
+	if err != nil {
+		logger.Panic(err)
+	}
+	return &handler{
+		controller: controller,
+	}
+}
 
-func handleStorage(r *gin.RouterGroup, h handler) {
-	// store
-	r.POST("/", auth.VerifyIdentityHandler, h.putObjectHandle)
-	r.GET("/:cid", auth.VerifyIdentityHandler, h.getObjectHandle)
-	r.GET("/listobjects", auth.VerifyIdentityHandler, h.listObjectsHandle)
-	r.GET("/delete", auth.VerifyIdentityHandler, h.deleteObjectHandle)
+func handlerMefs() *handler {
+	store, err := mefs.NewGateway()
+	if err != nil {
+		logger.Error("init mefs error:", err)
+	}
 
-	// info
-	r.GET("/balance", auth.VerifyIdentityHandler, h.getBalanceHandle)
+	return newHandler(store, "mefs")
+}
+
+func handlerIpfs() *handler {
+	store, err := ipfs.NewGateway()
+	if err != nil {
+		logger.Error("init ipfs error:", err)
+	}
+
+	return newHandler(store, "ipfs")
+}
+
+func handleStorage(r *gin.RouterGroup, h *handler) {
+
+	// OBJ
+	r.POST("/putObject/", auth.VerifyIdentityHandler, h.putObjectHandle)      //
+	r.POST("/getObject/:cid", auth.VerifyIdentityHandler, h.getObjectHandle)  //
+	r.POST("/listObject", auth.VerifyIdentityHandler, h.listObjectsHandle)    //
+	r.POST("/deleteObject", auth.VerifyIdentityHandler, h.deleteObjectHandle) //
+
+	r.POST("/getBalance", auth.VerifyIdentityHandler, h.getBalanceHandle) //
 
 	// package
-	r.GET("/space", auth.VerifyIdentityHandler, h.getSpace)
-	r.GET("/traffic", auth.VerifyIdentityHandler, h.getTraffic)
-	r.GET("/spacehash", auth.VerifyIdentityHandler, h.spaceHash)
-	r.GET("/traffichash", auth.VerifyIdentityHandler, h.trafficHash)
-	r.GET("/buyspace", auth.VerifyIdentityHandler, h.BuySpace)
-	r.GET("/buytraffic", auth.VerifyIdentityHandler, h.BuyTraffic)
-	r.GET("/approve", auth.VerifyIdentityHandler, h.Approve)
-	r.GET("/allowance", auth.VerifyIdentityHandler, h.allowance)
+	r.POST("/getSpaceInfo", auth.VerifyIdentityHandler, h.getSpaceInfoHandle)               //
+	r.POST("/getTrafficInfo", auth.VerifyIdentityHandler, h.getTrafficInfoHandle)           //
+	r.POST("/getSpaceCheckHash", auth.VerifyIdentityHandler, h.getSpaceCheckHashHandle)     //
+	r.POST("/getTrafficCheckHash", auth.VerifyIdentityHandler, h.getTrafficCheckHashHandle) //
+	r.GET("/getSpacePrice", h.getSpacePriceHandle)                                          //
+	r.GET("/getTrafficPrice", h.getTrafficPriceHandle)                                      //
+	r.POST("/buySpace", auth.VerifyIdentityHandler, h.buySpaceHandle)                       //
+	r.POST("/buyTraffic", auth.VerifyIdentityHandler, h.buyTrafficHandle)                   //
+	r.POST("/getApproveTsHash", auth.VerifyIdentityHandler, h.getApproveTsHash)             //
+	r.POST("/getAllowance", auth.VerifyIdentityHandler, h.getAllowanceHandle)               //
 
-	r.GET("/cashspace", h.cashSpace)
-	r.GET("/cashtraffic", h.cashTraffic)
-	r.GET("/receipt", h.checkReceipt)
+	r.GET("/getReceipt", h.checkReceiptHandle)
 
+	r.GET("/cashSpace", h.cashSpaceHandle)
+	r.GET("/cashTraffic", h.cashTrafficHandle)
 }

@@ -7,6 +7,7 @@ import (
 )
 
 type IGateway interface {
+	GetStoreType(context.Context) StorageType
 	PutObject(context.Context, string, string, io.Reader, ObjectOptions) (ObjectInfo, error)
 	GetObject(context.Context, string, io.Writer, ObjectOptions) error
 	DeleteObject(context.Context, string, string) error
@@ -19,15 +20,15 @@ type IContract interface {
 	Send(ctx context.Context, sender, name, method string, args ...interface{}) (string, error)
 	BalanceOf(context.Context, string) (*big.Int, error)
 	CheckTrsaction(context.Context, string) error
-	GetStorePayHash(ctx context.Context, checksize uint64, nonce *big.Int) string
-	GetReadPayHash(ctx context.Context, checksize uint64, nonce *big.Int) string
+	GetSapceCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) Check
+	GetTrafficCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) Check
 
-	BuySpace(ctx context.Context, buyer string, size uint64) (string, error)
-	BuyTraffic(ctx context.Context, buyer string, size uint64) (string, error)
-	Approve(ctx context.Context, at, sender string, buyValue *big.Int) (string, error)
-	Allowance(ctx context.Context, at, buyer string) (*big.Int, error)
-	CashTrafficCheck(ctx context.Context, sender string, nonce *big.Int, sizeByte uint64, sign []byte) (string, error)
-	CashSpaceCheck(ctx context.Context, sender string, nonce *big.Int, sizeByte uint64, durationDay uint64, sign []byte) (string, error)
+	BuySpace(ctx context.Context, buyer string, size uint64) (Transaction, error)
+	BuyTraffic(ctx context.Context, buyer string, size uint64) (Transaction, error)
+	ApproveTsHash(ctx context.Context, pt PayType, sender string, buyValue *big.Int) (Transaction, error)
+	Allowance(ctx context.Context, pt PayType, buyer string) (*big.Int, error)
+	CashTrafficCheck(context.Context, CheckInfo) (string, error)
+	CashSpaceCheck(context.Context, CheckInfo) (string, error)
 }
 
 type IDataBase interface {
@@ -37,12 +38,18 @@ type IDataBase interface {
 	PutObject(context.Context, FileInfo) error
 	DeleteObject(context.Context, int) error
 
-	GetUpSize(context.Context, string) (uint64, error)
-	GetDownSize(context.Context, string) (uint64, error)
+	AddUser(context.Context, USerInfo) error
+	SelectUser(context.Context, string) (USerInfo, error)
+	DeleteUser(context.Context, int) error
+	ListUsers(context.Context) ([]USerInfo, error)
+	GetUser(context.Context, int) (USerInfo, error)
+}
+
+type IDataStore interface {
+	GetSpaceInfo(context.Context, string) (CheckInfo, error)
+	GetTrafficInfo(context.Context, string) (CheckInfo, error)
 	Upload(context.Context, CheckInfo) error
 	Download(context.Context, CheckInfo) error
-	SpaceCheck(ctx context.Context, buyer string) CheckInfo
-	TrafficCheck(ctx context.Context, buyer string) CheckInfo
 }
 
 type IConfig interface {
@@ -55,4 +62,15 @@ type Keystore interface {
 	Put(string, []byte) error
 	List() ([]string, error)
 	Delete(string) error
+}
+
+type IPublicKey interface {
+	Commitment(d []byte) (G1, error)
+	GenrateProof(rnd Fr, d []byte) (Proof, error)
+	VerifyProof(rnd Fr, commit G1, pf Proof) error
+}
+
+type KVStore interface {
+	Put(key, value []byte) error
+	Get(key []byte) ([]byte, error)
 }

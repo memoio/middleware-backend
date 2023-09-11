@@ -6,3 +6,10 @@ config.json
 internal/repo/*/
 internal/*/test/*
 **/*_test.go
+app/
+
+datastore
+did
+keystore
+pid
+start.sh

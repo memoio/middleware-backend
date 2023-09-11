@@ -26,7 +26,7 @@ type ShareObjectInfo struct {
 var MemoCache = new(sync.Map)
 
 func InitShareTable() error {
-	return database.DataBase.AutoMigrate(&ShareObjectInfo{})
+	return database.GlobalDataBase.AutoMigrate(&ShareObjectInfo{})
 }
 
 func (s *ShareObjectInfo) CreateShare() (string, error) {
@@ -36,7 +36,7 @@ func (s *ShareObjectInfo) CreateShare() (string, error) {
 	}
 	s.ShareID = uuid.String()
 
-	err = database.DataBase.Create(s).Error
+	err = database.GlobalDataBase.Create(s).Error
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "UNIQUE constraint failed") {
 			return "", logs.DataBaseError{Message: "Alread created the share"}
@@ -49,7 +49,7 @@ func (s *ShareObjectInfo) CreateShare() (string, error) {
 
 func GetShareByUniqueIndex(address string, chainid int, mid string, stype storage.StorageType) *ShareObjectInfo {
 	var share ShareObjectInfo
-	if err := database.DataBase.Where("address = ? and chain_id = ? and m_id = ? and s_type = ?", address, chainid, mid, stype).Find(&share).Error; err != nil {
+	if err := database.GlobalDataBase.Where("address = ? and chain_id = ? and m_id = ? and s_type = ?", address, chainid, mid, stype).Find(&share).Error; err != nil {
 		return nil
 	}
 	return &share
@@ -57,7 +57,7 @@ func GetShareByUniqueIndex(address string, chainid int, mid string, stype storag
 
 func GetShareByID(shareID string) *ShareObjectInfo {
 	var share ShareObjectInfo
-	if err := database.DataBase.Where("share_id = ?", shareID).First(&share).Error; err != nil {
+	if err := database.GlobalDataBase.Where("share_id = ?", shareID).First(&share).Error; err != nil {
 		return nil
 	}
 	return &share
@@ -93,7 +93,7 @@ func (s *ShareObjectInfo) UpdateShare(attr string, value string) error {
 	var err error
 	switch attr {
 	case "password":
-		err = database.DataBase.Model(s).Update(attr, value).Error
+		err = database.GlobalDataBase.Model(s).Update(attr, value).Error
 		if err != nil {
 			err = logs.DataBaseError{Message: err.Error()}
 		}
@@ -104,7 +104,7 @@ func (s *ShareObjectInfo) UpdateShare(attr string, value string) error {
 }
 
 func (s *ShareObjectInfo) DeleteShare() error {
-	err := database.DataBase.Delete(s).Error
+	err := database.GlobalDataBase.Delete(s).Error
 	if err != nil {
 		return logs.DataBaseError{Message: err.Error()}
 	}
@@ -130,7 +130,7 @@ func GetFileInfo(address string, chainID int, mid string, stype storage.StorageT
 
 func ListShares(address string, chainID int) ([]ShareObjectInfo, error) {
 	var shares []ShareObjectInfo
-	err := database.DataBase.Where("address = ? and chain_id = ?", address, chainID).Find(&shares).Error
+	err := database.GlobalDataBase.Where("address = ? and chain_id = ?", address, chainID).Find(&shares).Error
 	if err != nil {
 		return nil, logs.DataBaseError{Message: err.Error()}
 	}

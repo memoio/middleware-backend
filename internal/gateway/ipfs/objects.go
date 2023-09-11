@@ -23,6 +23,7 @@ func ChunkerSize(size string) shapi.AddOpts {
 }
 
 type Ipfs struct {
+	st   api.StorageType
 	host string
 }
 
@@ -34,7 +35,11 @@ func NewGateway() (api.IGateway, error) {
 
 	return &Ipfs{
 		host: cf.Storage.Ipfs.Host,
+		st:   api.IPFS,
 	}, nil
+}
+func (i *Ipfs) GetStoreType(ctx context.Context) api.StorageType {
+	return i.st
 }
 
 func (i *Ipfs) PutObject(ctx context.Context, bucket, object string, r io.Reader, opts api.ObjectOptions) (objInfo api.ObjectInfo, err error) {
@@ -53,6 +58,7 @@ func (i *Ipfs) PutObject(ctx context.Context, bucket, object string, r io.Reader
 		Cid:         hash,
 		ModTime:     time.Now(),
 		UserDefined: opts.UserDefined,
+		SType:       i.st,
 	}, nil
 }
 
@@ -85,26 +91,3 @@ func (i *Ipfs) GetObjectInfo(ctx context.Context, cid string) (api.ObjectInfo, e
 func (i *Ipfs) DeleteObject(ctx context.Context, address, mid string) error {
 	return logs.StorageError{Message: "ipfs not support delete option"}
 }
-
-// func (i *Ipfs) ListObjects(ctx context.Context, address string) ([]gateway.ObjectInfo, error) {
-// 	ob, err := db.ListObjects(address)
-// 	if err != nil {
-// 		return []gateway.ObjectInfo{}, err
-// 	}
-
-// 	var objects []gateway.ObjectInfo
-
-// 	for _, oj := range ob {
-// 		objects = append(objects, toObjectInfo(oj))
-// 	}
-// 	return objects, nil
-// }
-
-// func toObjectInfo(o db.ObjectInfo) gateway.ObjectInfo {
-// 	return gateway.ObjectInfo{
-// 		Address: o.Address,
-// 		Name:    o.Name,
-// 		Cid:     o.Cid,
-// 		Size:    o.Size,
-// 	}
-// }

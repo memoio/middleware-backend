@@ -10,8 +10,7 @@ import (
 )
 
 type ServerOption struct {
-	Endpoint        string
-	CheckRegistered bool
+	Endpoint string
 }
 
 func NewServer(opt ServerOption) *http.Server {

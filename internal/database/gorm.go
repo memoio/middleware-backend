@@ -1,23 +1,18 @@
 package database
 
 import (
-	"os"
 	"time"
 
 	"github.com/memoio/backend/api"
-	"github.com/memoio/go-mefs-v2/lib/backend/kv"
-	"github.com/memoio/go-mefs-v2/lib/backend/wrap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-var DataBase *gorm.DB
+var GlobalDataBase *gorm.DB
 
 // var logger = logs.Logger("share")
 
 func init() {
-	logger.Debug("Initializing database")
-
 	db, err := gorm.Open(sqlite.Open("backend.db"), &gorm.Config{})
 	if err != nil {
 		logger.Panicf("Failed to connect to database: %s", err.Error())
@@ -39,33 +34,11 @@ func init() {
 	if err != nil {
 		logger.Panicf("Failed to ping database: %s", err.Error())
 	}
+	GlobalDataBase = db
+	GlobalDataBase.AutoMigrate(&api.FileInfo{}, &api.USerInfo{})
 
-	DataBase = db
-
-	DataBase.AutoMigrate(&api.FileInfo{})
 }
 
-func NewDataStore(st string) (*DataStore, error) {
-	res := &DataStore{}
-
-	opt := kv.DefaultOptions
-	bpath := "./datastore/" + st
-	err := os.MkdirAll(bpath, os.ModePerm)
-	if err != nil {
-		logger.Error(err)
-		return res, err
-	}
-	ds, err := kv.NewBadgerStore(bpath, &opt)
-	if err != nil {
-		logger.Error(err)
-		return res, err
-	}
-
-	dss := wrap.NewKVStore("upload", ds)
-
-	up := NewCheckPay(dss)
-
-	dss = wrap.NewKVStore("download", ds)
-	down := NewCheckPay(dss)
-	return &DataStore{DataBase, up, down}, nil
+func NewDataBase() *DataBase {
+	return &DataBase{GlobalDataBase}
 }
