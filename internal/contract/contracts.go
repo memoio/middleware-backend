@@ -6,8 +6,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/utils"
@@ -149,13 +149,22 @@ func (c *Contract) Call(ctx context.Context, name, method string, args ...interf
 
 	return out, nil
 }
+
 // space
-func (c *Contract) GetSapceCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) string {
-	hash := com.GetCashCheckHash(c.storeAddr, c.seller, checksize, nonce)
-	return hexutil.Encode(hash)
+func (c *Contract) GetSapceCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) api.Check {
+	return api.Check{
+		Store:    c.storeAddr,
+		Seller:   c.seller,
+		SizeByte: checksize,
+		Nonce:    nonce,
+	}
 }
 
-func (c *Contract) GetTrafficCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) string {
-	hash := com.GetCashCheckHash(c.readAddr, c.seller, checksize, nonce)
-	return hexutil.Encode(hash)
+func (c *Contract) GetTrafficCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) api.Check {
+	return api.Check{
+		Store:    c.readAddr,
+		Seller:   c.seller,
+		SizeByte: checksize,
+		Nonce:    nonce,
+	}
 }

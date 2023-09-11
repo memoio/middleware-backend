@@ -14,11 +14,11 @@ import (
 	"github.com/memoio/middleware-contracts/go-contracts/proxy"
 )
 
-func (c *Contract) BuySpace(ctx context.Context, buyer string, size uint64) (string, error) {
+func (c *Contract) BuySpace(ctx context.Context, buyer string, size uint64) (api.Transaction, error) {
 	return c.GetTrasaction(ctx, c.proxyAddr, buyer, "proxy", "buySpace", size, api.DurationDay, common.HexToAddress(buyer))
 }
 
-func (c *Contract) BuyTraffic(ctx context.Context, buyer string, size uint64) (string, error) {
+func (c *Contract) BuyTraffic(ctx context.Context, buyer string, size uint64) (api.Transaction, error) {
 	return c.GetTrasaction(ctx, c.proxyAddr, buyer, "proxy", "buyTraffic", size, common.HexToAddress(buyer))
 }
 

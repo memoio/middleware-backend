@@ -12,7 +12,7 @@ import (
 	"github.com/memoio/contractsv2/go_contracts/erc"
 )
 
-func (c *Contract) ApproveTsHash(ctx context.Context, pt api.PayType, sender string, buyValue *big.Int) (string, error) {
+func (c *Contract) ApproveTsHash(ctx context.Context, pt api.PayType, sender string, buyValue *big.Int) (api.Transaction, error) {
 	var approveAddr common.Address
 
 	switch pt {
@@ -21,7 +21,7 @@ func (c *Contract) ApproveTsHash(ctx context.Context, pt api.PayType, sender str
 	case api.StorePay:
 		approveAddr = c.storeAddr
 	default:
-		return "", logs.ContractError{Message: "type not right"}
+		return api.Transaction{}, logs.ContractError{Message: "type not right"}
 	}
 
 	return c.GetTrasaction(ctx, c.erc20, sender, "erc20", "approve", approveAddr, buyValue)

@@ -8,6 +8,8 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr"
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr/kzg"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	com "github.com/memoio/contractsv2/common"
 )
 
 type ObjectInfo struct {
@@ -143,3 +145,16 @@ type GT = bls12377.GT
 type Fr = fr.Element
 
 type Proof = kzg.OpeningProof
+
+type Transaction types.LegacyTx
+
+type Check struct {
+	Store    common.Address
+	Seller   common.Address
+	SizeByte uint64
+	Nonce    *big.Int
+}
+
+func (c Check) Hash() []byte {
+	return com.GetCashCheckHash(c.Store, c.Seller, c.SizeByte, c.Nonce)
+}

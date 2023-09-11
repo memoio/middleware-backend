@@ -52,21 +52,14 @@ func (c *Controller) canRead(ctx context.Context, address, sign string, size uin
 }
 
 func (c *Controller) verifySign(ctx context.Context, ct string, ci api.CheckInfo) error {
-	var hashs string
+	var hash api.Check
 	if ct == "space" {
-		hashs = c.contract.GetSapceCheckHash(ctx, ci.FileSize.Uint64(), ci.Nonce)
-		logger.Info(hashs)
+		hash = c.contract.GetSapceCheckHash(ctx, ci.FileSize.Uint64(), ci.Nonce)
 	} else {
-		hashs = c.contract.GetTrafficCheckHash(ctx, ci.FileSize.Uint64(), ci.Nonce)
-	}
-	hash, err := hexutil.Decode(hashs)
-	if err != nil {
-		lerr := logs.ControllerError{Message: err.Error()}
-		logger.Error(lerr)
-		return lerr
+		hash = c.contract.GetTrafficCheckHash(ctx, ci.FileSize.Uint64(), ci.Nonce)
 	}
 
-	publicKey, err := crypto.SigToPub(hash, ci.Sign)
+	publicKey, err := crypto.SigToPub(hash.Hash(), ci.Sign)
 	if err != nil {
 		lerr := logs.ControllerError{Message: err.Error()}
 		logger.Error(lerr)

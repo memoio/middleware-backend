@@ -57,6 +57,6 @@ func (r Routes) registFileDnsRoute() {
 }
 
 func (r Routes) registStorageRoute() {
-	r.handleStorage(r.Group("/mefs"), handlerMefs())
-	r.handleStorage(r.Group("/ipfs"), handlerIpfs())
+	handleStorage(r.Group("/mefs"), handlerMefs())
+	handleStorage(r.Group("/ipfs"), handlerIpfs())
 }

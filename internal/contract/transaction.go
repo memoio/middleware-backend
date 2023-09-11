@@ -7,10 +7,10 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/wallet"
 )
@@ -135,12 +135,13 @@ func checkResult(receipt *types.Receipt) error {
 	return nil
 }
 
-func (c *Contract) GetTrasaction(ctx context.Context, contract common.Address, sender, name, method string, args ...interface{}) (string, error) {
+func (c *Contract) GetTrasaction(ctx context.Context, contract common.Address, sender, name, method string, args ...interface{}) (api.Transaction, error) {
+	res := api.Transaction{}
 	client, err := ethclient.DialContext(ctx, c.endpoint)
 	if err != nil {
 		lerr := logs.ContractError{Message: err.Error()}
 		logger.Error(lerr)
-		return "", lerr
+		return res, lerr
 	}
 	defer client.Close()
 
@@ -148,7 +149,7 @@ func (c *Contract) GetTrasaction(ctx context.Context, contract common.Address, s
 	if err != nil {
 		lerr := logs.ContractError{Message: err.Error()}
 		logger.Error(lerr)
-		return "", lerr
+		return res, lerr
 	}
 	logger.Debug("nonce: ", nonce)
 
@@ -156,7 +157,7 @@ func (c *Contract) GetTrasaction(ctx context.Context, contract common.Address, s
 	if err != nil {
 		lerr := logs.ContractError{Message: err.Error()}
 		logger.Error(lerr)
-		return "", lerr
+		return res, lerr
 	}
 	logger.Info("chainID: ", chainID)
 
@@ -166,21 +167,22 @@ func (c *Contract) GetTrasaction(ctx context.Context, contract common.Address, s
 	if err != nil {
 		lerr := logs.ContractError{Message: fmt.Sprint("pack error: ", err)}
 		logger.Error(lerr)
-		return "", lerr
+		return res, lerr
 	}
 
 	gasLimit := uint64(300000)
 	gasPrice := big.NewInt(1000)
-	tx := types.NewTransaction(nonce, contract, big.NewInt(0), gasLimit, gasPrice, data)
-
-	txByte, err := tx.MarshalBinary()
-	if err != nil {
-		lerr := logs.ContractError{Message: fmt.Sprint("tx marshal binary: ", err)}
-		logger.Error(lerr)
-		return "", lerr
+	// tx := types.NewTransaction(nonce, contract, big.NewInt(0), gasLimit, gasPrice, data)
+	tx := types.LegacyTx{
+		Nonce:    nonce,
+		To:       &contract,
+		Value:    big.NewInt(0),
+		Gas:      gasLimit,
+		GasPrice: gasPrice,
+		Data:     data,
 	}
-	logger.Info("TXDATA", hexutil.Encode(txByte))
-	return hexutil.Encode(txByte), nil
+
+	return api.Transaction(tx), nil
 }
 
 func (c *Contract) SendTx(ctx context.Context, hash string) error {

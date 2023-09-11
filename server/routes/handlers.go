@@ -44,7 +44,7 @@ func handlerIpfs() *handler {
 	return newHandler(store, "ipfs")
 }
 
-func (ro Routes) handleStorage(r *gin.RouterGroup, h *handler) {
+func handleStorage(r *gin.RouterGroup, h *handler) {
 
 	// OBJ
 	r.POST("/putObject/", auth.VerifyIdentityHandler, h.putObjectHandle)      //

@@ -153,19 +153,19 @@ func (c *Controller) DeleteObject(ctx context.Context, address string, id int) e
 	return c.database.DeleteObject(ctx, id)
 }
 
-func (c *Controller) GetSpaceCheckHash(ctx context.Context, address string, size uint64) (string, error) {
+func (c *Controller) GetSpaceCheckHash(ctx context.Context, address string, size uint64) (api.Check, error) {
 	ci, err := c.getSpaceCheckInfo(ctx, address, size)
 	if err != nil {
-		return "", err
+		return api.Check{}, err
 	}
 
 	return c.contract.GetSapceCheckHash(ctx, ci.FileSize.Uint64(), ci.Nonce), nil
 }
 
-func (c *Controller) GetTrafficCheckHash(ctx context.Context, address string, size uint64) (string, error) {
+func (c *Controller) GetTrafficCheckHash(ctx context.Context, address string, size uint64) (api.Check, error) {
 	ci, err := c.getTrafficCheckInfo(ctx, address, size)
 	if err != nil {
-		return "", err
+		return api.Check{}, err
 	}
 
 	return c.contract.GetTrafficCheckHash(ctx, ci.FileSize.Uint64(), ci.Nonce), nil
@@ -191,15 +191,15 @@ func (c *Controller) GetTrafficPrice(ctx context.Context) (uint64, error) {
 	return out0, nil
 }
 
-func (c *Controller) BuySpace(ctx context.Context, address string, size uint64) (string, error) {
+func (c *Controller) BuySpace(ctx context.Context, address string, size uint64) (api.Transaction, error) {
 	return c.contract.BuySpace(ctx, address, size)
 }
 
-func (c *Controller) BuyTraffic(ctx context.Context, address string, size uint64) (string, error) {
+func (c *Controller) BuyTraffic(ctx context.Context, address string, size uint64) (api.Transaction, error) {
 	return c.contract.BuyTraffic(ctx, address, size)
 }
 
-func (c *Controller) Approve(ctx context.Context, pt api.PayType, buyer string, value *big.Int) (string, error) {
+func (c *Controller) Approve(ctx context.Context, pt api.PayType, buyer string, value *big.Int) (api.Transaction, error) {
 	return c.contract.ApproveTsHash(ctx, pt, buyer, value)
 }
 

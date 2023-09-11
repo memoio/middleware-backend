@@ -20,12 +20,12 @@ type IContract interface {
 	Send(ctx context.Context, sender, name, method string, args ...interface{}) (string, error)
 	BalanceOf(context.Context, string) (*big.Int, error)
 	CheckTrsaction(context.Context, string) error
-	GetSapceCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) string
-	GetTrafficCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) string
+	GetSapceCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) Check
+	GetTrafficCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) Check
 
-	BuySpace(ctx context.Context, buyer string, size uint64) (string, error)
-	BuyTraffic(ctx context.Context, buyer string, size uint64) (string, error)
-	ApproveTsHash(ctx context.Context, pt PayType, sender string, buyValue *big.Int) (string, error)
+	BuySpace(ctx context.Context, buyer string, size uint64) (Transaction, error)
+	BuyTraffic(ctx context.Context, buyer string, size uint64) (Transaction, error)
+	ApproveTsHash(ctx context.Context, pt PayType, sender string, buyValue *big.Int) (Transaction, error)
 	Allowance(ctx context.Context, pt PayType, buyer string) (*big.Int, error)
 	CashTrafficCheck(context.Context, CheckInfo) (string, error)
 	CashSpaceCheck(context.Context, CheckInfo) (string, error)
