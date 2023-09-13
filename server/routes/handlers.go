@@ -17,6 +17,7 @@ type handler struct {
 	controller *controller.Controller
 }
 
+// create handler with controller
 func newHandler(store api.IGateway, path string) *handler {
 	controller, err := controller.NewController(store, path)
 	if err != nil {
@@ -27,6 +28,7 @@ func newHandler(store api.IGateway, path string) *handler {
 	}
 }
 
+// create handler for mefs
 func handlerMefs() *handler {
 	ui := api.USerInfo{
 		Api:   config.Cfg.Storage.Mefs.Api,
@@ -40,6 +42,7 @@ func handlerMefs() *handler {
 	return newHandler(store, "mefs")
 }
 
+// create handler for ipfs
 func handlerIpfs() *handler {
 	store, err := ipfs.NewGateway()
 	if err != nil {

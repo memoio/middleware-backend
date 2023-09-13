@@ -9,7 +9,7 @@ definitions:
       httpstatusCode:
         type: integer
     type: object
-host: localhost:8081
+host: localhost:8081/swagger/index.html
 info:
   contact: {}
   description: This is a middleware server.

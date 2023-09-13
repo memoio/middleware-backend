@@ -18,6 +18,7 @@ func (c *Controller) SetStore(store api.IGateway) {
 	c.store = store
 }
 
+// address as bucket name
 func (c *Controller) PutObject(ctx context.Context, address, object string, r io.Reader, opts ObjectOptions) (PutObjectResult, error) {
 	result := PutObjectResult{}
 	ci, err := c.canWrite(ctx, address, opts.Sign, uint64(opts.Size))

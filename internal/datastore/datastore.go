@@ -33,6 +33,7 @@ func NewDataStore(path string) (*DataStore, error) {
 		return res, err
 	}
 
+	// create paycheck with ds
 	cp := NewCheckPay(ds)
 	return &DataStore{cp}, nil
 }

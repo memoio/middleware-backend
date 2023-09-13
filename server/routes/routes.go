@@ -56,6 +56,7 @@ func (r Routes) registFileDnsRoute() {
 	filedns.LoadFileDnsModule(r.Group("/"))
 }
 
+// create handler and register route with handler
 func (r Routes) registStorageRoute() {
 	handleStorage(r.Group("/mefs"), handlerMefs())
 	handleStorage(r.Group("/ipfs"), handlerIpfs())

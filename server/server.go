@@ -26,8 +26,10 @@ func NewServer(opt ServerOption) *http.Server {
 	log.Println("Server Start")
 	gin.SetMode(gin.ReleaseMode)
 
+	// register routes
 	router := routes.RegistRoutes()
 
+	// start server
 	srv := &http.Server{
 		Addr:    opt.Endpoint,
 		Handler: router,

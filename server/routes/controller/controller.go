@@ -21,6 +21,7 @@ type Controller struct {
 }
 
 func NewController(store api.IGateway, path string) (*Controller, error) {
+	// init all contracts addresses
 	contract, err := contract.NewContract(config.Cfg.Contract)
 	if err != nil {
 		return nil, err
@@ -39,7 +40,7 @@ func NewController(store api.IGateway, path string) (*Controller, error) {
 	return &Controller{
 		contract:  contract,
 		database:  database,
-		datastore: datastore,
+		datastore: datastore, // datastore used by cashcheck
 		publickey: publickey,
 		store:     store,
 	}, nil
