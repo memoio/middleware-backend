@@ -8,12 +8,14 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+//localhost:8081
+//103.39.231.220:18070
+
 //	@title			MiddleWare API
 //	@version		1.0
 //	@description	This is a middleware server.
-
-// @host		localhost:8081/swagger/index.html
-// @BasePath	/
+//	@host			103.39.231.220:18070
+//	@BasePath		/
 func main() {
 	local := make([]*cli.Command, 0, 1)
 	local = append(local, cmd.BackendCmd)

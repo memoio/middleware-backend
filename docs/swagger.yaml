@@ -9,7 +9,7 @@ definitions:
       httpstatusCode:
         type: integer
     type: object
-host: localhost:8081/swagger/index.html
+host: 103.39.231.220:18070
 info:
   contact: {}
   description: This is a middleware server.
@@ -179,6 +179,65 @@ paths:
       summary: put object
       tags:
       - PutObj
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: Login
+      tags:
+      - Login
+  /login{cid}:
+    get:
+      consumes:
+      - application/json
+      description: GetSession
+      parameters:
+      - description: did
+        in: query
+        name: did
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: request id
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: GetSession
+      tags:
+      - GetSession
   /mefs/buySpace:
     post:
       consumes:
@@ -724,4 +783,33 @@ paths:
       summary: put object
       tags:
       - PutObj
+  /refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh
+      parameters:
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Refresh
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: Refresh
+      tags:
+      - Refresh
 swagger: "2.0"
