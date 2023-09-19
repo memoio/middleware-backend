@@ -42,9 +42,13 @@ func (d *DataBase) DeleteUser(ctx context.Context, id int) error {
 	return d.Delete(&api.USerInfo{}, "id = ?", id).Error
 }
 
-func (d *DataBase) ListUsers(ctx context.Context) ([]api.USerInfo, error) {
+func (d *DataBase) ListUsers(ctx context.Context, area string) ([]api.USerInfo, error) {
 	var userInfos []api.USerInfo
-	err := d.Find(&userInfos).Error
+	query := d.Model(&api.USerInfo{})
+	if area != "" {
+		query = query.Where("area = ?", area)
+	}
+	err := query.Find(&userInfos).Error
 	if err != nil {
 		lerr := logs.DataBaseError{Message: err.Error()}
 		logger.Error(lerr)

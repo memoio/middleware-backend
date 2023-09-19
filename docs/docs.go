@@ -256,6 +256,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/logs.APIError"
                         }
+                    },
+                    "525": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
                     }
                 }
             }
@@ -517,60 +523,6 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "getAllowance",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/mefs/getApproveTsHash": {
-            "post": {
-                "description": "getApproveTsHash",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "getApproveTsHash"
-                ],
-                "summary": "getApproveTsHash",
-                "parameters": [
-                    {
-                        "description": "b",
-                        "name": "b",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "value",
-                        "name": "value",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "type",
-                        "name": "type",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "getApproveTsHash",
                         "schema": {
                             "type": "integer"
                         }
@@ -1074,6 +1026,66 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "525": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/recharge": {
+            "post": {
+                "description": "recharge",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recharge"
+                ],
+                "summary": "recharge",
+                "parameters": [
+                    {
+                        "description": "b",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "value",
+                        "name": "value",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "type",
+                        "name": "type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "getApproveTsHash",
+                        "schema": {
+                            "type": "integer"
                         }
                     },
                     "521": {

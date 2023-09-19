@@ -13,30 +13,30 @@ var UserCmd = &cli.Command{
 	Name:  "mefs",
 	Usage: "mefs options",
 	Subcommands: []*cli.Command{
-		addCmd,
-		stopCmd,
+		addUSerCmd,
+		listUSerCmd,
+		deleteUSerCmd,
 	},
 }
 
-var addCmd = &cli.Command{
+var addUSerCmd = &cli.Command{
 	Name:  "add",
 	Usage: "add user",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:    "api",
+			Name:    "area",
 			Aliases: []string{"a"},
 			Usage:   "input api",
 		},
 		&cli.StringFlag{
 			Name:    "token",
 			Aliases: []string{"t"},
-			Usage:   "input api",
+			Usage:   "input token",
 		},
 		&cli.StringFlag{
 			Name:    "area",
 			Aliases: []string{"area"},
-			Usage:   "input api",
-			Value:   "default",
+			Usage:   "input area",
 		},
 	},
 	Action: func(ctx *cli.Context) error {
@@ -63,6 +63,57 @@ var addCmd = &cli.Command{
 			Token: token,
 		}
 		err := db.AddUser(context.Background(), ui)
+		if err != nil {
+			return err
+		}
+		return nil
+	},
+}
+
+var listUSerCmd = &cli.Command{
+	Name:  "list",
+	Usage: "list user",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "area",
+			Aliases: []string{"area"},
+			Usage:   "input area",
+		},
+	},
+	Action: func(ctx *cli.Context) error {
+		area := ctx.String("area")
+
+		db := database.NewDataBase()
+		uis, err := db.ListUsers(context.TODO(), area)
+		if err != nil {
+			return err
+		}
+		for _, ui := range uis {
+			fmt.Println(ui)
+		}
+		return nil
+	},
+}
+
+var deleteUSerCmd = &cli.Command{
+	Name:  "del",
+	Usage: "delete user",
+	Flags: []cli.Flag{
+		&cli.IntFlag{
+			Name:    "id",
+			Aliases: []string{"i"},
+			Usage:   "user id",
+			Value:   -1,
+		},
+	},
+	Action: func(ctx *cli.Context) error {
+		id := ctx.Int("id")
+		if id == -1 {
+			fmt.Println("id is nil")
+			return nil
+		}
+		db := database.NewDataBase()
+		err := db.DeleteUser(context.TODO(), id)
 		if err != nil {
 			return err
 		}
