@@ -9,7 +9,7 @@ definitions:
       httpstatusCode:
         type: integer
     type: object
-host: 103.39.231.220:18070
+host: localhost:8081
 info:
   contact: {}
   description: This is a middleware server.
@@ -173,6 +173,10 @@ paths:
           schema:
             $ref: '#/definitions/logs.APIError'
         "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "525":
           description: ""
           schema:
             $ref: '#/definitions/logs.APIError'
@@ -416,42 +420,6 @@ paths:
       summary: getAllowance
       tags:
       - getAllowance
-  /mefs/getApproveTsHash:
-    post:
-      consumes:
-      - application/json
-      description: getApproveTsHash
-      parameters:
-      - description: b
-        in: body
-        name: b
-        required: true
-        schema:
-          type: string
-      - description: value
-        in: query
-        name: value
-        required: true
-        type: string
-      - description: type
-        in: query
-        name: type
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: getApproveTsHash
-          schema:
-            type: integer
-        "521":
-          description: ""
-          schema:
-            $ref: '#/definitions/logs.APIError'
-      summary: getApproveTsHash
-      tags:
-      - getApproveTsHash
   /mefs/getBalance:
     post:
       consumes:
@@ -780,9 +748,49 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/logs.APIError'
+        "525":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
       summary: put object
       tags:
       - PutObj
+  /mefs/recharge:
+    post:
+      consumes:
+      - application/json
+      description: recharge
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: value
+        in: query
+        name: value
+        required: true
+        type: string
+      - description: type
+        in: query
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getApproveTsHash
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: recharge
+      tags:
+      - recharge
   /refresh:
     post:
       consumes:

@@ -41,7 +41,7 @@ type IDataBase interface {
 	AddUser(context.Context, USerInfo) error
 	SelectUser(context.Context, string) (USerInfo, error)
 	DeleteUser(context.Context, int) error
-	ListUsers(context.Context) ([]USerInfo, error)
+	ListUsers(context.Context, string) ([]USerInfo, error)
 	GetUser(context.Context, int) (USerInfo, error)
 }
 
