@@ -2,6 +2,7 @@ package contract
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -53,6 +54,7 @@ type Contract struct {
 }
 
 func NewContract(cfc config.ContractConfig) (*Contract, error) {
+	fmt.Println("chain:", cfc.Chain)
 	instanceAddr, endPoint := com.GetInsEndPointByChain(cfc.Chain)
 
 	client, err := ethclient.DialContext(context.TODO(), endPoint)

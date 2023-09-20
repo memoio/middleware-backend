@@ -39,7 +39,7 @@ func NewController() (*Controller, error) {
 	return &Controller{
 		contract:  contract,
 		database:  database,
-		datastore: datastore,
+		datastore: datastore, // datastore used by cashcheck
 		publickey: publickey,
 	}, nil
 }

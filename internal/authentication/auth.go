@@ -25,6 +25,18 @@ func LoadAuthModule(g *gin.RouterGroup) {
 	})
 }
 
+// Login godoc
+//
+//	@Summary		Login
+//	@Description	Login
+//	@Tags			Login
+//	@Accept			json
+//	@Produce		json
+//	@Param			b	body		string	true	"body"
+//	@Success		200	{object}	string	"Login"
+//	@Failure		521	{object}	logs.APIError
+//	@Failure		400	{object}	logs.APIError
+//	@Router			/login [post]
 func LoginHandler(c *gin.Context) {
 	// var request Request
 	body := make(map[string]interface{})
@@ -52,6 +64,18 @@ func LoginHandler(c *gin.Context) {
 
 }
 
+// GetSession godoc
+//
+//	@Summary		GetSession
+//	@Description	GetSession
+//	@Tags			GetSession
+//	@Accept			json
+//	@Produce		json
+//	@Param			did	query		string	true	"did"
+//	@Success		200	{object}	string	"request id"
+//	@Failure		521	{object}	logs.APIError
+//	@Failure		400	{object}	logs.APIError
+//	@Router			/login{cid} [get]
 func GetSessionHandler(c *gin.Context) {
 	did := c.Query("did")
 
@@ -64,6 +88,18 @@ func GetSessionHandler(c *gin.Context) {
 	c.JSON(200, session)
 }
 
+// Refresh godoc
+//
+//	@Summary		Refresh
+//	@Description	Refresh
+//	@Tags			Refresh
+//	@Accept			json
+//	@Produce		json
+//	@Param			Authorization	header		string	true	"Authorization"
+//	@Success		200				{object}	string	"Refresh"
+//	@Failure		521				{object}	logs.APIError
+//	@Failure		400				{object}	logs.APIError
+//	@Router			/refresh [post]
 func RefreshHandler(c *gin.Context) {
 	tokenString := c.GetHeader("Authorization")
 
