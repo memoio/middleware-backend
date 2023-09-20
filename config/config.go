@@ -16,6 +16,7 @@ const CONFIGPATH = "./config.json"
 var Cfg *Config
 
 type Config struct {
+	SwagHost    string                 `json:"swaghost"`
 	Storage     StorageConfig          `json:"storage"`
 	Contracts   map[int]ContractConfig `json:"contracts"`
 	Contract    ContractConfig         `json:"contract"`
@@ -33,9 +34,8 @@ type StorageConfig struct {
 }
 
 type MefsConfig struct {
-	Api          string `json:"api"`
-	Token        string `json:"token"`
-	ContractAddr string `json:"contractaddr"`
+	Api   string `json:"api"`
+	Token string `json:"token"`
 }
 
 type IpfsConfig struct {
@@ -50,7 +50,8 @@ func newDefaultIpfsConfig() IpfsConfig {
 
 func newDefaultMefsConfig() MefsConfig {
 	return MefsConfig{
-		Api: "/ip4/127.0.0.1/tcp/5001",
+		Api:   "/ip4/192.168.1.46/tcp/26812",
+		Token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJBbGxvdyI6WyJyZWFkIiwid3JpdGUiLCJzaWduIiwiYWRtaW4iXX0.OzYt9dIYMEuUoaEQeXah2wkPUZ1O6Yya7mwuuIAP89s",
 	}
 }
 
@@ -90,6 +91,7 @@ func newDefaultDomainConfig() string {
 
 func NewDefaultConfig() *Config {
 	return &Config{
+		SwagHost:    "localhost:8090",
 		Storage:     newDefaultStorageConfig(),
 		Contracts:   newDefaultContractsConfig(),
 		Contract:    newDefaultContractConfig(),

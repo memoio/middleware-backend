@@ -256,6 +256,102 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/logs.APIError"
                         }
+                    },
+                    "525": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "description": "Login",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Login"
+                ],
+                "summary": "Login",
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/login{cid}": {
+            "get": {
+                "description": "GetSession",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GetSession"
+                ],
+                "summary": "GetSession",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "did",
+                        "name": "did",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
                     }
                 }
             }
@@ -517,60 +613,6 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "getAllowance",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    "521": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/logs.APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/mefs/getApproveTsHash": {
-            "post": {
-                "description": "getApproveTsHash",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "getApproveTsHash"
-                ],
-                "summary": "getApproveTsHash",
-                "parameters": [
-                    {
-                        "description": "b",
-                        "name": "b",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "type": "string",
-                        "description": "value",
-                        "name": "value",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "type",
-                        "name": "type",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "getApproveTsHash",
                         "schema": {
                             "type": "integer"
                         }
@@ -1066,6 +1108,110 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "file id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    },
+                    "525": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mefs/recharge": {
+            "post": {
+                "description": "recharge",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recharge"
+                ],
+                "summary": "recharge",
+                "parameters": [
+                    {
+                        "description": "b",
+                        "name": "b",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "value",
+                        "name": "value",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "type",
+                        "name": "type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "getApproveTsHash",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    "521": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/logs.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/refresh": {
+            "post": {
+                "description": "Refresh",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Refresh"
+                ],
+                "summary": "Refresh",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authorization",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Refresh",
                         "schema": {
                             "type": "string"
                         }

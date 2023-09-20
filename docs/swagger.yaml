@@ -176,9 +176,72 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/logs.APIError'
+        "525":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
       summary: put object
       tags:
       - PutObj
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login
+      parameters:
+      - description: body
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: Login
+      tags:
+      - Login
+  /login{cid}:
+    get:
+      consumes:
+      - application/json
+      description: GetSession
+      parameters:
+      - description: did
+        in: query
+        name: did
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: request id
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: GetSession
+      tags:
+      - GetSession
   /mefs/buySpace:
     post:
       consumes:
@@ -357,42 +420,6 @@ paths:
       summary: getAllowance
       tags:
       - getAllowance
-  /mefs/getApproveTsHash:
-    post:
-      consumes:
-      - application/json
-      description: getApproveTsHash
-      parameters:
-      - description: b
-        in: body
-        name: b
-        required: true
-        schema:
-          type: string
-      - description: value
-        in: query
-        name: value
-        required: true
-        type: string
-      - description: type
-        in: query
-        name: type
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: getApproveTsHash
-          schema:
-            type: integer
-        "521":
-          description: ""
-          schema:
-            $ref: '#/definitions/logs.APIError'
-      summary: getApproveTsHash
-      tags:
-      - getApproveTsHash
   /mefs/getBalance:
     post:
       consumes:
@@ -721,7 +748,76 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/logs.APIError'
+        "525":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
       summary: put object
       tags:
       - PutObj
+  /mefs/recharge:
+    post:
+      consumes:
+      - application/json
+      description: recharge
+      parameters:
+      - description: b
+        in: body
+        name: b
+        required: true
+        schema:
+          type: string
+      - description: value
+        in: query
+        name: value
+        required: true
+        type: string
+      - description: type
+        in: query
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: getApproveTsHash
+          schema:
+            type: integer
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: recharge
+      tags:
+      - recharge
+  /refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh
+      parameters:
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Refresh
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/logs.APIError'
+        "521":
+          description: ""
+          schema:
+            $ref: '#/definitions/logs.APIError'
+      summary: Refresh
+      tags:
+      - Refresh
 swagger: "2.0"

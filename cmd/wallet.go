@@ -19,14 +19,14 @@ var WalletCmd = &cli.Command{
 	Name:  "wallet",
 	Usage: "wallet cmd",
 	Subcommands: []*cli.Command{
-		newCmd,
-		listCmd,
+		newWalletCmd,
+		listWalletCmd,
 		exportCmd,
 		importCmd,
 	},
 }
 
-var newCmd = &cli.Command{
+var newWalletCmd = &cli.Command{
 	Name:  "new",
 	Usage: "create a new address",
 	Action: func(_ *cli.Context) error {
@@ -45,7 +45,7 @@ var newCmd = &cli.Command{
 	},
 }
 
-var listCmd = &cli.Command{
+var listWalletCmd = &cli.Command{
 	Name:  "list",
 	Usage: "list all addresses",
 	Action: func(_ *cli.Context) error {

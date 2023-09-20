@@ -20,7 +20,7 @@ type Controller struct {
 	publickey api.IPublicKey
 }
 
-func NewController(store api.IGateway, path string) (*Controller, error) {
+func NewController() (*Controller, error) {
 	contract, err := contract.NewContract(config.Cfg.Contract)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func NewController(store api.IGateway, path string) (*Controller, error) {
 
 	database := database.NewDataBase()
 
-	datastore, err := datastore.NewDataStore(path)
+	datastore, err := datastore.NewDataStore()
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +39,7 @@ func NewController(store api.IGateway, path string) (*Controller, error) {
 	return &Controller{
 		contract:  contract,
 		database:  database,
-		datastore: datastore,
+		datastore: datastore, // datastore used by cashcheck
 		publickey: publickey,
-		store:     store,
 	}, nil
 }

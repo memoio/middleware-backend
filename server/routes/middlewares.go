@@ -4,6 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/memoio/backend/api"
+	"github.com/memoio/backend/config"
+	"github.com/memoio/backend/internal/gateway/ipfs"
+	"github.com/memoio/backend/internal/gateway/mefs"
 	"github.com/memoio/backend/internal/logs"
 )
 
@@ -36,5 +40,29 @@ func ErrorHandler() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+	}
+}
+
+func LoadMefsHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ui := api.USerInfo{
+			Api:   config.Cfg.Storage.Mefs.Api,
+			Token: config.Cfg.Storage.Mefs.Token,
+		}
+		store, err := mefs.NewGatewayWith(ui)
+		if err != nil {
+			logger.Error("init mefs error:", err)
+		}
+		c.Set("store", store)
+	}
+}
+
+func LoadIpfsHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		store, err := ipfs.NewGateway()
+		if err != nil {
+			logger.Error("init ipfs error:", err)
+		}
+		c.Set("store", store)
 	}
 }

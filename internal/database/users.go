@@ -5,6 +5,7 @@ import (
 	"math/rand"
 
 	"github.com/memoio/backend/api"
+	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/internal/logs"
 )
 
@@ -27,6 +28,11 @@ func (d *DataBase) SelectUser(ctx context.Context, area string) (api.USerInfo, e
 	var index = 0
 	if len(userInfos) != 0 {
 		index = rand.Intn(len(userInfos))
+	} else {
+		userInfos = append(userInfos, api.USerInfo{
+			Api:   config.Cfg.Storage.Mefs.Api,
+			Token: config.Cfg.Storage.Mefs.Token,
+		})
 	}
 
 	return userInfos[index], nil
@@ -36,9 +42,13 @@ func (d *DataBase) DeleteUser(ctx context.Context, id int) error {
 	return d.Delete(&api.USerInfo{}, "id = ?", id).Error
 }
 
-func (d *DataBase) ListUsers(ctx context.Context) ([]api.USerInfo, error) {
+func (d *DataBase) ListUsers(ctx context.Context, area string) ([]api.USerInfo, error) {
 	var userInfos []api.USerInfo
-	err := d.Find(&userInfos).Error
+	query := d.Model(&api.USerInfo{})
+	if area != "" {
+		query = query.Where("area = ?", area)
+	}
+	err := query.Find(&userInfos).Error
 	if err != nil {
 		lerr := logs.DataBaseError{Message: err.Error()}
 		logger.Error(lerr)

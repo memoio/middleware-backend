@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/docs"
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/filedns"
@@ -18,7 +19,10 @@ type Routes struct {
 
 func RegistRoutes() Routes {
 	docs.SwaggerInfo.Schemes = []string{"http", "https"}
-
+	swaghost := config.Cfg.SwagHost
+	if swaghost != "" {
+		docs.SwaggerInfo.Host = swaghost
+	}
 	router := gin.Default()
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -31,6 +35,7 @@ func RegistRoutes() Routes {
 	r.registLoginRoute()
 	r.registShareRoute()
 	r.registFileDnsRoute()
+	// r.registAccount()
 	r.registStorageRoute()
 	return r
 }
@@ -56,7 +61,12 @@ func (r Routes) registFileDnsRoute() {
 	filedns.LoadFileDnsModule(r.Group("/"))
 }
 
+// func (r Routes) registAccount() {
+// 	account.LoadAccountModule(r.Group("/account"))
+// }
+
 func (r Routes) registStorageRoute() {
-	handleStorage(r.Group("/mefs"), handlerMefs())
-	handleStorage(r.Group("/ipfs"), handlerIpfs())
+	h := newHandler()
+	h.handleStorage(r.Group("/mefs", LoadMefsHandler()))
+	h.handleStorage(r.Group("/ipfs", LoadIpfsHandler()))
 }

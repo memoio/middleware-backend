@@ -13,7 +13,7 @@ import (
 type CashCheck struct {
 	lw sync.Mutex
 
-	ds   api.KVStore
+	ds   api.KVStore // datastore
 	pool map[common.Address]*PayCheck
 }
 
@@ -24,6 +24,7 @@ func NewCheckPay(ds api.KVStore) *CashCheck {
 	}
 }
 
+// update paycheck with info
 func (u *CashCheck) check(ctx context.Context, ct CheckType, info api.CheckInfo) error {
 	if info.FileSize.Sign() <= 0 {
 		lerr := logs.DataBaseError{Message: "size should be lager than zero"}
@@ -34,9 +35,11 @@ func (u *CashCheck) check(ctx context.Context, ct CheckType, info api.CheckInfo)
 	u.lw.Lock()
 	defer u.lw.Unlock()
 
+	// load paycheck from ds
 	p, ok := u.pool[info.Buyer]
 	if !ok {
 		var err error
+		// load from ds
 		p, err = u.loadPay(ctx, info.Buyer)
 		if err != nil {
 			return err
@@ -54,12 +57,15 @@ func (u *CashCheck) check(ctx context.Context, ct CheckType, info api.CheckInfo)
 		p.traffic.Size += info.FileSize.Uint64()
 	}
 
+	// update pool
 	u.pool[info.Buyer] = p
+	// save into ds
 	p.Save(u.ds)
 
 	return nil
 }
 
+// create paycheck
 func (u *CashCheck) create(buyer common.Address) (*PayCheck, error) {
 	p := &PayCheck{
 		space:        Check{Size: 0},
@@ -71,6 +77,7 @@ func (u *CashCheck) create(buyer common.Address) (*PayCheck, error) {
 	return p, p.Save(u.ds)
 }
 
+// load paycheck from ds into pool
 func (u *CashCheck) loadPay(ctx context.Context, buyer common.Address) (*PayCheck, error) {
 	key := newKey(buyer.String())
 	data, err := u.ds.Get(key)
@@ -93,6 +100,7 @@ func (u *CashCheck) loadPay(ctx context.Context, buyer common.Address) (*PayChec
 	return pchk, nil
 }
 
+// get check from pool
 func (u *CashCheck) getCheck(ctx context.Context, ct CheckType, buyer common.Address) (api.CheckInfo, error) {
 	res := api.CheckInfo{}
 

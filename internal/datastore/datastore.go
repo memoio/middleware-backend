@@ -17,11 +17,11 @@ type DataStore struct {
 	*CashCheck
 }
 
-func NewDataStore(path string) (*DataStore, error) {
+func NewDataStore() (*DataStore, error) {
 	res := &DataStore{}
 
 	opt := DefaultOptions
-	bpath := "./datastore/" + path
+	bpath := "./datastore/"
 	err := os.MkdirAll(bpath, os.ModePerm)
 	if err != nil {
 		logger.Error(err)
@@ -33,6 +33,7 @@ func NewDataStore(path string) (*DataStore, error) {
 		return res, err
 	}
 
+	// create paycheck with ds
 	cp := NewCheckPay(ds)
 	return &DataStore{cp}, nil
 }

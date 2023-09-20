@@ -5,11 +5,26 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/server/routes/controller"
+	"github.com/memoio/middleware-response/response"
 )
+
+func (h *handler) getStore(c *gin.Context) error {
+	store, ok := c.Get("store")
+	if !ok {
+		lerr := logs.ServerError{Message: "store not set"}
+		c.Error(lerr)
+		return lerr
+	}
+	storei := store.(api.IGateway)
+	h.controller.SetStore(storei)
+
+	return nil
+}
 
 // storage
 
@@ -30,10 +45,16 @@ import (
 //	@Success		200			{object}	string	"file id"
 //	@Failure		521			{object}	logs.APIError
 //	@Failure		400			{object}	logs.APIError
+//	@Failure		525			{object}	logs.APIError
 //	@Router			/mefs/putObject/ [post]
 //	@Router			/ipfs/putObject/ [post]
 func (h handler) putObjectHandle(c *gin.Context) {
 	address := c.GetString("address")
+	err := h.getStore(c)
+	if err != nil {
+		return
+	}
+
 	file, err := c.FormFile("file")
 	if err != nil {
 		err = logs.ServerError{Message: err.Error()}
@@ -68,6 +89,7 @@ func (h handler) putObjectHandle(c *gin.Context) {
 	result, err := h.controller.PutObject(c.Request.Context(), address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud, Sign: sign, Area: area})
 	if err != nil {
 		c.Error(err)
+		return
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -89,6 +111,11 @@ func (h handler) putObjectHandle(c *gin.Context) {
 //	@Router			/mefs/getObject/{cid} [post]
 //	@Router			/ipfs/getObject/{cid} [post]
 func (h handler) getObjectHandle(c *gin.Context) {
+	err := h.getStore(c)
+	if err != nil {
+		return
+	}
+
 	cid := c.Param("cid")
 	address := c.GetString("address")
 
@@ -152,10 +179,15 @@ func (h handler) listObjectsHandle(c *gin.Context) {
 //	@Router			/mefs/deleteObject [post]
 //	@Router			/ipfs/deleteObject [post]
 func (h handler) deleteObjectHandle(c *gin.Context) {
+	err := h.getStore(c)
+	if err != nil {
+		return
+	}
+
 	address := c.GetString("address")
 	id := c.Query("id")
 
-	err := h.controller.DeleteObject(c.Request.Context(), address, int(toInt64(id)))
+	err = h.controller.DeleteObject(c.Request.Context(), address, int(toInt64(id)))
 	if err != nil {
 		c.Error(err)
 	}
@@ -358,9 +390,9 @@ func (h handler) buyTrafficHandle(c *gin.Context) {
 
 // Approve godoc
 //
-//	@Summary		getApproveTsHash
-//	@Description	getApproveTsHash
-//	@Tags			getApproveTsHash
+//	@Summary		recharge
+//	@Description	recharge
+//	@Tags			recharge
 //	@Accept			json
 //	@Produce		json
 //	@Param			b		body		string	true	"b"
@@ -368,9 +400,9 @@ func (h handler) buyTrafficHandle(c *gin.Context) {
 //	@Param			type	query		string	true	"type"
 //	@Success		200		{object}	int		"getApproveTsHash"
 //	@Failure		521		{object}	logs.APIError
-//	@Router			/mefs/getApproveTsHash [post]
+//	@Router			/mefs/recharge [post]
 func (h handler) getApproveTsHash(c *gin.Context) {
-	address := c.GetString("address")
+	address := c.Query("address")
 	value := c.Query("value")
 	pt := c.Query("type")
 
@@ -378,7 +410,11 @@ func (h handler) getApproveTsHash(c *gin.Context) {
 	if err != nil {
 		c.Error(err)
 	}
-	c.JSON(http.StatusOK, res)
+	rsp := response.ReChageResponse{
+		Tx: types.LegacyTx(res),
+	}
+
+	c.JSON(http.StatusOK, rsp)
 }
 
 // allowance godoc
