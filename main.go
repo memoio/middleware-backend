@@ -26,8 +26,10 @@ func main() {
 				Usage:   "Show application version",
 			},
 		},
-		Action: func(_ *cli.Context) error {
-			fmt.Println(cmd.Version + "+" + cmd.BuildFlag)
+		Action: func(ctx *cli.Context) error {
+			if ctx.Bool("version") {
+				fmt.Println(cmd.Version + "+" + cmd.BuildFlag)
+			}
 			return nil
 		},
 	}

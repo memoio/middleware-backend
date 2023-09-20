@@ -10,8 +10,6 @@ import (
 
 var GlobalDataBase *gorm.DB
 
-// var logger = logs.Logger("share")
-
 func init() {
 	db, err := gorm.Open(sqlite.Open("backend.db"), &gorm.Config{})
 	if err != nil {
@@ -36,7 +34,6 @@ func init() {
 	}
 	GlobalDataBase = db
 	GlobalDataBase.AutoMigrate(&api.FileInfo{}, &api.USerInfo{})
-
 }
 
 func NewDataBase() *DataBase {
