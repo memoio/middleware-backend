@@ -38,6 +38,7 @@ func (p *PayCheck) Deserialize(b []byte) error {
 	return cbor.Unmarshal(b, p)
 }
 
+// save paycheck into ds
 func (p *PayCheck) Save(ds api.KVStore) error {
 	key := newKey(p.Buyer.String())
 	data, err := p.Serialize()
