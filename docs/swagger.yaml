@@ -511,11 +511,11 @@ paths:
       summary: checkReceipt
       tags:
       - checkReceipt
-  /mefs/getSpaceCheckHash:
+  /mefs/getSpaceCheck:
     post:
       consumes:
       - application/json
-      description: getSpaceCheckHash
+      description: getSpaceCheck
       parameters:
       - description: b
         in: body
@@ -532,16 +532,16 @@ paths:
       - application/json
       responses:
         "200":
-          description: getSpaceCheckHash
+          description: getSpaceCheck
           schema:
             type: integer
         "521":
           description: ""
           schema:
             $ref: '#/definitions/logs.APIError'
-      summary: getSpaceCheckHash
+      summary: getSpaceCheck
       tags:
-      - getSpaceCheckHash
+      - getSpaceCheck
   /mefs/getSpaceInfo:
     post:
       consumes:
@@ -587,11 +587,11 @@ paths:
       summary: getSpacePrice
       tags:
       - getSpacePrice
-  /mefs/getTrafficCheckHash:
+  /mefs/getTrafficCheck:
     post:
       consumes:
       - application/json
-      description: getTrafficCheckHash
+      description: getTrafficCheck
       parameters:
       - description: b
         in: body
@@ -608,16 +608,16 @@ paths:
       - application/json
       responses:
         "200":
-          description: getTrafficCheckHash
+          description: getTrafficCheck
           schema:
             type: integer
         "521":
           description: ""
           schema:
             $ref: '#/definitions/logs.APIError'
-      summary: getTrafficCheckHash
+      summary: getTrafficCheck
       tags:
-      - getTrafficCheckHash
+      - getTrafficCheck
   /mefs/getTrafficInfo:
     post:
       consumes:

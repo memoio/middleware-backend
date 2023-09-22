@@ -8,8 +8,8 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr"
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr/kzg"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	com "github.com/memoio/contractsv2/common"
+	"github.com/memoio/middleware-response/response"
 )
 
 type ObjectInfo struct {
@@ -95,11 +95,11 @@ type BuyPackage struct {
 
 type FileInfo struct {
 	ID         int         `gorm:"primarykey"`
-	ChainID    int         `gorm:"uniqueIndex:composite;column:chainid"`
-	Address    string      `gorm:"uniqueIndex:composite"`
-	SType      StorageType `gorm:"uniqueIndex:composite;column:stype"`
-	Mid        string      `gorm:"uniqueIndex:composite"`
-	Name       string      `gorm:"uniqueIndex:composite"`
+	ChainID    int         `gorm:"uniqueIndex:file_composite;column:chainid"`
+	Address    string      `gorm:"uniqueIndex:file_composite;column:address"`
+	SType      StorageType `gorm:"uniqueIndex:file_composite;column:stype"`
+	Mid        string      `gorm:"uniqueIndex:file_composite;column:mid"`
+	Name       string      `gorm:"uniqueIndex:file_composite;column:name"`
 	Size       int64
 	ModTime    time.Time `gorm:"column:modtime"`
 	Public     bool
@@ -113,9 +113,9 @@ func (FileInfo) TableName() string {
 
 type USerInfo struct {
 	ID    int    `gorm:"primarykey"`
-	Area  string `gorm:"uniqueIndex:composite;column:area"`
-	Api   string `gorm:"uniqueIndex:composite;column:api"`
-	Token string `gorm:"uniqueIndex:composite;column:token"`
+	Area  string `gorm:"uniqueIndex:user_composite;column:area"`
+	Api   string `gorm:"uniqueIndex:user_composite;column:api"`
+	Token string `gorm:"uniqueIndex:user_composite;column:token"`
 }
 
 func (USerInfo) TableName() string {
@@ -146,15 +146,10 @@ type Fr = fr.Element
 
 type Proof = kzg.OpeningProof
 
-type Transaction types.LegacyTx
+type Transaction response.Transaction
 
-type Check struct {
-	Store    common.Address
-	Seller   common.Address
-	SizeByte uint64
-	Nonce    *big.Int
-}
+type Check response.CheckResponse
 
 func (c Check) Hash() []byte {
-	return com.GetCashCheckHash(c.Store, c.Seller, c.SizeByte, c.Nonce)
+	return com.GetCashCheckHash(c.PayAddr, c.Seller, c.SizeByte, c.Nonce)
 }
