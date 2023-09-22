@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
@@ -15,11 +15,12 @@ import (
 
 func (h *handler) getStore(c *gin.Context) error {
 	store, ok := c.Get("store")
-	if !ok {
+	if !ok || store == nil {
 		lerr := logs.ServerError{Message: "store not set"}
 		c.Error(lerr)
 		return lerr
 	}
+
 	storei := store.(api.IGateway)
 	h.controller.SetStore(storei)
 
@@ -59,6 +60,7 @@ func (h handler) putObjectHandle(c *gin.Context) {
 	if err != nil {
 		err = logs.ServerError{Message: err.Error()}
 		c.Error(err)
+		return
 	}
 
 	if file == nil {
@@ -76,6 +78,7 @@ func (h handler) putObjectHandle(c *gin.Context) {
 	if err != nil {
 		err = logs.ServerError{Message: "open file error"}
 		c.Error(err)
+		return
 	}
 
 	sign := c.PostForm("sign")
@@ -84,6 +87,7 @@ func (h handler) putObjectHandle(c *gin.Context) {
 	if sign == "" {
 		lerr := logs.ServerError{Message: "sign is empty"}
 		c.Error(lerr)
+		return
 	}
 
 	result, err := h.controller.PutObject(c.Request.Context(), address, object, fr, controller.ObjectOptions{Size: size, UserDefined: ud, Sign: sign, Area: area})
@@ -124,12 +128,14 @@ func (h handler) getObjectHandle(c *gin.Context) {
 	if sign == "" {
 		lerr := logs.ServerError{Message: "sign is empty"}
 		c.Error(lerr)
+		return
 	}
 
 	var w bytes.Buffer
 	result, err := h.controller.GetObject(c.Request.Context(), address, cid, &w, controller.ObjectOptions{Sign: sign})
 	if err != nil {
 		c.Error(err)
+		return
 	}
 
 	head := fmt.Sprintf("attachment; filename=\"%s\"", result.Name)
@@ -159,6 +165,7 @@ func (h handler) listObjectsHandle(c *gin.Context) {
 	result, err := h.controller.ListObjects(c.Request.Context(), address)
 	if err != nil {
 		c.Error(err)
+		return
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -190,6 +197,7 @@ func (h handler) deleteObjectHandle(c *gin.Context) {
 	err = h.controller.DeleteObject(c.Request.Context(), address, int(toInt64(id)))
 	if err != nil {
 		c.Error(err)
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"state": "success"})
@@ -213,6 +221,7 @@ func (h handler) getBalanceHandle(c *gin.Context) {
 	balance, err := h.controller.GetBalance(c.Request.Context(), address)
 	if err != nil {
 		c.Error(err)
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"Address": address, "Balance": balance.String()})
 }
@@ -233,6 +242,7 @@ func (h handler) getSpaceInfoHandle(c *gin.Context) {
 	space, err := h.controller.SpacePayInfo(c.Request.Context(), address)
 	if err != nil {
 		c.Error(err)
+		return
 	}
 
 	c.JSON(http.StatusOK, space)
@@ -254,53 +264,58 @@ func (h handler) getTrafficInfoHandle(c *gin.Context) {
 	pi, err := h.controller.TrafficPayInfo(c.Request.Context(), address)
 	if err != nil {
 		c.Error(err)
+		return
 	}
 
 	c.JSON(http.StatusOK, pi)
 }
 
-// getSpaceCheckHash godoc
+// getSpaceCheck godoc
 //
-//	@Summary		getSpaceCheckHash
-//	@Description	getSpaceCheckHash
-//	@Tags			getSpaceCheckHash
+//	@Summary		getSpaceCheck
+//	@Description	getSpaceCheck
+//	@Tags			getSpaceCheck
 //	@Accept			json
 //	@Produce		json
 //	@Param			b		body		string	true	"b"
 //	@Param			size	query		string	true	"size"
-//	@Success		200		{object}	int		"getSpaceCheckHash"
+//	@Success		200		{object}	int		"getSpaceCheck"
 //	@Failure		521		{object}	logs.APIError
-//	@Router			/mefs/getSpaceCheckHash [post]
-func (h handler) getSpaceCheckHashHandle(c *gin.Context) {
-	address := c.GetString("address")
+//	@Router			/mefs/getSpaceCheck [post]
+func (h handler) getSpaceCheckHandle(c *gin.Context) {
+	address := c.Query("address")
 	filesize := c.Query("size")
 
 	res, err := h.controller.GetSpaceCheckHash(c.Request.Context(), address, toUint64(filesize))
 	if err != nil {
 		c.Error(err)
+		return
 	}
-	c.JSON(http.StatusOK, res)
+	response := response.CheckResponse(res)
+	logger.Info(response.Hash())
+	c.JSON(http.StatusOK, response)
 }
 
-// getTrafficCheckHash godoc
+// getTrafficCheck godoc
 //
-//	@Summary		getTrafficCheckHash
-//	@Description	getTrafficCheckHash
-//	@Tags			getTrafficCheckHash
+//	@Summary		getTrafficCheck
+//	@Description	getTrafficCheck
+//	@Tags			getTrafficCheck
 //	@Accept			json
 //	@Produce		json
 //	@Param			b		body		string	true	"b"
 //	@Param			size	query		string	true	"size"
-//	@Success		200		{object}	int		"getTrafficCheckHash"
+//	@Success		200		{object}	int		"getTrafficCheck"
 //	@Failure		521		{object}	logs.APIError
-//	@Router			/mefs/getTrafficCheckHash [post]
-func (h handler) getTrafficCheckHashHandle(c *gin.Context) {
+//	@Router			/mefs/getTrafficCheck [post]
+func (h handler) getTrafficCheckHandle(c *gin.Context) {
 	address := c.GetString("address")
 	filesize := c.Query("size")
 
 	res, err := h.controller.GetTrafficCheckHash(c.Request.Context(), address, toUint64(filesize))
 	if err != nil {
 		c.Error(err)
+		return
 	}
 
 	c.JSON(http.StatusOK, res)
@@ -320,6 +335,7 @@ func (h handler) getSpacePriceHandle(c *gin.Context) {
 	price, err := h.controller.GetSpacePrice(c.Request.Context())
 	if err != nil {
 		c.Error(err)
+		return
 	}
 	c.JSON(http.StatusOK, price)
 }
@@ -338,6 +354,7 @@ func (h handler) getTrafficPriceHandle(c *gin.Context) {
 	res, err := h.controller.GetTrafficPrice(c.Request.Context())
 	if err != nil {
 		c.Error(err)
+		return
 	}
 	c.JSON(http.StatusOK, res)
 }
@@ -361,6 +378,7 @@ func (h handler) buySpaceHandle(c *gin.Context) {
 	res, err := h.controller.BuySpace(c.Request.Context(), address, toUint64(size))
 	if err != nil {
 		c.Error(err)
+		return
 	}
 	c.JSON(http.StatusOK, res)
 }
@@ -384,6 +402,7 @@ func (h handler) buyTrafficHandle(c *gin.Context) {
 	res, err := h.controller.BuyTraffic(c.Request.Context(), address, toUint64(checksize))
 	if err != nil {
 		c.Error(err)
+		return
 	}
 	c.JSON(http.StatusOK, res)
 }
@@ -402,19 +421,24 @@ func (h handler) buyTrafficHandle(c *gin.Context) {
 //	@Failure		521		{object}	logs.APIError
 //	@Router			/mefs/recharge [post]
 func (h handler) getApproveTsHash(c *gin.Context) {
-	address := c.Query("address")
+	address := c.GetString("address")
 	value := c.Query("value")
 	pt := c.Query("type")
 
 	res, err := h.controller.Approve(c.Request.Context(), api.StringToPayType(pt), address, toBigInt(value))
 	if err != nil {
 		c.Error(err)
+		return
 	}
-	rsp := response.ReChageResponse{
-		Tx: types.LegacyTx(res),
-	}
+	rsp := response.ReChargeResponse(res)
 
-	c.JSON(http.StatusOK, rsp)
+	reps, err := rsp.Marshal()
+	if err != nil {
+		lerr := logs.ControllerError{Message: err.Error()}
+		c.Error(lerr)
+		return
+	}
+	c.JSON(http.StatusOK, hexutil.Encode(reps))
 }
 
 // allowance godoc
@@ -436,6 +460,7 @@ func (h handler) getAllowanceHandle(c *gin.Context) {
 	res, err := h.controller.Allowance(c.Request.Context(), api.StringToPayType(at), address)
 	if err != nil {
 		c.Error(err)
+		return
 	}
 	c.JSON(http.StatusOK, res)
 }
@@ -457,6 +482,7 @@ func (h handler) checkReceiptHandle(c *gin.Context) {
 	err := h.controller.CheckReceipt(c.Request.Context(), receipt)
 	if err != nil {
 		c.Error(err)
+		return
 	}
 	c.JSON(http.StatusOK, "success")
 }
@@ -478,6 +504,7 @@ func (h handler) cashSpaceHandle(c *gin.Context) {
 	res, err := h.controller.CashSpace(c.Request.Context(), address)
 	if err != nil {
 		c.Error(err)
+		return
 	}
 	c.JSON(http.StatusOK, res)
 }
@@ -499,6 +526,7 @@ func (h handler) cashTrafficHandle(c *gin.Context) {
 	res, err := h.controller.CashTraffic(c.Request.Context(), address)
 	if err != nil {
 		c.Error(err)
+		return
 	}
 	c.JSON(http.StatusOK, res)
 }

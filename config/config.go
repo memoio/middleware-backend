@@ -16,13 +16,12 @@ const CONFIGPATH = "./config.json"
 var Cfg *Config
 
 type Config struct {
-	SwagHost    string                 `json:"swaghost"`
-	Storage     StorageConfig          `json:"storage"`
-	Contracts   map[int]ContractConfig `json:"contracts"`
-	Contract    ContractConfig         `json:"contract"`
-	SecurityKey string                 `json:"securityKey"`
-	Domain      string                 `json:"domain"`
-	EthDriveUrl string                 `json:"ethDriveUrl"`
+	SwagHost    string         `json:"swaghost"`
+	Storage     StorageConfig  `json:"storage"`
+	Contract    ContractConfig `json:"contract"`
+	SecurityKey string         `json:"securityKey"`
+	Domain      string         `json:"domain"`
+	EthDriveUrl string         `json:"ethDriveUrl"`
 	// LensAPIUrl  string                 `json:"lensAPIUrl"`
 }
 
@@ -57,20 +56,9 @@ func newDefaultMefsConfig() MefsConfig {
 
 func newDefaultStorageConfig() StorageConfig {
 	return StorageConfig{
-		Mefs:        newDefaultMefsConfig(),
-		Ipfs:        newDefaultIpfsConfig(),
-		Prices:      map[string]int64{"mefs": 25000, "ipfs": 25000},
-		TrafficCost: 25000,
+		Mefs: newDefaultMefsConfig(),
+		Ipfs: newDefaultIpfsConfig(),
 	}
-}
-
-func newDefaultContractsConfig() map[int]ContractConfig {
-	cfg := map[int]ContractConfig{
-		985: {
-			Chain: "dev",
-		},
-	}
-	return cfg
 }
 
 func newDefaultContractConfig() ContractConfig {
@@ -93,7 +81,6 @@ func NewDefaultConfig() *Config {
 	return &Config{
 		SwagHost:    "localhost:8090",
 		Storage:     newDefaultStorageConfig(),
-		Contracts:   newDefaultContractsConfig(),
 		Contract:    newDefaultContractConfig(),
 		SecurityKey: newDefaultSecurityKeyConfig(),
 		Domain:      newDefaultDomainConfig(),

@@ -173,16 +173,24 @@ func (c *Contract) GetTrasaction(ctx context.Context, contract common.Address, s
 	gasLimit := uint64(300000)
 	gasPrice := big.NewInt(1000)
 	// tx := types.NewTransaction(nonce, contract, big.NewInt(0), gasLimit, gasPrice, data)
-	tx := types.LegacyTx{
-		Nonce:    nonce,
-		To:       &contract,
-		Value:    big.NewInt(0),
-		Gas:      gasLimit,
-		GasPrice: gasPrice,
-		Data:     data,
-	}
+	// tx := types.LegacyTx{
+	// 	Nonce:    nonce,
+	// 	To:       &contract,
+	// 	Value:    big.NewInt(0),
+	// 	Gas:      gasLimit,
+	// 	GasPrice: gasPrice,
+	// 	Data:     data,
+	// }
 
-	return api.Transaction(tx), nil
+	return api.Transaction{
+		ChainId:  chainID.Int64(),
+		Nonce:    nonce,
+		To:       contract,
+		Value:    big.NewInt(0),
+		GasPrice: gasPrice,
+		Gas:      gasLimit,
+		Data:     data,
+	}, nil
 }
 
 func (c *Contract) SendTx(ctx context.Context, hash string) error {

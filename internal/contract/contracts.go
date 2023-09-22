@@ -155,7 +155,7 @@ func (c *Contract) Call(ctx context.Context, name, method string, args ...interf
 // space
 func (c *Contract) GetSapceCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) api.Check {
 	return api.Check{
-		Store:    c.storeAddr,
+		PayAddr:  c.storeAddr,
 		Seller:   c.seller,
 		SizeByte: checksize,
 		Nonce:    nonce,
@@ -164,7 +164,7 @@ func (c *Contract) GetSapceCheckHash(ctx context.Context, checksize uint64, nonc
 
 func (c *Contract) GetTrafficCheckHash(ctx context.Context, checksize uint64, nonce *big.Int) api.Check {
 	return api.Check{
-		Store:    c.readAddr,
+		PayAddr:  c.readAddr,
 		Seller:   c.seller,
 		SizeByte: checksize,
 		Nonce:    nonce,

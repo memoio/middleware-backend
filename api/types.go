@@ -8,8 +8,8 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr"
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr/kzg"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	com "github.com/memoio/contractsv2/common"
+	"github.com/memoio/middleware-response/response"
 )
 
 type ObjectInfo struct {
@@ -146,15 +146,10 @@ type Fr = fr.Element
 
 type Proof = kzg.OpeningProof
 
-type Transaction types.LegacyTx
+type Transaction response.ReChargeResponse
 
-type Check struct {
-	Store    common.Address
-	Seller   common.Address
-	SizeByte uint64
-	Nonce    *big.Int
-}
+type Check response.CheckResponse
 
 func (c Check) Hash() []byte {
-	return com.GetCashCheckHash(c.Store, c.Seller, c.SizeByte, c.Nonce)
+	return com.GetCashCheckHash(c.PayAddr, c.Seller, c.SizeByte, c.Nonce)
 }

@@ -67,6 +67,7 @@ func (r Routes) registFileDnsRoute() {
 
 func (r Routes) registStorageRoute() {
 	h := newHandler()
-	h.handleStorage(r.Group("/mefs", LoadMefsHandler()))
-	h.handleStorage(r.Group("/ipfs", LoadIpfsHandler()))
+	// h.handleStorage(r.Group("/mefs", auth.VerifyAccessTokenHandler, LoadMefsHandler()))
+	h.handleStorage(r.Group("/mefs", auth.VerifyAccessTokenHandler, LoadMefsHandler()))
+	h.handleStorage(r.Group("/ipfs", auth.VerifyAccessTokenHandler, LoadIpfsHandler()))
 }

@@ -764,9 +764,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/mefs/getSpaceCheckHash": {
+        "/mefs/getSpaceCheck": {
             "post": {
-                "description": "getSpaceCheckHash",
+                "description": "getSpaceCheck",
                 "consumes": [
                     "application/json"
                 ],
@@ -774,9 +774,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "getSpaceCheckHash"
+                    "getSpaceCheck"
                 ],
-                "summary": "getSpaceCheckHash",
+                "summary": "getSpaceCheck",
                 "parameters": [
                     {
                         "description": "b",
@@ -797,7 +797,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "getSpaceCheckHash",
+                        "description": "getSpaceCheck",
                         "schema": {
                             "type": "integer"
                         }
@@ -880,9 +880,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/mefs/getTrafficCheckHash": {
+        "/mefs/getTrafficCheck": {
             "post": {
-                "description": "getTrafficCheckHash",
+                "description": "getTrafficCheck",
                 "consumes": [
                     "application/json"
                 ],
@@ -890,9 +890,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "getTrafficCheckHash"
+                    "getTrafficCheck"
                 ],
-                "summary": "getTrafficCheckHash",
+                "summary": "getTrafficCheck",
                 "parameters": [
                     {
                         "description": "b",
@@ -913,7 +913,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "getTrafficCheckHash",
+                        "description": "getTrafficCheck",
                         "schema": {
                             "type": "integer"
                         }
