@@ -146,7 +146,7 @@ type Fr = fr.Element
 
 type Proof = kzg.OpeningProof
 
-type Transaction response.ReChargeResponse
+type Transaction response.Transaction
 
 type Check response.CheckResponse
 

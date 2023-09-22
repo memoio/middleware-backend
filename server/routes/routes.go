@@ -67,7 +67,13 @@ func (r Routes) registFileDnsRoute() {
 
 func (r Routes) registStorageRoute() {
 	h := newHandler()
-	// h.handleStorage(r.Group("/mefs", auth.VerifyAccessTokenHandler, LoadMefsHandler()))
 	h.handleStorage(r.Group("/mefs", auth.VerifyAccessTokenHandler, LoadMefsHandler()))
+	// h.handleStorage(r.Group("/mefs", testLoadAddress(), LoadMefsHandler()))
 	h.handleStorage(r.Group("/ipfs", auth.VerifyAccessTokenHandler, LoadIpfsHandler()))
 }
+
+// func testLoadAddress() gin.HandlerFunc {
+// 	return func(ctx *gin.Context) {
+// 		ctx.Set("address", ctx.Query("address"))
+// 	}
+// }

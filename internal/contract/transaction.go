@@ -151,7 +151,6 @@ func (c *Contract) GetTrasaction(ctx context.Context, contract common.Address, s
 		logger.Error(lerr)
 		return res, lerr
 	}
-	logger.Debug("nonce: ", nonce)
 
 	chainID, err := client.NetworkID(ctx)
 	if err != nil {
@@ -184,6 +183,7 @@ func (c *Contract) GetTrasaction(ctx context.Context, contract common.Address, s
 
 	return api.Transaction{
 		ChainId:  chainID.Int64(),
+		EndPoint: c.endpoint,
 		Nonce:    nonce,
 		To:       contract,
 		Value:    big.NewInt(0),

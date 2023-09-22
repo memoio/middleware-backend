@@ -380,7 +380,15 @@ func (h handler) buySpaceHandle(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, res)
+	rsp := response.Transaction(res)
+
+	reps, err := rsp.Marshal()
+	if err != nil {
+		lerr := logs.ControllerError{Message: err.Error()}
+		c.Error(lerr)
+		return
+	}
+	c.JSON(http.StatusOK, hexutil.Encode(reps))
 }
 
 // BuyTraffic godoc
@@ -404,7 +412,15 @@ func (h handler) buyTrafficHandle(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, res)
+	rsp := response.Transaction(res)
+
+	reps, err := rsp.Marshal()
+	if err != nil {
+		lerr := logs.ControllerError{Message: err.Error()}
+		c.Error(lerr)
+		return
+	}
+	c.JSON(http.StatusOK, hexutil.Encode(reps))
 }
 
 // Approve godoc
@@ -430,7 +446,7 @@ func (h handler) getApproveTsHash(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	rsp := response.ReChargeResponse(res)
+	rsp := response.Transaction(res)
 
 	reps, err := rsp.Marshal()
 	if err != nil {
