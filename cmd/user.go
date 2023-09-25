@@ -24,7 +24,7 @@ var addUSerCmd = &cli.Command{
 	Usage: "add user",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:    "area",
+			Name:    "api",
 			Aliases: []string{"a"},
 			Usage:   "input api",
 		},
@@ -35,7 +35,7 @@ var addUSerCmd = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:    "area",
-			Aliases: []string{"area"},
+			Aliases: []string{"ar"},
 			Usage:   "input area",
 		},
 	},
@@ -76,7 +76,7 @@ var listUSerCmd = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "area",
-			Aliases: []string{"area"},
+			Aliases: []string{"ar"},
 			Usage:   "input area",
 		},
 	},
