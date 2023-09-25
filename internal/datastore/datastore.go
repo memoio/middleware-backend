@@ -53,3 +53,11 @@ func (d *DataStore) GetSpaceInfo(ctx context.Context, buyer string) (api.CheckIn
 func (d *DataStore) GetTrafficInfo(ctx context.Context, buyer string) (api.CheckInfo, error) {
 	return d.getCheck(ctx, TRAFFIC, common.HexToAddress(buyer))
 }
+
+func (d *DataStore) ResetSpace(ctx context.Context, buyer string) error {
+	return d.resetCheck(ctx, SPACE, common.HexToAddress(buyer))
+}
+
+func (d *DataStore) ResetTraffic(ctx context.Context, buyer string) error {
+	return d.resetCheck(ctx, TRAFFIC, common.HexToAddress(buyer))
+}

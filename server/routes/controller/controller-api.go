@@ -242,11 +242,19 @@ func (c *Controller) CashSpace(ctx context.Context, buyer string) (string, error
 	if err != nil {
 		return "", err
 	}
+	err = c.datastore.ResetSpace(ctx, buyer)
+	if err != nil {
+		return "", err
+	}
 	return c.contract.CashSpaceCheck(ctx, check)
 }
 
 func (c *Controller) CashTraffic(ctx context.Context, buyer string) (string, error) {
 	check, err := c.datastore.GetTrafficInfo(ctx, buyer)
+	if err != nil {
+		return "", err
+	}
+	err = c.datastore.ResetTraffic(ctx, buyer)
 	if err != nil {
 		return "", err
 	}

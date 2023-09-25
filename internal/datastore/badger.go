@@ -11,13 +11,13 @@ import (
 var ErrClosed = xerrors.New("badger closed")
 
 type BadgerStore struct {
-	db     *badger.DB
-	seqMap sync.Map
+	db *badger.DB
+	// seqMap sync.Map
 
-	closeLk   sync.RWMutex
-	closed    bool
-	closeOnce sync.Once
-	closing   chan struct{}
+	closeLk sync.RWMutex
+	closed  bool
+	// closeOnce sync.Once
+	closing chan struct{}
 
 	gcDiscardRatio float64
 	gcSleep        time.Duration

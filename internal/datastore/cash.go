@@ -127,5 +127,26 @@ func (u *CashCheck) getCheck(ctx context.Context, ct CheckType, buyer common.Add
 			Nonce:    big.NewInt(int64(p.traffic.Nonce)),
 		}, nil
 	}
+}
 
+func (u *CashCheck) resetCheck(ctx context.Context, ct CheckType, buyer common.Address) error {
+	p, ok := u.pool[buyer]
+	if !ok {
+		var err error
+		p, err = u.loadPay(ctx, buyer)
+		if err != nil {
+			return err
+		}
+	}
+
+	if ct == SPACE {
+		p.space.Reset()
+	} else {
+		p.traffic.Reset()
+	}
+
+	p.Save(u.ds)
+	u.pool[buyer] = p
+
+	return nil
 }
