@@ -4,23 +4,26 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/memoio/backend/api"
-	"github.com/memoio/backend/config"
 )
 
 var (
 	contractAddr common.Address
-	sellerAddr   common.Address
+	// sellerAddr   common.Address
 )
 
-func init() {
-	sellerAddr = common.HexToAddress(config.Cfg.Contract.SellerAddr)
-}
+// func init() {
+// 	sellerAddr = common.HexToAddress(config.Cfg.Contract.SellerAddr)
+// }
 
 type Check struct {
 	Nonce    uint64
 	Size     uint64
 	Duration uint64
 	Sign     []byte
+}
+
+func (c *Check) Reset() {
+	c = &Check{Size: 0}
 }
 
 type PayCheck struct {

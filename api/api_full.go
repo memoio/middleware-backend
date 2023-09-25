@@ -50,6 +50,8 @@ type IDataStore interface {
 	GetTrafficInfo(context.Context, string) (CheckInfo, error)
 	Upload(context.Context, CheckInfo) error
 	Download(context.Context, CheckInfo) error
+	ResetSpace(context.Context, string) error
+	ResetTraffic(context.Context, string) error
 }
 
 type IConfig interface {

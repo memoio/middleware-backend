@@ -9,7 +9,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr/kzg"
 	"github.com/ethereum/go-ethereum/common"
 	com "github.com/memoio/contractsv2/common"
-	"github.com/memoio/middleware-response/response"
+	"github.com/memoio/middleware/response"
 )
 
 type ObjectInfo struct {

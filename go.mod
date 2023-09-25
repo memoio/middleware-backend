@@ -3,12 +3,12 @@ module github.com/memoio/backend
 go 1.18
 
 require (
-	github.com/consensys/gnark-crypto v0.10.0
+	github.com/consensys/gnark-crypto v0.11.2
 	github.com/dgraph-io/badger v1.6.2
 	github.com/dgraph-io/badger/v3 v3.2103.5
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/ethereum/go-ethereum v1.13.0
-	github.com/fxamacker/cbor/v2 v2.3.0
+	github.com/ethereum/go-ethereum v1.13.1
+	github.com/fxamacker/cbor/v2 v2.5.0
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-ego/riot v0.0.0-20201013133145-f4c30acb3704
 	github.com/ipfs/go-ipfs-api v0.3.0
@@ -17,11 +17,11 @@ require (
 	github.com/memoio/did-solidity v0.0.0-00010101000000-000000000000
 	github.com/memoio/go-did v0.0.0-00010101000000-000000000000
 	github.com/memoio/go-mefs-v2 v0.0.0-00010101000000-000000000000
+	github.com/memoio/middleware v0.0.0-00010101000000-000000000000
 	github.com/memoio/middleware-contracts v0.0.0-00010101000000-000000000000
-	github.com/memoio/middleware-response v0.0.0-00010101000000-000000000000
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/segmentio/ksuid v1.0.4
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.1
@@ -105,7 +105,6 @@ require (
 	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.12 // indirect
 	github.com/klauspost/reedsolomon v1.9.15 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/libp2p/go-buffer-pool v0.0.2 // indirect
 	github.com/libp2p/go-flow-metrics v0.0.3 // indirect
@@ -135,6 +134,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20220216144756-c35f1ee13d7c // indirect
 	github.com/prometheus/client_golang v1.15.0 // indirect
+	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/shirou/gopsutil/v3 v3.22.2 // indirect
@@ -176,8 +176,8 @@ replace (
 	github.com/memoio/did-solidity => ../did-solidity
 	github.com/memoio/go-did => ../go-did
 	github.com/memoio/go-mefs-v2 => ../go-mefs-v2
+	github.com/memoio/middleware => ../middleware
 	github.com/memoio/middleware-contracts => ../contracts
-	github.com/memoio/middleware-response => ../middleware-response
 	github.com/memoio/relay => ../relay
 	memoc => ../memo-go-contracts-v2
 )

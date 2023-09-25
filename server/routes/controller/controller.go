@@ -6,8 +6,8 @@ import (
 	"github.com/memoio/backend/internal/contract"
 	"github.com/memoio/backend/internal/database"
 	"github.com/memoio/backend/internal/datastore"
+	"github.com/memoio/backend/internal/kzg"
 	"github.com/memoio/backend/internal/logs"
-	"github.com/memoio/backend/server/routes/controller/kzg"
 )
 
 var logger = logs.Logger("controller")
@@ -32,7 +32,7 @@ func NewController() (*Controller, error) {
 	if err != nil {
 		return nil, err
 	}
-	publickey, err := kzg.GenKey()
+	publickey, err := kzg.NewKzg()
 	if err != nil {
 		return nil, err
 	}
