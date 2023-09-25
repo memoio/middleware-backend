@@ -10,7 +10,7 @@ import (
 	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/server/routes/controller"
-	"github.com/memoio/middleware-response/response"
+	"github.com/memoio/middleware/response"
 )
 
 func (h *handler) getStore(c *gin.Context) error {
