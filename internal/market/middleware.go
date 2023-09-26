@@ -86,6 +86,10 @@ func SearchNFTHandler() gin.HandlerFunc {
 			return
 		}
 
+		for index := range nfts {
+			nfts[index].TokenID -= 1
+		}
+
 		c.JSON(200, nfts)
 	}
 }
