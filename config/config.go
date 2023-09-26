@@ -20,6 +20,7 @@ type Config struct {
 	Domain      string                 `json:"domain"`
 	LensAPIUrl  string                 `json:"lensAPIUrl"`
 	EthDriveUrl string                 `json:"ethDriveUrl"`
+	FreeSpace   map[string]int64       `json:"freeSpace"`
 }
 
 type StorageConfig struct {

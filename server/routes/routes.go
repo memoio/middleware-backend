@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/internal/market"
 	"github.com/memoio/backend/internal/share"
 )
 
@@ -24,6 +25,7 @@ func RegistRoutes(checkRegistered bool) Routes {
 	r.registRoute()
 
 	r.registLoginRoute(checkRegistered)
+	r.registMarketRoute()
 	r.registShareRoute()
 
 	r.registStorageRoute()
@@ -40,6 +42,10 @@ func (r Routes) registRoute() {
 
 func (r Routes) registLoginRoute(checkRegistered bool) {
 	auth.LoadAuthModule(r.Group("/"), checkRegistered)
+}
+
+func (r Routes) registMarketRoute() {
+	market.LoadNFTMarketModule(r.Group("nft"))
 }
 
 func (r Routes) registShareRoute() {

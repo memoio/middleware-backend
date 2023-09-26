@@ -8,6 +8,7 @@ import (
 	"github.com/memoio/backend/config"
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/controller"
+	"github.com/memoio/backend/internal/market"
 	"github.com/memoio/backend/server/routes"
 )
 
@@ -36,6 +37,14 @@ func NewServer(opt ServerOption) *http.Server {
 		log.Fatal("config not right ", err)
 		return nil
 	}
+
+	market.InitDriveMarket(market.DefaultSearcherOpts)
+
+	dumper, err := market.NewDriveNFTDumper()
+	if err != nil {
+		panic(err.Error())
+	}
+	go dumper.DumperDriveNFT()
 
 	auth.InitAuthConfig(config.SecurityKey, config.Domain, config.LensAPIUrl)
 
