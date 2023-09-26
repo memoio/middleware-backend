@@ -47,7 +47,7 @@ func Search(text string, page int, pageSize int) types.ScoredIDs {
 	res := Searcher.SearchID(types.SearchReq{
 		Text: text,
 		RankOpts: &types.RankOpts{
-			OutputOffset: page * pageSize,
+			OutputOffset: (page - 1) * pageSize,
 			MaxOutputs:   pageSize,
 		},
 	})
