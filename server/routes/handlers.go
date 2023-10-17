@@ -26,16 +26,18 @@ func handlerMefs() handler {
 	store, err := mefs.NewGateway()
 	if err != nil {
 		logger.Error("init mefs error:", err)
+		return handler{}
 	}
 
 	config, err := config.ReadFile()
 	if err != nil {
 		logger.Error("config not right ", err)
-
+		return handler{}
 	}
 	control, err := controller.NewController(api.MEFS, store, config)
 	if err != nil {
 		logger.Error("get control error:", err)
+		return handler{}
 	}
 	return handler{controller: control}
 }
@@ -59,6 +61,10 @@ func handlerIpfs() handler {
 }
 
 func handleStorage(r *gin.RouterGroup, h handler) {
+	if (h == handler{}) {
+		logger.Error("storage not valid")
+		return
+	}
 	r.POST("/", auth.VerifyIdentityHandler, h.putObjectHandle)
 	r.GET("/:cid", auth.VerifyIdentityHandler, h.getObjectHandle)
 	r.GET("/listobjects", auth.VerifyIdentityHandler, h.listObjectsHandle)
