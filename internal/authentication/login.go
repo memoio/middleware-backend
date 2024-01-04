@@ -2,13 +2,19 @@ package auth
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"strings"
 
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcutil"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/memoio/backend/internal/logs"
+	"github.com/memoio/backend/internal/siwb"
 	"github.com/shurcooL/graphql"
 	"github.com/spruceid/siwe-go"
 )
@@ -16,6 +22,17 @@ import (
 type EIP4361Request struct {
 	EIP191Message string `json:"message,omitempty"`
 	Signature     string `json:"signature,omitempty"`
+
+	// used for registe
+	Recommender string `json:"recommender,omitempty"`
+	Source      string `json:"source,omitempty"`
+	// used for choose user
+	UserID int `json:"userID,omitempty"`
+}
+
+type BTCSignedMessage struct {
+	Message   string `json:"message,omitempty"`
+	Signature string `json:"signature,omitempty"`
 
 	// used for registe
 	Recommender string `json:"recommender,omitempty"`
@@ -77,6 +94,14 @@ func Challenge(domain, address, uri, nonce string, chainID int) (string, error) 
 	return msg.String(), nil
 }
 
+func ChallengeWithBTC(domain, address, uri, nonce string) (string, error) {
+	msg, err := siwb.InitMessage(domain, address, uri, nonce, map[string]interface{}{})
+	if err != nil {
+		return "", err
+	}
+	return msg.String(), nil
+}
+
 func Login(nonceManager *NonceManager, request interface{}) (string, string, string, error) {
 	req, ok := request.(EIP4361Request)
 	if !ok {
@@ -84,24 +109,6 @@ func Login(nonceManager *NonceManager, request interface{}) (string, string, str
 	}
 	return loginWithEth(nonceManager, req)
 }
-
-// func LoginWithMethod(nonceManager *NonceManager, request interface{}, method int, checkRegistered bool) (string, string, error) {
-// 	switch method {
-// 	case LensMod:
-// 		req, ok := request.(EIP4361Request)
-// 		if !ok {
-// 			return "", "", xerrors.Errorf("")
-// 		}
-// 		return loginWithLens(req, checkRegistered)
-// 	case EthMod:
-// 		req, ok := request.(LoginRequest)
-// 		if !ok {
-// 			return "", "", xerrors.Errorf("")
-// 		}
-// 		return loginWithEth(nonceManager, req)
-// 	}
-// 	return "", "", gateway.NotImplemented{Message: ""}
-// }
 
 func LoginWithLens(request EIP4361Request, required bool) (string, string, string, bool, error) {
 	message, err := parseLensMessage(request.EIP191Message)
@@ -188,6 +195,63 @@ func loginWithEth(nonceManager *NonceManager, request EIP4361Request) (string, s
 	return accessToken, refreshToken, message.GetAddress().Hex(), err
 }
 
+func LoginWithBTC(nonceManager *NonceManager, request BTCSignedMessage) (string, string, string, error) {
+	message, err := siwb.ParseMessage(request.Message)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	hash, err := message.MessageHash()
+	if err != nil {
+		return "", "", "", err
+	}
+
+	sig, err := base64.StdEncoding.DecodeString(request.Signature)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	pk, _, err := btcec.RecoverCompact(btcec.S256(), sig, hash)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	switch message.GetAddress()[:1] {
+	case "1":
+		// get P2PKH address
+		if message.GetAddress() != getP2PKHAddress(pk.SerializeCompressed()) {
+			return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
+		}
+	case "3":
+		// get P2SH address
+		if message.GetAddress() != getP2SHAddress(pk.SerializeCompressed()) {
+			return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
+		}
+	default:
+		switch message.GetAddress()[:4] {
+		case "bc1q":
+			// get Native SegWit address
+			if message.GetAddress() != getNativeSegWitAddress(pk.SerializeCompressed()) {
+				return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
+			}
+		case "bc1p":
+			// TODO: get Traproot address
+			return "", "", "", logs.AuthenticationFailed{Message: "Unsupported address format"}
+		default:
+			return "", "", "", logs.AuthenticationFailed{Message: "Invalid address format"}
+		}
+	}
+
+	accessToken, err := genAccessToken(message.GetAddress(), 0, request.UserID)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	refreshToken, err := genRefreshToken(message.GetAddress(), 0, request.UserID)
+
+	return accessToken, refreshToken, message.GetAddress(), err
+}
+
 func parseLensMessage(message string) (*siwe.Message, error) {
 	message = strings.TrimPrefix(message, "\n")
 	message = strings.TrimPrefix(message, "https://")
@@ -195,6 +259,42 @@ func parseLensMessage(message string) (*siwe.Message, error) {
 	message = strings.TrimSuffix(message, "\n ")
 
 	return siwe.ParseMessage(message)
+}
+
+func getP2PKHAddress(publicKey []byte) string {
+	address, err := btcutil.NewAddressPubKey(publicKey, &chaincfg.MainNetParams)
+	if err != nil {
+		return ""
+	}
+	return address.EncodeAddress()
+}
+
+func getP2SHAddress(publicKey []byte) string {
+	witnessProg := btcutil.Hash160(publicKey)
+	addressWitnessPubKeyHash, err := btcutil.NewAddressWitnessPubKeyHash(witnessProg, &chaincfg.MainNetParams)
+	if err != nil {
+		return ""
+	}
+
+	serializedScript, err := txscript.PayToAddrScript(addressWitnessPubKeyHash)
+	if err != nil {
+		return ""
+	}
+	addressScriptHash, err := btcutil.NewAddressScriptHash(serializedScript, &chaincfg.MainNetParams)
+	if err != nil {
+		return ""
+	}
+
+	return addressScriptHash.EncodeAddress()
+}
+
+func getNativeSegWitAddress(publicKey []byte) string {
+	witnessProg := btcutil.Hash160(publicKey)
+	addressWitnessPubKeyHash, err := btcutil.NewAddressWitnessPubKeyHash(witnessProg, &chaincfg.MainNetParams)
+	if err != nil {
+		return ""
+	}
+	return addressWitnessPubKeyHash.EncodeAddress()
 }
 
 func isLensAccount(address string, required bool) (bool, error) {
@@ -219,48 +319,3 @@ func isLensAccount(address string, required bool) (bool, error) {
 
 	return true, nil
 }
-
-// Verify token's type, audience, nonce, expires time and signatrue
-// Then, return access token, refresh token and usr id
-// The format of usr id is did:eth:{usr's publickey key || usr's address}
-// func VerifyDidToken(nonceManager *NonceManager, tokenString string) (string, string, string, error) {
-// 	if tokenString == "" {
-// 		return "", "", "", ErrNullToken
-// 	}
-
-// 	claims := &Claims{}
-// 	_, _, err := new(jwt.Parser).ParseUnverified(tokenString, claims)
-// 	if err != nil {
-// 		return "", "", "", ErrValidToken
-// 	}
-
-// 	// check Audience
-// 	if claims.Audience != Domain {
-// 		return "", "", "", ErrValidToken
-// 	}
-
-// 	// check token type
-// 	if claims.Type != DidToken {
-// 		return "", "", "", ErrValidType
-// 	}
-
-// 	// check token nonce
-// 	if nonceManager.VerifyNonce(claims.Nonce) == false {
-// 		return "", "", "", ErrValidToken
-// 	}
-
-// 	// check signature, expires time and issued time
-// 	token, err := ParseDidToken(tokenString, claims.Subject)
-// 	if err != nil || !token.Valid {
-// 		return "", "", "", ErrValidToken
-// 	}
-
-// 	accessToken, err := GenAccessToken(claims.Subject)
-// 	if err != nil {
-// 		return "", "", "", err
-// 	}
-
-// 	refreshToken, err := GenRefreshToken(claims.Subject)
-
-// 	return accessToken, refreshToken, claims.Subject, err
-// }

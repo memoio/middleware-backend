@@ -90,7 +90,17 @@ type BlockNumber struct {
 const blockNumberID = 1
 
 func InitBlockNumberTable() error {
-	return database.DataBase.AutoMigrate(&BlockNumber{})
+	err := database.DataBase.AutoMigrate(&BlockNumber{})
+	if err != nil {
+		return err
+	}
+
+	var number int64
+	database.DataBase.Model(&BlockNumber{}).Count(&number)
+	if number == 0 {
+		return database.DataBase.Create(&BlockNumber{ID: blockNumberID, BlockNumber: 0}).Error
+	}
+	return nil
 }
 
 func SetLastBlockNumber(blockNumber int64) error {
@@ -98,7 +108,7 @@ func SetLastBlockNumber(blockNumber int64) error {
 		ID:          blockNumberID,
 		BlockNumber: blockNumber,
 	}
-	return database.DataBase.Create(&blockNumberData).Error
+	return database.DataBase.Model(&BlockNumber{ID: blockNumberID}).Updates(&blockNumberData).Error
 }
 
 func GetLastBlockNumber() int64 {
