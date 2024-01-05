@@ -242,14 +242,21 @@ func LoginWithBTC(nonceManager *NonceManager, request BTCSignedMessage) (string,
 		}
 	}
 
-	accessToken, err := genAccessToken(message.GetAddress(), 0, request.UserID)
+	pubKeyEcdsa, err := crypto.UnmarshalPubkey(pk.SerializeUncompressed())
+	if err != nil {
+		panic(err)
+	}
+
+	ethAddress := crypto.PubkeyToAddress(*pubKeyEcdsa)
+
+	accessToken, err := genAccessToken(ethAddress.String(), 0, request.UserID)
 	if err != nil {
 		return "", "", "", err
 	}
 
-	refreshToken, err := genRefreshToken(message.GetAddress(), 0, request.UserID)
+	refreshToken, err := genRefreshToken(ethAddress.String(), 0, request.UserID)
 
-	return accessToken, refreshToken, message.GetAddress(), err
+	return accessToken, refreshToken, ethAddress.String(), err
 }
 
 func parseLensMessage(message string) (*siwe.Message, error) {
