@@ -105,7 +105,7 @@ func (d *Dumper) DumperDriveNFT() error {
 			FlushSearcher()
 		}
 
-		time.Sleep(2 * time.Minute)
+		time.Sleep(5 * time.Minute)
 	}
 }
 
@@ -131,14 +131,14 @@ type NFTData struct {
 	Mid         string `json:"mid"`
 	Description string `json:"desc"`
 	Name        string `json:"name"`
-	Time        string `json:"time"`
-	Class       string `json:"class"`
-	Price       string `json:"price"`
-	Currency    string `json:"currency"`
-	Size        int    `json:"size"`
-	FileType    string `json:"filetype"`
-	FileName    string `json:"filename"`
-	ExternUrl   string `json:"exturl"`
+	// Time        string `json:"time"`
+	// Class       string `json:"class"`
+	// Price       string `json:"price"`
+	// Currency    string `json:"currency"`
+	// Size        int    `json:"size"`
+	// FileType    string `json:"filetype"`
+	// FileName    string `json:"filename"`
+	// ExternUrl   string `json:"exturl"`
 }
 
 func (d *Dumper) HandleTransferNFT(log types.Log) error {
