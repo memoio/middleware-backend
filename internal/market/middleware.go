@@ -9,9 +9,9 @@ import (
 )
 
 func LoadNFTMarketModule(g *gin.RouterGroup) {
-	g.GET("show", ShowNFTHandler())
+	g.GET("nft/show", ShowNFTHandler())
 
-	g.GET("search", SearchNFTHandler())
+	g.GET("nft/search", SearchNFTHandler())
 }
 
 func ShowNFTHandler() gin.HandlerFunc {
