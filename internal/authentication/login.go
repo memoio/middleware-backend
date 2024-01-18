@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -15,9 +16,13 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/siwb"
+	"github.com/memoio/backend/internal/siws"
+	"github.com/mr-tron/base58"
 	"github.com/shurcooL/graphql"
 	"github.com/spruceid/siwe-go"
 )
+
+var purposeStatement = "The message is only used for login"
 
 type EIP4361Request struct {
 	EIP191Message string `json:"message,omitempty"`
@@ -31,6 +36,17 @@ type EIP4361Request struct {
 }
 
 type BTCSignedMessage struct {
+	Message   string `json:"message,omitempty"`
+	Signature string `json:"signature,omitempty"`
+
+	// used for registe
+	Recommender string `json:"recommender,omitempty"`
+	Source      string `json:"source,omitempty"`
+	// used for choose user
+	UserID int `json:"userID,omitempty"`
+}
+
+type SOLSignedMessage struct {
 	Message   string `json:"message,omitempty"`
 	Signature string `json:"signature,omitempty"`
 
@@ -85,7 +101,8 @@ func InitAuthConfig(jwtKey string, domain string, url string) {
 
 func Challenge(domain, address, uri, nonce string, chainID int) (string, error) {
 	var opt = map[string]interface{}{
-		"chainId": chainID,
+		"chainId":   chainID,
+		"statement": purposeStatement,
 	}
 	msg, err := siwe.InitMessage(domain, address, uri, nonce, opt)
 	if err != nil {
@@ -96,6 +113,18 @@ func Challenge(domain, address, uri, nonce string, chainID int) (string, error) 
 
 func ChallengeWithBTC(domain, address, uri, nonce string) (string, error) {
 	msg, err := siwb.InitMessage(domain, address, uri, nonce, map[string]interface{}{})
+	if err != nil {
+		return "", err
+	}
+	return msg.String(), nil
+}
+
+func ChallengeWithSOL(domain, address, uri, nonce, chainID string) (string, error) {
+	var opt = map[string]interface{}{
+		"chainId":   chainID,
+		"statement": purposeStatement,
+	}
+	msg, err := siws.InitMessage(domain, address, uri, nonce, opt)
 	if err != nil {
 		return "", err
 	}
@@ -257,6 +286,36 @@ func LoginWithBTC(nonceManager *NonceManager, request BTCSignedMessage) (string,
 	refreshToken, err := genRefreshToken(ethAddress.String(), 0, request.UserID)
 
 	return accessToken, refreshToken, ethAddress.String(), err
+}
+
+func LoginWithSOL(nonceManager *NonceManager, request SOLSignedMessage) (string, string, string, error) {
+	message, err := siws.ParseMessage(request.Message)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	sig, err := base64.StdEncoding.DecodeString(request.Signature)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	pub, err := base58.Decode(message.GetAddress())
+	if err != nil {
+		return "", "", "", err
+	}
+
+	if !ed25519.Verify(pub, []byte(message.String()), sig) {
+		return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
+	}
+
+	accessToken, err := genAccessToken(message.GetAddress(), -1, request.UserID)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	refreshToken, err := genRefreshToken(message.GetAddress(), -1, request.UserID)
+
+	return accessToken, refreshToken, message.GetAddress(), err
 }
 
 func parseLensMessage(message string) (*siwe.Message, error) {

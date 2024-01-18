@@ -13,15 +13,19 @@ import (
 func LoadAuthModule(g *gin.RouterGroup, checkRegistered bool) {
 	InitRecommendTable()
 
+	g.GET("/challenge", ChallengeHandler())
+
 	g.GET("/btc/challenge", BitcoinChallengeHandler())
 
-	g.GET("/challenge", ChallengeHandler())
+	g.GET("sol/challenge", SolanaChallengeHandler())
 
 	g.POST("/login", LoginHandler())
 
 	g.POST("/lens/login", LensLoginHandler(checkRegistered))
 
 	g.POST("/btc/login", BitcoinLoginHandler())
+
+	g.POST("/sol/login", SolanaLoginHandler())
 
 	g.GET("/refresh", RefreshHandler())
 
@@ -35,28 +39,6 @@ func LoadAuthModule(g *gin.RouterGroup, checkRegistered bool) {
 	g.GET("/recommend", ListRecommendHandler())
 
 	g.GET("/recommend/:address", GetRecommendHandler())
-}
-
-func BitcoinChallengeHandler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		address := c.Query("address")
-		uri, err := url.Parse(c.GetHeader("Origin"))
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
-		domain := uri.Host
-		nonce := nonceManager.GetNonce()
-
-		challenge, err := ChallengeWithBTC(domain, address, uri.String(), nonce)
-		if err != nil {
-			errRes := logs.ToAPIErrorCode(err)
-			c.JSON(errRes.HTTPStatusCode, errRes)
-			return
-		}
-		c.String(http.StatusOK, challenge)
-	}
 }
 
 func ChallengeHandler() gin.HandlerFunc {
@@ -84,6 +66,55 @@ func ChallengeHandler() gin.HandlerFunc {
 		}
 
 		challenge, err := Challenge(domain, address, uri.String(), nonce, chainID)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+		c.String(http.StatusOK, challenge)
+	}
+}
+
+func BitcoinChallengeHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		address := c.Query("address")
+		uri, err := url.Parse(c.GetHeader("Origin"))
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+		domain := uri.Host
+		nonce := nonceManager.GetNonce()
+
+		challenge, err := ChallengeWithBTC(domain, address, uri.String(), nonce)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+		c.String(http.StatusOK, challenge)
+	}
+}
+
+func SolanaChallengeHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		address := c.Query("address")
+		uri, err := url.Parse(c.GetHeader("Origin"))
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+		domain := uri.Host
+		nonce := nonceManager.GetNonce()
+
+		chainID := c.Query("chainid")
+		if chainID == "" {
+			chainID = "mainnet"
+		}
+
+		challenge, err := ChallengeWithSOL(domain, address, uri.String(), nonce, chainID)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
@@ -202,6 +233,48 @@ func BitcoinLoginHandler() gin.HandlerFunc {
 			"accessToken":  accessToken,
 			"refreshToken": refreshToken,
 			"ethAddress":   address,
+			"newAccount":   newAccount,
+		})
+	}
+}
+
+func SolanaLoginHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var request SOLSignedMessage
+		err := c.BindJSON(&request)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		accessToken, refreshToken, address, err := LoginWithSOL(nonceManager, request)
+		if err != nil {
+			errRes := logs.ToAPIErrorCode(err)
+			c.JSON(errRes.HTTPStatusCode, errRes)
+			return
+		}
+
+		var newAccount = true
+		var recommend = Recommend{
+			Address:     address,
+			Recommender: request.Recommender,
+			Source:      request.Source,
+		}
+		err = recommend.CreateRecommend()
+		if err != nil {
+			if !strings.Contains(err.Error(), "UNIQUE constraint failed") {
+				errRes := logs.ToAPIErrorCode(err)
+				c.JSON(errRes.HTTPStatusCode, errRes)
+				return
+			} else {
+				newAccount = false
+			}
+		}
+
+		c.JSON(http.StatusOK, map[string]interface{}{
+			"accessToken":  accessToken,
+			"refreshToken": refreshToken,
 			"newAccount":   newAccount,
 		})
 	}
