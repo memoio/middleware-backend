@@ -311,12 +311,12 @@ func LoginWithSOL(nonceManager *NonceManager, request SOLSignedMessage) (string,
 
 	ethAddress := common.BytesToAddress(crypto.Keccak256(pub[:])[12:])
 
-	accessToken, err := genAccessToken(ethAddress.String(), -1, request.UserID)
+	accessToken, err := genAccessToken(ethAddress.String(), 987456, request.UserID)
 	if err != nil {
 		return "", "", "", err
 	}
 
-	refreshToken, err := genRefreshToken(ethAddress.String(), -1, request.UserID)
+	refreshToken, err := genRefreshToken(ethAddress.String(), 987456, request.UserID)
 
 	return accessToken, refreshToken, ethAddress.String(), err
 }
