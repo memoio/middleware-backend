@@ -12,6 +12,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcutil"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/memoio/backend/internal/logs"
@@ -308,14 +309,16 @@ func LoginWithSOL(nonceManager *NonceManager, request SOLSignedMessage) (string,
 		return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
 	}
 
-	accessToken, err := genAccessToken(message.GetAddress(), -1, request.UserID)
+	ethAddress := common.BytesToAddress(crypto.Keccak256(pub[:])[12:])
+
+	accessToken, err := genAccessToken(ethAddress.String(), -1, request.UserID)
 	if err != nil {
 		return "", "", "", err
 	}
 
-	refreshToken, err := genRefreshToken(message.GetAddress(), -1, request.UserID)
+	refreshToken, err := genRefreshToken(ethAddress.String(), -1, request.UserID)
 
-	return accessToken, refreshToken, message.GetAddress(), err
+	return accessToken, refreshToken, ethAddress.String(), err
 }
 
 func parseLensMessage(message string) (*siwe.Message, error) {

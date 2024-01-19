@@ -275,6 +275,7 @@ func SolanaLoginHandler() gin.HandlerFunc {
 		c.JSON(http.StatusOK, map[string]interface{}{
 			"accessToken":  accessToken,
 			"refreshToken": refreshToken,
+			"ethAddress":   address,
 			"newAccount":   newAccount,
 		})
 	}
