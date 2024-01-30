@@ -4,8 +4,9 @@ go 1.18
 
 require (
 	github.com/btcsuite/btcd v0.22.1
-	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1
-	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
+	github.com/btcsuite/btcd/btcec/v2 v2.3.2
+	github.com/btcsuite/btcd/btcutil v1.1.1
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.11.5
 	github.com/fxamacker/cbor/v2 v2.3.0
@@ -33,15 +34,16 @@ require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f // indirect
+	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5 // indirect
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
+	github.com/decred/dcrd/crypto/blake256 v1.0.1 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/dgraph-io/badger v1.6.2 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.4 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
@@ -131,10 +133,10 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.7.0 // indirect
-	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/crypto v0.18.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

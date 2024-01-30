@@ -8,10 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/memoio/backend/internal/logs"
@@ -240,7 +238,7 @@ func LoginWithBTC(nonceManager *NonceManager, request BTCSignedMessage) (string,
 		return "", "", "", err
 	}
 
-	pk, _, err := btcec.RecoverCompact(btcec.S256(), sig, hash)
+	pk, _, err := ecdsa.RecoverCompact(sig, hash)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -248,24 +246,26 @@ func LoginWithBTC(nonceManager *NonceManager, request BTCSignedMessage) (string,
 	switch message.GetAddress()[:1] {
 	case "1":
 		// get P2PKH address
-		if message.GetAddress() != getP2PKHAddress(pk.SerializeCompressed()) {
+		if message.GetAddress() != getP2PKHAddress(pk) {
 			return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
 		}
 	case "3":
 		// get P2SH address
-		if message.GetAddress() != getP2SHAddress(pk.SerializeCompressed()) {
+		if message.GetAddress() != getP2SHAddress(pk) {
 			return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
 		}
 	default:
 		switch message.GetAddress()[:4] {
 		case "bc1q":
 			// get Native SegWit address
-			if message.GetAddress() != getNativeSegWitAddress(pk.SerializeCompressed()) {
+			if message.GetAddress() != getNativeSegWitAddress(pk) {
 				return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
 			}
 		case "bc1p":
 			// TODO: get Traproot address
-			return "", "", "", logs.AuthenticationFailed{Message: "Unsupported address format"}
+			if message.GetAddress() != getTaprootAddress(pk) {
+				return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
+			}
 		default:
 			return "", "", "", logs.AuthenticationFailed{Message: "Invalid address format"}
 		}
@@ -308,14 +308,16 @@ func LoginWithSOL(nonceManager *NonceManager, request SOLSignedMessage) (string,
 		return "", "", "", logs.AuthenticationFailed{Message: "Got wrong address/signature"}
 	}
 
-	accessToken, err := genAccessToken(message.GetAddress(), -1, request.UserID)
+	ethAddress := common.BytesToAddress(crypto.Keccak256(pub[:])[12:])
+
+	accessToken, err := genAccessToken(ethAddress.String(), 987456, request.UserID)
 	if err != nil {
 		return "", "", "", err
 	}
 
-	refreshToken, err := genRefreshToken(message.GetAddress(), -1, request.UserID)
+	refreshToken, err := genRefreshToken(ethAddress.String(), 987456, request.UserID)
 
-	return accessToken, refreshToken, message.GetAddress(), err
+	return accessToken, refreshToken, ethAddress.String(), err
 }
 
 func parseLensMessage(message string) (*siwe.Message, error) {
@@ -325,42 +327,6 @@ func parseLensMessage(message string) (*siwe.Message, error) {
 	message = strings.TrimSuffix(message, "\n ")
 
 	return siwe.ParseMessage(message)
-}
-
-func getP2PKHAddress(publicKey []byte) string {
-	address, err := btcutil.NewAddressPubKey(publicKey, &chaincfg.MainNetParams)
-	if err != nil {
-		return ""
-	}
-	return address.EncodeAddress()
-}
-
-func getP2SHAddress(publicKey []byte) string {
-	witnessProg := btcutil.Hash160(publicKey)
-	addressWitnessPubKeyHash, err := btcutil.NewAddressWitnessPubKeyHash(witnessProg, &chaincfg.MainNetParams)
-	if err != nil {
-		return ""
-	}
-
-	serializedScript, err := txscript.PayToAddrScript(addressWitnessPubKeyHash)
-	if err != nil {
-		return ""
-	}
-	addressScriptHash, err := btcutil.NewAddressScriptHash(serializedScript, &chaincfg.MainNetParams)
-	if err != nil {
-		return ""
-	}
-
-	return addressScriptHash.EncodeAddress()
-}
-
-func getNativeSegWitAddress(publicKey []byte) string {
-	witnessProg := btcutil.Hash160(publicKey)
-	addressWitnessPubKeyHash, err := btcutil.NewAddressWitnessPubKeyHash(witnessProg, &chaincfg.MainNetParams)
-	if err != nil {
-		return ""
-	}
-	return addressWitnessPubKeyHash.EncodeAddress()
 }
 
 func isLensAccount(address string, required bool) (bool, error) {
