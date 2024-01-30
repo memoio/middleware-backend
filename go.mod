@@ -16,6 +16,7 @@ require (
 	github.com/memoio/contractsv2 v0.0.0-00010101000000-000000000000
 	github.com/memoio/go-mefs-v2 v0.0.0-00010101000000-000000000000
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/mr-tron/base58 v1.2.0
 	github.com/relvacode/iso8601 v1.1.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/shurcooL/graphql v0.0.0-20220606043923-3cf50f8a0a29
@@ -100,7 +101,6 @@ require (
 	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/multiformats/go-base32 v0.0.4 // indirect
 	github.com/multiformats/go-base36 v0.1.0 // indirect
 	github.com/multiformats/go-multiaddr v0.5.0 // indirect

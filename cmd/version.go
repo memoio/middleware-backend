@@ -3,10 +3,11 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/memoio/backend/api"
 	"github.com/urfave/cli/v2"
 )
 
-const Version = "0.2.0"
+const Version = api.Version
 
 var BuildFlag string
 

@@ -199,7 +199,12 @@ func (h handler) listObjectsHandle(c *gin.Context) {
 func (h handler) deleteObjectHandle(c *gin.Context) {
 	address := c.GetString("address")
 	id := c.Query("id")
-
+	if id == "" {
+		msg := logs.ControllerError{Message: "id not set, please check storage id"}
+		errRes := logs.ToAPIErrorCode(msg)
+		c.JSON(errRes.HTTPStatusCode, errRes )
+		return
+	}
 	err := h.controller.DeleteObject(c.Request.Context(), address, int(toInt64(id)))
 	if err != nil {
 		errRes := logs.ToAPIErrorCode(err)
