@@ -176,13 +176,17 @@ func CreateShareHandler() gin.HandlerFunc {
 			return
 		}
 
-		res, err := CreateShare(address, chainID, request)
+		baseUrl, shareId, err := CreateShare(address, chainID, request)
 		if err != nil {
 			errRes := logs.ToAPIErrorCode(err)
 			c.JSON(errRes.HTTPStatusCode, errRes)
 			return
 		}
-		c.JSON(200, res)
+		c.JSON(200, map[string]interface{}{
+			"shareId":          shareId,
+			"shareDowloadLink": baseUrl + "/share/" + shareId,
+			"shareInfoLink":    baseUrl + "/share/info/" + shareId,
+		})
 	}
 }
 

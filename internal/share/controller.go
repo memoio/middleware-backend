@@ -17,17 +17,17 @@ type CreateShareRequest struct {
 	ExpiredTime int64           `josn:"expire"`
 }
 
-func CreateShare(address string, chainID int, request CreateShareRequest) (string, error) {
+func CreateShare(address string, chainID int, request CreateShareRequest) (string, string, error) {
 	// 查看是否支持该存储模式
 	_, ok := ApiMap["/"+request.SType.String()]
 	if !ok {
-		return "", logs.StorageNotSupport{}
+		return "", "", logs.StorageNotSupport{}
 	}
 
 	// 查看文件是否存在，且属于该用户
 	fileInfo, err := GetFileInfo(address, chainID, request.MID, request.SType, request.Name)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	share := GetShareByUniqueIndex(address, chainID, request.MID, request.SType, request.Name)
@@ -37,7 +37,7 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 		if err == nil {
 			baseUrl = config.EthDriveUrl
 		}
-		return baseUrl + "/s/" + share.ShareID, nil
+		return baseUrl, share.ShareID, nil
 	}
 
 	newShare := ShareObjectInfo{
@@ -56,11 +56,11 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 
 	id, err := newShare.CreateShare()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if err = database.DataBase.Model(&fileInfo).Update("shared", true).Error; err != nil {
-		return "", logs.DataBaseError{Message: err.Error()}
+		return "", "", logs.DataBaseError{Message: err.Error()}
 	}
 
 	baseUrl := "https://ethdrive.net"
@@ -68,7 +68,7 @@ func CreateShare(address string, chainID int, request CreateShareRequest) (strin
 	if err == nil {
 		baseUrl = config.EthDriveUrl
 	}
-	return baseUrl + "/share/" + id, nil
+	return baseUrl, id, nil
 }
 
 type UpdateShareRequest struct {
