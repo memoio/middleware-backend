@@ -7,6 +7,7 @@ import (
 	"github.com/memoio/backend/config"
 	"github.com/memoio/backend/docs"
 	auth "github.com/memoio/backend/internal/authentication"
+	"github.com/memoio/backend/internal/da"
 	"github.com/memoio/backend/internal/filedns"
 	"github.com/memoio/backend/internal/share"
 	swaggerFiles "github.com/swaggo/files"
@@ -37,6 +38,7 @@ func RegistRoutes() Routes {
 	r.registFileDnsRoute()
 	// r.registAccount()
 	r.registStorageRoute()
+	r.registDARoute()
 	return r
 }
 
@@ -59,6 +61,10 @@ func (r Routes) registShareRoute() {
 
 func (r Routes) registFileDnsRoute() {
 	filedns.LoadFileDnsModule(r.Group("/"))
+}
+
+func (r Routes) registDARoute() {
+	da.LoadDAModule(r.Group("/da"))
 }
 
 // func (r Routes) registAccount() {
