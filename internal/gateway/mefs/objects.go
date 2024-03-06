@@ -230,6 +230,24 @@ func (m *Mefs) GetObject(ctx context.Context, objectName string, writer io.Write
 	return nil
 }
 
+func (m *Mefs) GetObjectEtag(ctx context.Context, bucket, object string) (string, error) {
+	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)
+	if err != nil {
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return "", lerr
+	}
+	defer closer()
+
+	objInfo, err := napi.HeadObject(ctx, bucket, object)
+	if err != nil {
+		lerr := logs.StorageError{Message: err.Error()}
+		logger.Error(lerr)
+		return "", lerr
+	}
+	return string(objInfo.ETag), nil
+}
+
 func (m *Mefs) GetObjectInfo(ctx context.Context, cid string) (api.ObjectInfo, error) {
 	result := api.ObjectInfo{}
 	napi, closer, err := mclient.NewUserNode(ctx, m.addr, m.headers)

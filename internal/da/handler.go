@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gin-gonic/gin"
 	"github.com/memoio/backend/api"
 	"github.com/memoio/backend/config"
@@ -17,7 +18,6 @@ import (
 var daStore api.IGateway
 var logger = logs.Logger("da")
 var defaultDABucket string = "da-bucket"
-var defaultDAObject string = "da-txdata"
 
 func LoadDAModule(g *gin.RouterGroup) {
 	ui := api.USerInfo{
@@ -64,12 +64,22 @@ func putObjectHandler(c *gin.Context) {
 		return
 	}
 
+	dataHash := crypto.Keccak256Hash([]byte(data))
 	var buf bytes.Buffer
 	buf.Write([]byte(data))
-	oi, err := daStore.PutObject(c.Request.Context(), defaultDABucket, defaultDAObject, &buf, api.ObjectOptions{})
+	oi, err := daStore.PutObject(c.Request.Context(), defaultDABucket, dataHash.Hex(), &buf, api.ObjectOptions{})
 	if err != nil {
-		c.Error(err)
-		return
+		if !strings.Contains(err.Error(), "already exist") {
+			c.Error(err)
+			return
+		}
+		// get cid
+		cid, err := daStore.(*mefs.Mefs).GetObjectEtag(c.Request.Context(), defaultDABucket, dataHash.Hex())
+		if err != nil {
+			c.Error(err)
+			return
+		}
+		oi.Cid = cid
 	}
 
 	c.JSON(http.StatusOK, gin.H{
