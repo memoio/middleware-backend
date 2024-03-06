@@ -245,7 +245,7 @@ func (m *Mefs) GetObjectEtag(ctx context.Context, bucket, object string) (string
 		logger.Error(lerr)
 		return "", lerr
 	}
-	return string(objInfo.ETag), nil
+	return metag.ToString(objInfo.ETag)
 }
 
 func (m *Mefs) GetObjectInfo(ctx context.Context, cid string) (api.ObjectInfo, error) {
