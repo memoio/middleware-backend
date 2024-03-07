@@ -2,6 +2,7 @@ package da
 
 import (
 	"bytes"
+	"encoding/hex"
 	"net/http"
 	"strings"
 	"time"
@@ -63,10 +64,16 @@ func putObjectHandler(c *gin.Context) {
 		c.Error(lerr)
 		return
 	}
+	databyte, err := hex.DecodeString(data)
+	if err != nil {
+		lerr := logs.ServerError{Message: "field 'data' is not legally hexadecimal presented"}
+		c.Error(lerr)
+		return
+	}
 
-	dataHash := crypto.Keccak256Hash([]byte(data))
+	dataHash := crypto.Keccak256Hash(databyte)
 	var buf bytes.Buffer
-	buf.Write([]byte(data))
+	buf.Write(databyte)
 	oi, err := daStore.PutObject(c.Request.Context(), defaultDABucket, dataHash.Hex(), &buf, api.ObjectOptions{})
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
