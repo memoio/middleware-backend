@@ -16,12 +16,13 @@ const CONFIGPATH = "./config.json"
 var Cfg *Config
 
 type Config struct {
-	SwagHost    string         `json:"swaghost"`
-	Storage     StorageConfig  `json:"storage"`
-	Contract    ContractConfig `json:"contract"`
-	SecurityKey string         `json:"securityKey"`
-	Domain      string         `json:"domain"`
-	EthDriveUrl string         `json:"ethDriveUrl"`
+	SwagHost    string           `json:"swaghost"`
+	Storage     StorageConfig    `json:"storage"`
+	Contract    ContractConfig   `json:"contract"`
+	DataAccess  DataAccessConfig `json:"da"`
+	SecurityKey string           `json:"securityKey"`
+	Domain      string           `json:"domain"`
+	EthDriveUrl string           `json:"ethDriveUrl"`
 	// LensAPIUrl  string                 `json:"lensAPIUrl"`
 }
 
@@ -82,6 +83,7 @@ func NewDefaultConfig() *Config {
 		SwagHost:    "localhost:8090",
 		Storage:     newDefaultStorageConfig(),
 		Contract:    newDefaultContractConfig(),
+		DataAccess:  newDefaultDataAccessConfig(),
 		SecurityKey: newDefaultSecurityKeyConfig(),
 		Domain:      newDefaultDomainConfig(),
 		EthDriveUrl: "https://ethdrive.net",
