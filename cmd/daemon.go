@@ -65,7 +65,7 @@ var runCmd = &cli.Command{
 
 		pidpath, err := homedir.Expand("./")
 		if err != nil {
-			return nil
+			return err
 		}
 
 		pid := os.Getpid()

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/memoio/backend/api"
 	auth "github.com/memoio/backend/internal/authentication"
 	"github.com/memoio/backend/internal/logs"
 	"github.com/memoio/backend/internal/market"
@@ -36,7 +37,8 @@ func (r Routes) registRoute() {
 	r.MaxMultipartMemory = 8 << 20 // 8 MiB
 	r.Use(Cors())
 	r.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Welcome Server")
+		msg := "Welcome Server, API version is " + api.Version
+		c.String(http.StatusOK, msg)
 	})
 }
 
