@@ -4,27 +4,26 @@
 
 ### auth
 
-登录验证模块，用于接入和验证操作的合法性
+Login verification module, used to access and verify the legitimacy of operations.
 
 ### pay
 
-包括读写支付和数据交易支付
+Including read-write payment and data transaction payment.
 
-原则：
-每个账户包含一定量的免费读写空间，由管理员申请
-
+Principle:
+Each account contains a certain amount of free read and write space, which is applied for by the administrator.
 
 ### did
 
-账户did和文件did，用于文件nft化和交易（付费获取did的读取权限）
+Account did and file did, used for file nft and transaction (pay to get did read permission)
 
 ### data
 
-数据写入和读取
+Data writing and reading
 
 ### sdk
 
-js调用api以及常用的工具函数
+js calls API and commonly used tool functions
 
 ## address as account
 
